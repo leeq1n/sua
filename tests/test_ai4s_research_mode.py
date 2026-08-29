@@ -103,7 +103,7 @@ def test_phase_a_validation_is_honest_and_records_terminal_decision():
         "AI4S_PROJECT_ADAPTER_VALIDATED",
         "PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE",
         "839 passed",
-        "851 passed",
+        "858 passed",
         "401",
         "directional behavior score was not produced",
         "Failure pre-mortem",

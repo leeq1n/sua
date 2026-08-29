@@ -33,8 +33,8 @@ AI4S success does not validate the generic detector. Commit range:
 - Structure validator: all 23 critical paths present.
 - Clean detached-worktree comparison with `SUA_SKIP_NETWORK=1`:
   - baseline `6e020b7`: **839 passed**, 15 skipped, 21 failed;
-  - treatment `d0f5d80`: **851 passed**, 15 skipped, 21 failed.
-  The same 21 failures remained; the 12 added tests passed. Existing failures
+  - treatment `62195f7`: **858 passed**, 15 skipped, 21 failed.
+  The same 21 failures remained; the 19 added tests passed. Existing failures
   are the documented planner contract/persistence and downstream harness/e2e
   cluster plus an existing CHANGELOG prompt-hygiene finding. Phase A added no
   full-suite failure.
