@@ -26,13 +26,46 @@ from src.llm import LLMConfig, chat_simple  # noqa: E402
 
 
 TASK_PATH = ROOT / "benchmarks" / "tasks.json"
-GUIDE_FILES = {
-    "baseline": [ROOT / "docs" / "RESEARCH_USAGE.md"],
-    "treatment": [
-        ROOT / "docs" / "RESEARCH_USAGE.md",
-        ROOT / "docs" / "AI4S_RESEARCH_MODE.md",
-        ROOT / "docs" / "AI4S_RESEARCH_MODE_DETAIL.md",
-    ],
+ARMS = ("baseline", "treatment")
+SUITES = {
+    "ai4s": {
+        "category": "ai4s_regression",
+        "guides": {
+            "baseline": [ROOT / "docs" / "RESEARCH_USAGE.md"],
+            "treatment": [
+                ROOT / "docs" / "RESEARCH_USAGE.md",
+                ROOT / "docs" / "AI4S_RESEARCH_MODE.md",
+                ROOT / "docs" / "AI4S_RESEARCH_MODE_DETAIL.md",
+            ],
+        },
+        "instruction": (
+            "Decide the current evidence state, the next scientific operation, "
+            "whether implementation may proceed, and what decision knowledge "
+            "must be recorded."
+        ),
+    },
+    "specialization": {
+        "category": "specialization_regression",
+        "guides": {
+            "baseline": [
+                ROOT / "docs" / "OPERATING_RULES.md",
+                ROOT / "docs" / "M_SELF_APPLICATION.md",
+                ROOT / "docs" / "SKILL_DESIGN.md",
+            ],
+            "treatment": [
+                ROOT / "docs" / "OPERATING_RULES.md",
+                ROOT / "docs" / "M_SELF_APPLICATION.md",
+                ROOT / "docs" / "SKILL_DESIGN.md",
+                ROOT / "docs" / "DOMAIN_SPECIALIZATION_BOOTSTRAP.md",
+                ROOT / "docs" / "DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md",
+            ],
+        },
+        "instruction": (
+            "Audit whether generic SUA is methodologically adequate for the "
+            "recurring task family. Decide whether to retain generic SUA, "
+            "collect evidence, or propose only a bounded adapter experiment."
+        ),
+    },
 }
 
 
@@ -44,11 +77,21 @@ def load_ai4s_tasks(path: Path = TASK_PATH) -> List[dict]:
     ]
 
 
-def build_guide(arm: str) -> tuple[str, List[str]]:
+def load_specialization_tasks(path: Path = TASK_PATH) -> List[dict]:
+    """Filter domain-specialization fixtures from the canonical task source."""
+    return [
+        task for task in load_tasks(str(path))
+        if task.get("category") == "specialization_regression"
+    ]
+
+
+def build_guide(arm: str, *, suite: str = "ai4s") -> tuple[str, List[str]]:
     """Return the controlled guide text and repository-relative sources."""
-    if arm not in GUIDE_FILES:
+    if suite not in SUITES:
+        raise ValueError(f"unknown suite: {suite}")
+    if arm not in ARMS:
         raise ValueError(f"unknown arm: {arm}")
-    paths = GUIDE_FILES[arm]
+    paths = SUITES[suite]["guides"][arm]
     text = "\n\n".join(path.read_text(encoding="utf-8") for path in paths)
     files = [path.relative_to(ROOT).as_posix() for path in paths]
     return text, files
@@ -61,24 +104,28 @@ def _default_llm(prompt: str, *, system: str, config: LLMConfig) -> str:
 def run_arm(
     arm: str,
     *,
+    suite: str = "ai4s",
     llm_call: Callable[..., str] = _default_llm,
     tasks: Optional[Iterable[dict]] = None,
     config: Optional[LLMConfig] = None,
 ) -> dict:
     """Collect one response per fixture; leave every rubric item unscored."""
-    guide, files = build_guide(arm)
+    guide, files = build_guide(arm, suite=suite)
     config = config or LLMConfig.from_env()
     if not getattr(config, "ready", True):
         raise RuntimeError("LLM configuration is not ready")
     system = (
-        "You are a fresh scientific-research agent. Apply only the provided "
-        "SUA research guide. Decide the current evidence state, the next "
-        "scientific operation, whether implementation may proceed, and what "
-        "decision knowledge must be recorded. Do not assume access to any "
-        "repository files beyond this guide.\n\nGUIDE:\n" + guide
+        "You are a fresh agent. Apply only the provided SUA guide. "
+        + SUITES[suite]["instruction"]
+        + " Do not assume access to repository files beyond this guide."
+        + "\n\nGUIDE:\n"
+        + guide
     )
     results = []
-    for task in list(tasks) if tasks is not None else load_ai4s_tasks():
+    default_tasks = (
+        load_ai4s_tasks() if suite == "ai4s" else load_specialization_tasks()
+    )
+    for task in list(tasks) if tasks is not None else default_tasks:
         response = llm_call(task["task"], system=system, config=config)
         if not response or not response.strip():
             raise RuntimeError(
@@ -98,6 +145,7 @@ def run_arm(
         })
     return {
         "schema_version": 1,
+        "suite": suite,
         "arm": arm,
         "guide_files": files,
         "guide_sha256": hashlib.sha256(guide.encode("utf-8")).hexdigest(),
@@ -187,7 +235,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run_parser = sub.add_parser("run", help="collect an unscored arm")
-    run_parser.add_argument("--arm", choices=sorted(GUIDE_FILES), required=True)
+    run_parser.add_argument("--suite", choices=sorted(SUITES), default="ai4s")
+    run_parser.add_argument("--arm", choices=ARMS, required=True)
     run_parser.add_argument("--output", required=True)
 
     score_parser = sub.add_parser("score", help="attach explicit ratings")
@@ -202,7 +251,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "run":
-        payload = run_arm(args.arm)
+        payload = run_arm(args.arm, suite=args.suite)
     elif args.command == "score":
         payload = score_run(_read_json(args.input), _read_json(args.ratings))
     else:

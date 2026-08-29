@@ -6,6 +6,7 @@ from benchmarks.ai4s_eval import (
     build_guide,
     compare_scored_runs,
     load_ai4s_tasks,
+    load_specialization_tasks,
     run_arm,
     score_run,
 )
@@ -25,6 +26,20 @@ def test_treatment_adds_controller_to_same_baseline_guide():
     assert "AI4S Research Mode" in treatment
     assert len(baseline_files) == 1
     assert len(treatment_files) == 3
+
+
+def test_specialization_suite_reuses_collector_without_keyword_registry():
+    tasks = load_specialization_tasks()
+    assert [task["case"] for task in tasks] == [
+        "debugging-negative",
+        "legal-positive",
+    ]
+    baseline, baseline_files = build_guide("baseline", suite="specialization")
+    treatment, treatment_files = build_guide("treatment", suite="specialization")
+    assert "M-self-application" in baseline
+    assert baseline in treatment
+    assert "Domain Specialization Bootstrap" in treatment
+    assert len(treatment_files) == len(baseline_files) + 2
 
 
 def test_run_arm_keeps_rubric_unscored_and_uses_same_task_prompt():

@@ -47,6 +47,8 @@ task fits.
 - Task is "decide between options" → `docs/SWITCH_SIGNALS.md`
 - Task is "discover, establish, falsify, or claim new scientific knowledge"
   → `docs/AI4S_RESEARCH_MODE.md` before proposing implementation
+- A recurring task family repeatedly needs the same methodological steering
+  → `docs/DOMAIN_SPECIALIZATION_BOOTSTRAP.md` before proposing a new mode
 
 **Why**: L1 gives **operational detail** without
 full L2 depth.

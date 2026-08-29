@@ -98,7 +98,7 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 | [RESEARCH_USAGE.md](RESEARCH_USAGE.md) | (within file) | 科研项目适配器模式 + 工作流 |
 | [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md) | [AI4S_RESEARCH_MODE_DETAIL.md](AI4S_RESEARCH_MODE_DETAIL.md) | Scientific-state controller for new-knowledge tasks |
 | [AI4S_PHASE_A_VALIDATION.md](AI4S_PHASE_A_VALIDATION.md) | (within file) | Phase A evidence, limitations, and layer decision |
-| [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md) | (within file) | Diagnose recurring domain-methodology gaps before adapter incubation |
+| [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md) | [DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md](DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md) | Detect recurring domain-methodology gaps before adapter incubation |
 | [HANDOFF.md](HANDOFF.md) | [HANDOFF_DETAIL.md](HANDOFF_DETAIL.md) | Project handoff template |
 | [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | (within file) | Acceptance protocol |
 | [ANALYSIS_PARENT_VERIFY.md](ANALYSIS_PARENT_VERIFY.md) | [ANALYSIS_PARENT_VERIFY_DETAIL.md](ANALYSIS_PARENT_VERIFY_DETAIL.md) | Parent verification analysis |

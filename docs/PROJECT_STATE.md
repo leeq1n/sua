@@ -19,6 +19,11 @@ through the project-layer scientific-state controller in
 `AI4S_RESEARCH_MODE.md`. Satellite-security episodes are regression fixtures,
 not active research directions. Phase A does not authorize core-layer changes.
 
+The Phase A addendum separately tests whether SUA can detect recurring domain-
+methodology inadequacy before a user requests specialization. The Layer 1
+detector is `DOMAIN_SPECIALIZATION_BOOTSTRAP.md`; AI4S remains a Layer 2 adapter
+and cannot by itself validate the generic detector.
+
 ## What the repo holds
 
 | Area | Location | Purpose |
@@ -26,6 +31,7 @@ not active research directions. Phase A does not authorize core-layer changes.
 | Operating contract | `core-layer/AGENTS_CORE.md` + `AGENTS.md` | always-loaded rules + per-task 段s (P11 split) |
 | Knowledge library | `docs/` | principles, operating rules, design, conventions |
 | AI4S research adapter | `docs/AI4S_RESEARCH_MODE.md` | scientific-state routing and evidence gates for new-knowledge tasks |
+| Specialization detector | `docs/DOMAIN_SPECIALIZATION_BOOTSTRAP.md` | audit recurring methodological friction before adapter proposals |
 | Governance | `core-layer/` | 3-layer policy (核心/用户/项目) + modification gates |
 | Commit gates | `hooks/` + `agent-tools/scripts/` | commit-msg / pre-commit / pre-push / prepare-commit-msg |
 | Legacy runtime | `core/` + `src/` + `self_upgrade/` | v1.x-v3.x self-improving agent (documented legacy, functional) |
@@ -54,11 +60,11 @@ change rarely; that file is the source of truth.
 
 ## Next step
 
-Phase A decision: `PROJECT_LAYER_SUFFICIENT`. See
-`AI4S_PHASE_A_VALIDATION.md` for evidence and limitations. The next useful
-verification is a controlled fresh-model A/B rerun after provider authorization
-is repaired; do not start Phase B or promote a core trigger automatically. The
-prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
+The addendum reopens Phase A's generic-specialization decision. Validate the
+two non-AI4S positive/negative controls, anti-overfitting and deletion gates,
+then revise `AI4S_PHASE_A_VALIDATION.md` with separate adapter and bootstrap
+decisions. Do not start Phase B or promote a core trigger. The prior
+`docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 
 ## References
 
@@ -67,6 +73,7 @@ prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 - Operating rules: [OPERATING_RULES.md](OPERATING_RULES.md)
 - AI4S Research Mode: [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md)
 - AI4S Phase A validation: [AI4S_PHASE_A_VALIDATION.md](AI4S_PHASE_A_VALIDATION.md)
+- Domain specialization bootstrap: [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md)
 - User intent: [USER_INSIGHTS.md](USER_INSIGHTS.md)
 - Hard rules: [CONSTRAINTS.md](CONSTRAINTS.md)
 - Pending tasks: [../TODO.md](../TODO.md)

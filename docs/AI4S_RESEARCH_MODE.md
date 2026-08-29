@@ -83,6 +83,10 @@ Phase A decision: **`PROJECT_LAYER_SUFFICIENT`**. See the
 [validation report](AI4S_PHASE_A_VALIDATION.md) for the structural evidence,
 failed live A/B attempt, and remaining uncertainty.
 
+AI4S is a Layer 2 domain adapter. The separate Layer 1 question—whether generic
+SUA should propose any specialization—is governed by
+[Domain Specialization Bootstrap](DOMAIN_SPECIALIZATION_BOOTSTRAP.md).
+
 ## Detail and use
 
 Before moving a candidate beyond K1, load
