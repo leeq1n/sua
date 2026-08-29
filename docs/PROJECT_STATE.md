@@ -54,10 +54,11 @@ change rarely; that file is the source of truth.
 
 ## Next step
 
-Complete Phase A baseline/treatment evaluation, full validation, failure
-pre-mortem, and core-promotion decision. Stop before Phase B or any core-layer
-promotion. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context,
-not the active AI4S direction.
+Phase A decision: `PROJECT_LAYER_SUFFICIENT`. See
+`AI4S_PHASE_A_VALIDATION.md` for evidence and limitations. The next useful
+verification is a controlled fresh-model A/B rerun after provider authorization
+is repaired; do not start Phase B or promote a core trigger automatically. The
+prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 
 ## References
 
@@ -65,6 +66,7 @@ not the active AI4S direction.
 - Working principles: [PRINCIPLES.md](PRINCIPLES.md)
 - Operating rules: [OPERATING_RULES.md](OPERATING_RULES.md)
 - AI4S Research Mode: [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md)
+- AI4S Phase A validation: [AI4S_PHASE_A_VALIDATION.md](AI4S_PHASE_A_VALIDATION.md)
 - User intent: [USER_INSIGHTS.md](USER_INSIGHTS.md)
 - Hard rules: [CONSTRAINTS.md](CONSTRAINTS.md)
 - Pending tasks: [../TODO.md](../TODO.md)

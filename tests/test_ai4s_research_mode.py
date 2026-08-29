@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY = ROOT / "docs" / "AI4S_RESEARCH_MODE.md"
 DETAIL = ROOT / "docs" / "AI4S_RESEARCH_MODE_DETAIL.md"
+VALIDATION = ROOT / "docs" / "AI4S_PHASE_A_VALIDATION.md"
 TASKS = ROOT / "benchmarks" / "tasks.json"
 
 
@@ -94,3 +95,19 @@ def test_fresh_agent_discovers_ai4s_from_project_entry_points():
     ):
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "AI4S_RESEARCH_MODE.md" in text, relative
+
+
+def test_phase_a_validation_is_honest_and_records_terminal_decision():
+    text = VALIDATION.read_text(encoding="utf-8")
+    for phrase in (
+        "PROJECT_LAYER_SUFFICIENT",
+        "839 passed",
+        "851 passed",
+        "401",
+        "directional behavior score was not produced",
+        "Failure pre-mortem",
+        "Self-audit",
+    ):
+        assert phrase in text
+    state = (ROOT / "docs" / "PROJECT_STATE.md").read_text(encoding="utf-8")
+    assert "Phase A decision: `PROJECT_LAYER_SUFFICIENT`" in state

@@ -1,6 +1,6 @@
 ---
 description: "Scientific-state controller for discovering, falsifying, and validating new knowledge"
-status: "active-phase-a"
+status: "active-project-layer"
 ---
 
 # AI4S Research Mode
@@ -78,6 +78,10 @@ activation/routing rather than missing primitives. Another P-n would duplicate
 P22/P28/P29. Phase A keeps the controller in the project-layer research
 adapter; user-layer placement is too local, core promotion lacks evidence, and
 a separate skill would be premature.
+
+Phase A decision: **`PROJECT_LAYER_SUFFICIENT`**. See the
+[validation report](AI4S_PHASE_A_VALIDATION.md) for the structural evidence,
+failed live A/B attempt, and remaining uncertainty.
 
 ## Detail and use
 
