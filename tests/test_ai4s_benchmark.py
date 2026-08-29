@@ -41,6 +41,15 @@ def test_run_arm_keeps_rubric_unscored_and_uses_same_task_prompt():
     assert seen[0][0] == load_ai4s_tasks()[0]["task"]
 
 
+def test_run_arm_fails_instead_of_recording_empty_llm_response():
+    with pytest.raises(RuntimeError, match="ai4s-a"):
+        run_arm(
+            "baseline",
+            llm_call=lambda prompt, *, system, config: "",
+            tasks=load_ai4s_tasks()[:1],
+        )
+
+
 def test_score_run_requires_explicit_complete_binary_ratings():
     raw = run_arm(
         "baseline",

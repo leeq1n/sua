@@ -80,6 +80,10 @@ def run_arm(
     results = []
     for task in list(tasks) if tasks is not None else load_ai4s_tasks():
         response = llm_call(task["task"], system=system, config=config)
+        if not response or not response.strip():
+            raise RuntimeError(
+                f"LLM returned an empty response for {task['id']}; arm invalid"
+            )
         rubric = [
             {**item, "rating": None, "note": ""}
             for item in task["rubric"]
