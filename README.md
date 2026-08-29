@@ -1,5 +1,7 @@
 # Self-Upgrade Agent (SUA)
 
+> **Canonical repository:** [`leeq1n/sua`](https://github.com/leeq1n/sua) is the active source of truth for SUA. [`leeq1n/self-upgrade-agent`](https://github.com/leeq1n/self-upgrade-agent) is the legacy predecessor and is no longer an active development source.
+
 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -7,7 +9,7 @@
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](CONTRIBUTING.md)
 [![AAIF Compatible](https://img.shields.io/badge/AAIF-AGENTS.md%20compatible-blueviolet)](AGENTS.md)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-open%20standard%202025--12--18-success)](docs/CROSS_RUNTIME_SKILL_BRIDGE.md)
-[![Latest Release](https://img.shields.io/github/v/release/leeq1n/self-upgrade-agent?label=latest&color=green)](https://github.com/leeq1n/self-upgrade-agent/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/leeq1n/sua?label=latest&color=green)](https://github.com/leeq1n/sua/releases/latest)
 
 
 > L0: SUA project README — orientation, current state.
@@ -232,7 +234,7 @@ the operating contract on session start.
 
 # 在你的项目里 (如科研项目 satellite-security/)
 
-git clone https://github.com/leeq1n/self-upgrade-agent.git .sua/
+git clone https://github.com/leeq1n/sua.git .sua/
 
 
 
@@ -243,6 +245,21 @@ git clone https://github.com/leeq1n/self-upgrade-agent.git .sua/
 ```
 
 
+
+### Existing projects migrating from the legacy repository
+
+If an existing project’s `.sua/` checkout still points to the legacy
+repository, inspect its state first, then update the remote safely:
+
+```bash
+cd .sua
+git remote -v
+git remote set-url origin https://github.com/leeq1n/sua.git
+git fetch origin
+```
+
+Review `git status` and `git log` before choosing any rebase or reset; this
+migration does not require destructive replacement of local history.
 
 **跨 agent 使用教程**：
 

@@ -1,5 +1,9 @@
 # CHANGELOG — Self-Upgrade Agent (SUA)
 
+> Repository lineage: [`leeq1n/sua`](https://github.com/leeq1n/sua) is the
+> canonical active repository. The legacy URL below is retained only as a
+> historical record of the predecessor repository.
+
 > Canonical log of SUA releases and significant changes.
 > Per P-14 docs current + P-17 no fabricate, this file documents
 > the actual released state of the project on
