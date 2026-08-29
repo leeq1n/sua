@@ -96,7 +96,7 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 | [SKILL_DESIGN.md](SKILL_DESIGN.md) | [SKILL_DESIGN_DETAIL.md](SKILL_DESIGN_DETAIL.md) | Skill design + incubation framework |
 | [CROSS_RUNTIME_SKILL_BRIDGE.md](CROSS_RUNTIME_SKILL_BRIDGE.md) | (within file) | Agent Skills SKILL.md bridge for non-canonical runtimes |
 | [RESEARCH_USAGE.md](RESEARCH_USAGE.md) | (within file) | 科研项目适配器模式 + 工作流 |
-| [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md) | (within file) | Phase A scientific-state controller diagnosis; behavior pending |
+| [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md) | [AI4S_RESEARCH_MODE_DETAIL.md](AI4S_RESEARCH_MODE_DETAIL.md) | Scientific-state controller for new-knowledge tasks |
 | [HANDOFF.md](HANDOFF.md) | [HANDOFF_DETAIL.md](HANDOFF_DETAIL.md) | Project handoff template |
 | [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | (within file) | Acceptance protocol |
 | [ANALYSIS_PARENT_VERIFY.md](ANALYSIS_PARENT_VERIFY.md) | [ANALYSIS_PARENT_VERIFY_DETAIL.md](ANALYSIS_PARENT_VERIFY_DETAIL.md) | Parent verification analysis |

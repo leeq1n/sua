@@ -1,76 +1,98 @@
 ---
 description: "Scientific-state controller for discovering, falsifying, and validating new knowledge"
-status: "phase-a-diagnosis"
+status: "active-phase-a"
 ---
 
 # AI4S Research Mode
 
 > L0: Load before proposing implementation when a task aims to discover,
 > establish, falsify, or claim new scientific knowledge.
->
-> Phase A status: diagnosis recorded; controller and regression evidence are
-> not yet complete.
 
-## Phase A diagnosis
+## Activation contract
 
-SUA already supplies the required reasoning operations: constructive and
-adversarial primitives, Add-then-Reduce, verification, self-audit, and
-self-application.  `RESEARCH_USAGE.md` maps broad research activities to
-tools, but it does not represent the current scientific knowledge state or
-define transition-blocking epistemic triggers.  A fresh agent can therefore
-perform the operations when explicitly requested without reliably deciding
-when a mechanism collision, adapter-dependent effect, weak claim, or failed
-branch must schedule them.
+Activate this mode from the research project's entry instructions whenever
+the objective is to discover, establish, falsify, or claim new scientific
+knowledge. Activation depends on the objective, not words such as "deep",
+"organize", "analogy", or "use SUA".
 
-The observed AI4S gap is primarily **activation and routing**, not a missing
-reasoning primitive.  The Phase A hypothesis is that a project-layer research
-adapter can make those decisions explicit enough to change fresh-agent
-behavior without adding a principle or modifying the core layer.
+This is a **scientific knowledge-state controller**. It routes SUA's existing
+Analyze/Reason/association/induction/summary, four critical-thinking
+primitives, Add-then-Reduce, verification, and self-application operations.
+It does not add a P-n or replace those canonical operations.
 
-## Five diagnosis questions
+## Control loop
 
-| Question | Finding | Evidence in the current repo |
+First declare the current state and evidence. Then execute only the operation
+required to satisfy the next gate. A failed gate loops backward; it never
+silently advances to implementation.
+
+| State | Knowledge condition | Required operation before advancing |
 |---|---|---|
-| Is the capability present but undiscoverable? | Partly. Individual operations are discoverable, but their scientific trigger conditions are not. | `PRINCIPLES.md`, `OPERATING_RULES.md`, and the critical-thinking detail define operations; `RESEARCH_USAGE.md` lists stages and tools. |
-| Is it present only informally? | The scientific scheduling logic is informal. | No current document defines a scientific-state transition gate, combination-only novelty block, native/adapter audit, or repeated-collision branch reset. |
-| Is the problem routing rather than primitives? | Yes, as the leading diagnosis. | Existing Analyze/Reason/analogy/induction/summary, adversarial reasoning, Reduce, verification, and recursion cover the required operations. |
-| Would another P-n duplicate existing principles? | Yes. | P22 already governs replanning; P28/P29 govern recursive application and reduction; P7 rejects an unevidenced new rule. |
-| Where should the fix live? | In a project-layer research adapter for Phase A. | It is reusable SUA project knowledge but not yet stable enough for the core; user layer is too local, and a separate skill is out of scope. |
+| **K0 Mother problem** | Scientific object and success claim are explicit | Frame the mother problem and what is not being optimized. |
+| **K1 Frontier change** | A new capability and invalidated old assumption are evidenced | Scan capabilities; expand possible mechanisms without defending a candidate. |
+| **K2 Mechanism candidate** | Capability, constraint, mechanism, and cheap falsifier are stated | Abstract away application nouns and expose necessary causal structure. |
+| **K3 Prior-art coverage** | Mechanism-level bridges cover the nearest mature theories | Schedule cross-domain analogy and strongest generic-mechanism search. |
+| **K4 Novelty decision** | Role-separated tribunal leaves an exact mechanism delta | KILL, Reduce, reset/lift, or provisionally retain; record the decision. |
+| **K5 Cheap falsification** | Cheapest decisive falsifier has been run | Reject or bound the mechanism before costly work. |
+| **K6 Native validation** | Claim-matched native/external evidence survives adapter audit | Validate in the target system and distinguish security from natural failure. |
+| **K7 Knowledge product** | Surviving claim, limits, and reopening conditions are explicit | Develop method/theory, then communicate; preserve negative knowledge too. |
 
-## Falsifiable Phase A hypothesis
+## Non-negotiable transition gates
 
-Compared with current `RESEARCH_USAGE.md`, the treatment must let a fresh
-agent, without user prompts such as "think deeper" or "use SUA":
+Implementation is blocked before K4 unless novelty is explicitly not the
+objective. Large implementation is blocked before K5. Native-system,
+external-validity, causal, and security claims are blocked before their K6
+evidence gates. A template filled with plausible prose is not a passed gate.
 
-1. identify the scientific knowledge state;
-2. schedule mechanism-level cross-domain search;
-3. block combination-only or renamed novelty;
-4. trigger Reduce, abstraction lift, or branch reset after collisions;
-5. require a cheap falsifier before expensive implementation;
-6. request native validation when adapters may manufacture evidence; and
-7. persist KILL knowledge so renamed candidates do not immediately revive.
+At every candidate transition, emit:
 
-Phase A fails if these outcomes require broad redesign, core edits, or a
-second benchmark framework.
+```text
+STATE: K#
+CLAIM TYPE: ...
+EVIDENCE: ...
+TRIGGER: ...
+NEXT OPERATION: ...
+DECISION: ADVANCE / HOLD / REDUCE / KILL / LIFT / RESET
+LEDGER UPDATE: ...
+```
 
-## Scope and acceptance boundary
+## Automatic routing defaults
 
-- **Allowed layer**: project docs, research adapter, benchmark fixtures,
-  transparent rubrics, validators, tests, and current-state routing.
-- **Excluded**: core-layer edits, new P-n, hook enforcement, continuous
-  frontier crawlers, a new skill repository, and renewed satellite research.
-- **Evidence rule**: deterministic checks validate structure and routing;
-  scientific judgment remains rubric-scored and must not be reported as a
-  deterministic behavioral gain without a controlled run.
+- Mechanism-equivalent collisions schedule Reduce, abstraction lift, or
+  mother-space reset; they do not schedule a renamed nearby candidate.
+- Combination-only or terminology-only novelty cannot pass K4 without a
+  distinct interaction mechanism.
+- Adapter-dependent effects schedule native/adapter audit before external
+  claims.
+- Missing cheap falsifiers, claim/evidence mismatch, and rescue inflation
+  move backward or KILL; they never justify a larger MVP.
+- Search operates on the generic mechanism outside application vocabulary and
+  stops on coverage, not a ritual number of fields.
+
+## Diagnosis and layer decision
+
+The repo already contains the reasoning operations, but current
+`RESEARCH_USAGE.md` schedules them only by broad activity (literature,
+experiment, writing), not by scientific knowledge state. The gap is therefore
+activation/routing rather than missing primitives. Another P-n would duplicate
+P22/P28/P29. Phase A keeps the controller in the project-layer research
+adapter; user-layer placement is too local, core promotion lacks evidence, and
+a separate skill would be premature.
+
+## Detail and use
+
+Before moving a candidate beyond K1, load
+[AI4S_RESEARCH_MODE_DETAIL.md](AI4S_RESEARCH_MODE_DETAIL.md). It defines the
+triggers, candidate representation, analogy coverage stop, tribunal, claim
+evidence gates, KILL ledger, frontier scan, resource policy, and benchmark
+contract. The summary is the router; the detail is the operating protocol.
 
 ## References
 
-- [Research usage](RESEARCH_USAGE.md) — current baseline research adapter.
-- [Operating rules](OPERATING_RULES.md) — existing operations being routed.
+- [Research usage](RESEARCH_USAGE.md) — baseline research adapter.
 - [Add then Reduce](ADD_THEN_REDUCE.md) — canonical reduction operation.
 - [Critical-thinking primitives](M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md) —
   canonical adversarial operations.
-- [Benchmark tasks](../benchmarks/tasks.json) — existing benchmark convention
-  to extend, not replace.
+- [Benchmark tasks](../benchmarks/tasks.json) — shared fixture source.
 
 Last P20-verified: 2026-08-29
