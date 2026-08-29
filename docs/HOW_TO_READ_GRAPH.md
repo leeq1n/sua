@@ -6,7 +6,7 @@
 > mentioned (c56 reflection): graph (structure) →
 > sequence (reading) happens **in the reader's head**,
 > not in a tool.  This doc IS the read pattern.
-> Last P20-verified: 2026-07-14 (initial)
+> Last P20-verified: 2026-08-29
 
 ## What this doc is for
 
@@ -45,6 +45,8 @@ task fits.
 - Task is "modify principles" → `docs/PRINCIPLES_DETAIL.md` P25段
 - Task is "add new docs" → `docs/PRINCIPLES_DETAIL.md` P11/P13段
 - Task is "decide between options" → `docs/SWITCH_SIGNALS.md`
+- Task is "discover, establish, falsify, or claim new scientific knowledge"
+  → `docs/AI4S_RESEARCH_MODE.md` before proposing implementation
 
 **Why**: L1 gives **operational detail** without
 full L2 depth.

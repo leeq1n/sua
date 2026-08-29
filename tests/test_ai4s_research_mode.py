@@ -82,3 +82,15 @@ def test_phase_a_does_not_route_through_core_layer():
     detail = DETAIL.read_text(encoding="utf-8")
     assert "core-layer trigger" not in summary.lower()
     assert "Do not modify `core-layer/`" in detail
+
+
+def test_fresh_agent_discovers_ai4s_from_project_entry_points():
+    for relative in (
+        "README.md",
+        "docs/HOW_TO_READ_GRAPH.md",
+        "docs/HANDOFF.md",
+        "docs/PROJECT_STATE.md",
+        "docs/INDEX.md",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        assert "AI4S_RESEARCH_MODE.md" in text, relative

@@ -13,12 +13,19 @@ reasoning primitives, and operating conventions that any agent
 runtime can carry into a project.  The repo is self-contained and
 does not depend on sibling repositories.
 
+The current top-level project goal is **Phase A AI4S self-application**:
+improve scientific-research behavior by routing existing SUA primitives
+through the project-layer scientific-state controller in
+`AI4S_RESEARCH_MODE.md`. Satellite-security episodes are regression fixtures,
+not active research directions. Phase A does not authorize core-layer changes.
+
 ## What the repo holds
 
 | Area | Location | Purpose |
 |---|---|---|
 | Operating contract | `core-layer/AGENTS_CORE.md` + `AGENTS.md` | always-loaded rules + per-task 段s (P11 split) |
 | Knowledge library | `docs/` | principles, operating rules, design, conventions |
+| AI4S research adapter | `docs/AI4S_RESEARCH_MODE.md` | scientific-state routing and evidence gates for new-knowledge tasks |
 | Governance | `core-layer/` | 3-layer policy (核心/用户/项目) + modification gates |
 | Commit gates | `hooks/` + `agent-tools/scripts/` | commit-msg / pre-commit / pre-push / prepare-commit-msg |
 | Legacy runtime | `core/` + `src/` + `self_upgrade/` | v1.x-v3.x self-improving agent (documented legacy, functional) |
@@ -47,14 +54,17 @@ change rarely; that file is the source of truth.
 
 ## Next step
 
-See `docs/PLANS/PLAN_2026-07-30.md` for the active work plan
-(`TODO.md` is a stub that points there).
+Complete Phase A baseline/treatment evaluation, full validation, failure
+pre-mortem, and core-promotion decision. Stop before Phase B or any core-layer
+promotion. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context,
+not the active AI4S direction.
 
 ## References
 
 - INDEX: [INDEX.md](INDEX.md)
 - Working principles: [PRINCIPLES.md](PRINCIPLES.md)
 - Operating rules: [OPERATING_RULES.md](OPERATING_RULES.md)
+- AI4S Research Mode: [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md)
 - User intent: [USER_INSIGHTS.md](USER_INSIGHTS.md)
 - Hard rules: [CONSTRAINTS.md](CONSTRAINTS.md)
 - Pending tasks: [../TODO.md](../TODO.md)

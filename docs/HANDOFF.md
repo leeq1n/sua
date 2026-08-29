@@ -1,7 +1,7 @@
 ---
 description: "Onboarding doc for any new agent entering this project. Read this FIRST (after AGENTS.md), then follow the next-steps tree."
 status: "active"
-last_updated: "2026-07-14"
+last_updated: "2026-08-29"
 ---
 
 # HANDOFF — Onboard a new agent into SUA
@@ -50,7 +50,16 @@ the contract.  Reading and applying them IS the work.
 need L2 depth on a specific doc.  They're reference, not
 orientation.
 
+**Conditional AI4S route**: when the task aims to discover, establish,
+falsify, or claim new scientific knowledge, load
+`docs/AI4S_RESEARCH_MODE.md` before proposing implementation. Follow its L2
+pointer only after identifying the current scientific knowledge state.
+
 ## Current state (per HEAD = commit 1f1d205, c78 = 47b)
+
+- **Active goal**: Phase A validates the project-layer AI4S scientific-state
+  controller. Satellite-security history is regression evidence only; core
+  promotion and Phase B are out of scope.
 
 - **Commits**: 319 in mainline
 - **Last commit**: c78 = P3+P24 merge (47b, c47 plan)

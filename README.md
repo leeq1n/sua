@@ -258,7 +258,7 @@ git clone https://github.com/leeq1n/self-upgrade-agent.git .sua/
 
 | **任意 stateless 会话** | 用 bridge 的 system-prompt 注入方式 |
 
-| **科研项目** | 见 [`docs/RESEARCH_USAGE.md`](docs/RESEARCH_USAGE.md)（适配器模式 + 工作流） |
+| **科研项目** | 通用接入见 [`docs/RESEARCH_USAGE.md`](docs/RESEARCH_USAGE.md)；发现、证伪或声称新知识时先加载 [`docs/AI4S_RESEARCH_MODE.md`](docs/AI4S_RESEARCH_MODE.md) |
 
 
 
@@ -329,4 +329,3 @@ bash .sua/install-hooks.sh
 rm .git/hooks/commit-msg .git/hooks/pre-commit .git/hooks/prepare-commit-msg .git/hooks/pre-push
 
 ```
-
