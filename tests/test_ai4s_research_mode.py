@@ -53,6 +53,38 @@ def test_detail_reuses_canonical_operations_and_defines_scientific_gates():
         assert phrase in text
 
 
+def test_pre_agent_gate_is_bounded_and_requires_residual_ambiguity_note():
+    summary = SUMMARY.read_text(encoding="utf-8")
+    detail = DETAIL.read_text(encoding="utf-8")
+    assert "PRE_AGENT_EVIDENCE_GATE" in summary
+    for phrase in (
+        "specific residual uncertainty",
+        "expected information gain",
+        "exact-task",
+        "operational / standards / product",
+        "Why cheap search is no longer sufficient",
+        "Stop/KILL condition",
+    ):
+        assert phrase in detail
+    assert "no fixed search count" in detail.lower()
+
+
+def test_author_claims_and_major_mutations_do_not_inherit_novelty():
+    detail = DETAIL.read_text(encoding="utf-8")
+    for phrase in (
+        "AUTHOR_CLAIMED_NOVELTY",
+        "ACTUAL_METHOD",
+        "ACTUAL_EXPERIMENT",
+        "STRONGEST_COMPARATOR",
+        "VERIFIED_DELTA",
+        "UNVERIFIED_MARKETING",
+        "MAJOR_CANDIDATE_MUTATION_RESETS_NOVELTY",
+        "parameter refinement",
+        "scientific-object mutation",
+    ):
+        assert phrase in detail
+
+
 def test_six_ai4s_regressions_cover_behavioral_acceptance_surface():
     tasks = json.loads(TASKS.read_text(encoding="utf-8"))
     cases = [task for task in tasks if task.get("category") == "ai4s_regression"]
@@ -76,6 +108,29 @@ def test_six_ai4s_regressions_cover_behavioral_acceptance_surface():
         "block_mvp",
         "lift_or_reset",
     } <= covered
+
+
+def test_six_pre_agent_regressions_cover_collisions_mutation_and_escape():
+    tasks = json.loads(TASKS.read_text(encoding="utf-8"))
+    cases = [
+        task for task in tasks
+        if task.get("category") == "ai4s_pre_agent_regression"
+    ]
+    assert [task["case"] for task in cases] == list("ABCDEF")
+    assert all(task.get("expected_decision") for task in cases)
+    covered = {item["id"] for task in cases for item in task["rubric"]}
+    assert {
+        "direct_collision",
+        "operational_collision",
+        "author_claim_skepticism",
+        "mutation_reset",
+        "residual_ambiguity",
+        "allow_agent",
+        "bounded_search",
+    } <= covered
+    mutation = next(task for task in cases if task["case"] == "D")
+    assert "episode 1" in mutation["task"].lower()
+    assert "episode 4" in mutation["task"].lower()
 
 
 def test_phase_a_does_not_route_through_core_layer():

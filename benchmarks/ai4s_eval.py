@@ -73,7 +73,9 @@ def load_ai4s_tasks(path: Path = TASK_PATH) -> List[dict]:
     """Filter AI4S fixtures from the repository's canonical task source."""
     return [
         task for task in load_tasks(str(path))
-        if task.get("category") == "ai4s_regression"
+        if task.get("category") in {
+            "ai4s_regression", "ai4s_pre_agent_regression"
+        }
     ]
 
 

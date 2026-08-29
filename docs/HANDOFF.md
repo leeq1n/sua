@@ -63,9 +63,10 @@ adapter, skill, or core trigger.
 ## Current state (per HEAD = commit 1f1d205, c78 = 47b)
 
 - **Active goal**: Phase A validates the project-layer AI4S scientific-state
-  controller and evaluates a separate domain-general specialization bootstrap.
-  Satellite-security history is regression evidence only; core promotion and
-  Phase B are out of scope.
+  controller, including the bounded K3 Pre-Agent Evidence Gate, and evaluates
+  a separate domain-general specialization bootstrap. Satellite-security
+  history is regression evidence only; core promotion and Phase B are out of
+  scope.
 
 - **Commits**: 319 in mainline
 - **Last commit**: c78 = P3+P24 merge (47b, c47 plan)

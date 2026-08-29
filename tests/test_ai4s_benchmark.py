@@ -14,7 +14,10 @@ from benchmarks.ai4s_eval import (
 
 def test_load_ai4s_tasks_filters_existing_task_source():
     tasks = load_ai4s_tasks()
-    assert [task["id"] for task in tasks] == [f"ai4s-{c}" for c in "abcdef"]
+    assert [task["id"] for task in tasks] == [
+        *[f"ai4s-{c}" for c in "abcdef"],
+        *[f"pre-agent-{c}" for c in "abcdef"],
+    ]
 
 
 def test_treatment_adds_controller_to_same_baseline_guide():

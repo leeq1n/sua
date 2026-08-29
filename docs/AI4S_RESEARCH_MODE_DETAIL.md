@@ -97,6 +97,34 @@ When a family repeatedly maps to mature adjacent theories, stop producing
 variants. Summarize the saturation evidence, persist it in the ledger, and
 RESET to a different scientific object. More names are not more entropy.
 
+### Author-claim skepticism
+
+Novelty language in a source is a retrieval lead, never a novelty decision.
+Record and compare these fields before using the source at K3/K4:
+
+- `AUTHOR_CLAIMED_NOVELTY`: what the authors call first, novel, unexplored, or
+  little studied;
+- `ACTUAL_METHOD`: the mechanism the work implements;
+- `ACTUAL_EXPERIMENT`: what the evaluation actually tests;
+- `STRONGEST_COMPARATOR`: the strongest mature mechanism or baseline it
+  genuinely challenges;
+- `VERIFIED_DELTA`: the distinct property left after mechanism comparison;
+- `UNVERIFIED_MARKETING`: framing supported only by the authors' claim.
+
+A primary source can verify what its authors said; it cannot independently
+verify that their novelty claim is true.
+
+### Major candidate mutation
+
+`MAJOR_CANDIDATE_MUTATION_RESETS_NOVELTY`: after Reduce or reformulation,
+compare the candidate with its last evidence note. A material change to the
+research object, security property, threat model, output semantics, mechanism,
+contribution lane, trusted evidence, attacker capability, or evaluation target
+is a scientific-object mutation. Route the new object back through bounded
+direct-prior-art reconnaissance at K3; it does not inherit the predecessor's
+coverage or higher novelty state. A parameter refinement that preserves those
+elements updates the existing note and does not reset by itself.
+
 ## 4. Candidate gate: Capability -> Broken Assumption -> Mechanism
 
 Before K4, every strong candidate must state:
@@ -140,7 +168,73 @@ Stop when all of the following hold:
 Coverage is recorded as mechanism -> field -> strongest work -> relation ->
 uncovered delta. No fixed domain count is required.
 
-## 6. Sequential novelty tribunal
+## 6. Pre-Agent Evidence Gate
+
+The Pre-Agent gate sits inside K3 before an expensive Research Agent call or
+deep novelty tribunal. It asks whether decisive low-cost evidence is still
+likely available. It does not create another K-state and does not replace the
+K4 tribunal or K5 cheap falsifier.
+
+### Bounded reconnaissance contract
+
+Cover the smallest task-relevant set that can expose a cheap collision:
+
+1. exact-task terms and task-equivalent work;
+2. generic mechanism terms after removing application nouns;
+3. the strongest neighboring academic field;
+4. operational / standards / product / government-program evidence;
+5. one strong opposing explanation; and
+6. a direct prior-art check for every major candidate mutation.
+
+These are coverage classes, not mandatory query counts.
+There is no fixed search count; evidence need not be exhaustive. Products,
+standards, and
+programs do not automatically establish scientific prior art; they test
+whether the capability already exists, the task is operationalized, or the
+claimed new-capability premise is false. When new searches repeat classified
+mechanisms and the remaining question is precise, stop cheap reconnaissance.
+
+### Escalation and expected information gain
+
+An expensive Research Agent is allowed only when all are explicit:
+
+1. a specific residual uncertainty that ordinary search has not resolved;
+2. the obvious exact-task and mechanism bridges already checked;
+3. why another cheap search is unlikely to settle the question;
+4. high expected information gain from deeper comparison, opposing argument,
+   abstraction-boundary analysis, or confounder-aware falsifier design; and
+5. a KILL, Reduce, reset, or provisional-retain decision after the result.
+
+Importance, promise, speed, absence of an exact-title paper, or an author's
+"first" claim are not valid escalation reasons. Lane A mechanism/theory and
+Lane B systems/empirical novelty remain distinct, but both must pass this gate;
+an operational study measuring the same Lane B phenomenon blocks escalation
+until the systems delta is stated.
+
+### Concise pre-Agent evidence note
+
+Persist this note in the research project's existing plan/state/ledger path:
+
+```text
+Candidate:
+Current scientific state:
+Direct prior art checked:
+Generic mechanism prior art checked:
+Operational / standards evidence checked:
+Author claims independently verified or rejected:
+Candidate mutations since previous state:
+Exact residual ambiguity:
+Why cheap search is no longer sufficient:
+Expected information gain from Agent:
+Stop/KILL condition:
+```
+
+If the exact residual ambiguity cannot be written, HOLD K3 and continue a
+targeted cheap search or Reduce. If the bounded contract is covered and the
+ambiguity is precise, allow escalation; do not turn the gate into an endless
+search loop.
+
+## 7. Sequential novelty tribunal
 
 Use sequential roles by default; do not introduce multi-agent orchestration in
 Phase A.
@@ -166,7 +260,7 @@ Classify each prior work using the existing-compatible minimal relation set:
 The K4 decision is `KILL`, `REDUCE`, `LIFT`, `RESET`, or
 `PROVISIONALLY_RETAIN`. Only the last enters K5.
 
-## 7. Claim type and evidence gates
+## 8. Claim type and evidence gates
 
 Use the smallest claim type that matches the sentence. Mixed claims must pass
 every applicable row.
@@ -184,7 +278,7 @@ every applicable row.
 Feasibility does not imply novelty; novelty does not imply causality; toy causal
 identification does not imply external validity.
 
-## 8. Negative scientific knowledge ledger
+## 9. Negative scientific knowledge ledger
 
 Every KILL, REDUCE, LIFT, or RESET writes or updates a durable project ledger.
 Projects choose the ledger path; SUA defines only the schema and operating
@@ -213,7 +307,7 @@ broken assumption. A renamed candidate inherits the prior status unless it
 satisfies `do_not_revive_unless` with new evidence. Reopening appends the new
 evidence and decision; it does not delete the negative result.
 
-## 9. Frontier capability radar
+## 10. Frontier capability radar
 
 K1 begins from verified changes more often than attack brainstorming. Perform
 a lightweight, task-bounded scan of recent papers, preprints, mission/system
@@ -225,7 +319,7 @@ Phase A does not build a crawler. Stop when the relevant capability classes
 are represented, sources begin repeating, and unresolved availability claims
 are marked rather than guessed.
 
-## 10. Cheap falsification resource policy
+## 11. Cheap falsification resource policy
 
 Rank proposed checks qualitatively by **expected kill value / cost**. Run the
 cheapest decisive falsifier before the most impressive experiment; do not
@@ -240,10 +334,12 @@ invent unsupported probabilities. The default resource order is:
 Exceptions require an explicit non-novelty objective or evidence that the
 cheaper check cannot discriminate the claim.
 
-## 11. Benchmark and decision contract
+## 12. Benchmark and decision contract
 
-The `ai4s_regression` entries in `benchmarks/tasks.json` encode six synthetic
-failure patterns. The same prompts are evaluated against baseline
+The `ai4s_regression` and `ai4s_pre_agent_regression` entries in
+`benchmarks/tasks.json` encode the original six scientific-state failures plus
+six Pre-Agent collision, marketing, mutation, residual-ambiguity, and bounded-
+search controls. The same prompts are evaluated against baseline
 `RESEARCH_USAGE.md` and treatment AI4S Research Mode. Each fixture contains a
 transparent criterion list; ratings are human or explicitly judge-assisted,
 never described as deterministic. Deterministic tests verify fixture coverage,
@@ -270,7 +366,7 @@ only if project routing repeatedly fails fresh-agent activation.
 For Phase A: Do not modify `core-layer/`, hooks, or established P-n. Any core
 trigger is proposal-only and requires separate authorization.
 
-## 12. Self-application and pre-mortem
+## 13. Self-application and pre-mortem
 
 Before accepting this controller, attack it as follows:
 

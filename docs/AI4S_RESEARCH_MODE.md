@@ -37,6 +37,21 @@ silently advances to implementation.
 | **K6 Native validation** | Claim-matched native/external evidence survives adapter audit | Validate in the target system and distinguish security from natural failure. |
 | **K7 Knowledge product** | Surviving claim, limits, and reopening conditions are explicit | Develop method/theory, then communicate; preserve negative knowledge too. |
 
+### Pre-Agent evidence gate inside K3
+
+`PRE_AGENT_EVIDENCE_GATE` controls whether K3 may spend an expensive Research
+Agent call; it is not a new scientific state. First run bounded cheap
+reconnaissance over the exact task, generic mechanism, nearest mature field,
+and operational/standards reality. Check author claims against actual methods
+and comparators, and reset reconnaissance after a major candidate mutation.
+
+Escalation is allowed only when the evidence note states a precise residual
+mechanism uncertainty, why another cheap search is unlikely to settle it, the
+Agent's expected information gain, and the decision its result will trigger.
+Otherwise KILL, Reduce, modify, or continue targeted cheap search. Adequate
+bounded coverage plus a precise residual ambiguity stops reconnaissance; the
+gate must not demand exhaustive search.
+
 ## Non-negotiable transition gates
 
 Implementation is blocked before K4 unless novelty is explicitly not the
@@ -68,6 +83,12 @@ LEDGER UPDATE: ...
   move backward or KILL; they never justify a larger MVP.
 - Search operates on the generic mechanism outside application vocabulary and
   stops on coverage, not a ritual number of fields.
+- A paper's "first" or "novel" language is retrieval evidence, not verified
+  novelty; compare its actual method, experiment, and strongest comparator.
+- A material change to the scientific object, property, threat model, output,
+  mechanism, evidence, attacker, evaluation target, or contribution lane
+  resets the candidate to cheap K3 reconnaissance. Parameter refinement does
+  not.
 
 ## Diagnosis and layer decision
 

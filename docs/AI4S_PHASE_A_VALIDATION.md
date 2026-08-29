@@ -22,7 +22,7 @@ AI4S success does not validate the generic detector. Commit range:
 | Scientific routing | `RESEARCH_USAGE.md` maps broad activities to tools but has no knowledge-state transition controller. | K0-K7 routes existing operations through evidence gates. | Diagnosis commit plus controller docs. |
 | Automatic triggers | No explicit combination-only block, repeated-collision reset, adapter audit, or rescue-inflation Reduce trigger. | Eight evidence-driven triggers independent of user wording. | Structural acceptance tests. |
 | Negative knowledge | No scientific KILL/reopen contract. | Minimal ledger schema and renamed-revival guard. | L2 schema test. |
-| Benchmark | 21 generic tasks; zero AI4S cases. | Same `tasks.json` plus six AI4S fixtures and transparent rubrics. | Fixture coverage test. |
+| Benchmark | 21 generic tasks; zero AI4S cases. | Same `tasks.json` plus six scientific-state and six Pre-Agent fixtures with transparent rubrics. | Fixture coverage tests. |
 | Fresh-agent routing | Research guide only. | README, reading graph, HANDOFF, PROJECT_STATE, and INDEX route qualifying tasks before implementation. | Discoverability test. |
 
 ## Validation evidence
@@ -54,6 +54,38 @@ as the next title (SHA `?`), while advisory trade-off/M-n 34 checks flag recent
 messages although the enforced P-n hook accepted them. This governed core tool
 was not changed; the result remains yellow.
 
+## Pre-Agent orchestration update
+
+Field evidence exposed a routing gap inside K3: plausible candidates could
+enter an expensive Research Agent tribunal while exact-task or operational
+collisions remained cheaply discoverable. The minimal treatment adds a bounded
+Pre-Agent evidence gate, author-claim skepticism, and novelty reset after a
+scientific-object mutation. It does not add a K-state, Mode, core rule, or
+Domain Specialization behavior.
+
+Static evidence now covers six additional cases: direct academic collision,
+operational collision, author-marketing trap, multi-episode major mutation,
+true residual ambiguity, and the negative control that stops cheap search once
+bounded coverage is adequate. These are regression specifications. No fresh
+provider run measures whether a model now spends fewer Agent calls, so the
+evidence level for this update is `STRUCTURALLY_VALIDATED` rather than a
+behavioral allocation claim.
+
+### Existing health-warning assessment
+
+Baseline `verify_after.py` fails two advisory checks before this treatment:
+
+- commit-message compliance expects a P-n plus either five-primitives or a
+  critical-thinking keyword; canonicalization commit `281f8d8` cites P-n but
+  not that additional vocabulary;
+- cold-start simulation expects the M-n 35 detail filename directly in
+  `AGENTS.md`, while the current L0/L1 split exposes it through
+  `core-layer/AGENTS_CORE.md`.
+
+This is stale validator/metadata alignment, not a scientific-controller
+failure. Repair would touch governed validation or entry-point behavior and is
+recorded as separate maintenance; it is not combined with this AI4S update.
+
 ## What genuinely improved
 
 1. Evidence states replace software phase or generic reasoning checklists.
@@ -67,6 +99,8 @@ was not changed; the result remains yellow.
 ## What did not improve or remains uncertain
 
 - A fair fresh-model A/B run is still missing because authentication failed.
+- Pre-Agent cases have structural and collector coverage but no live
+  baseline-vs-treatment Agent-call or decision-quality measurement.
 - Rubric judgments remain subjective by design; the collector only validates
   completeness and reports a single run as directional.
 - The ledger contract is defined but not longitudinally tested.
