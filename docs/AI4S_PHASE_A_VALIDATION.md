@@ -85,6 +85,9 @@ Baseline `verify_after.py` fails two advisory checks before this treatment:
 This is stale validator/metadata alignment, not a scientific-controller
 failure. Repair would touch governed validation or entry-point behavior and is
 recorded as separate maintenance; it is not combined with this AI4S update.
+After treatment commit `f76d9e1`, commit-message compliance passes; the
+AGENTS.md cold-start expectation remains the sole `verify_after --strict`
+failure.
 
 ## What genuinely improved
 
