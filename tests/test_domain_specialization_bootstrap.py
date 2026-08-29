@@ -6,6 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs" / "DOMAIN_SPECIALIZATION_BOOTSTRAP.md"
+DETAIL = ROOT / "docs" / "DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md"
+VALIDATION = ROOT / "docs" / "AI4S_PHASE_A_VALIDATION.md"
 TASKS = ROOT / "benchmarks" / "tasks.json"
 
 
@@ -78,3 +80,13 @@ def test_bootstrap_is_discoverable_without_loading_every_domain_adapter():
     ):
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "DOMAIN_SPECIALIZATION_BOOTSTRAP.md" in text, relative
+
+
+def test_phase_a_keeps_adapter_and_generic_decisions_independent():
+    report = VALIDATION.read_text(encoding="utf-8")
+    detail = DETAIL.read_text(encoding="utf-8")
+    assert "AI4S_PROJECT_ADAPTER_VALIDATED" in report
+    assert "PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE" in report
+    assert "AI4S success does not validate the generic detector" in report
+    assert "DOMAIN_SPECIALIZATION_BOOTSTRAP_VALIDATED" in detail
+    assert "do not prove domain-general behavior" in detail

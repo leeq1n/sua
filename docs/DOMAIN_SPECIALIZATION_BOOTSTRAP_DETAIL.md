@@ -98,8 +98,8 @@ core-trigger proposal. Stop before core modification.
   binding/persuasive distinctions survive the generic-first counterfactual.
   The result is an adapter experiment proposal, not a Legal Mode.
 
-These two fixtures test decision boundaries but do not prove domain-general
-behavior. Controlled fresh-agent runs and unrelated task families are still
+These two fixtures test boundaries but do not prove domain-general behavior.
+Controlled fresh-agent runs and unrelated task families are still
 needed before `DOMAIN_SPECIALIZATION_BOOTSTRAP_VALIDATED`.
 
 Last P20-verified: 2026-08-29

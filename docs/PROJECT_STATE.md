@@ -60,11 +60,11 @@ change rarely; that file is the source of truth.
 
 ## Next step
 
-The addendum reopens Phase A's generic-specialization decision. Validate the
-two non-AI4S positive/negative controls, anti-overfitting and deletion gates,
-then revise `AI4S_PHASE_A_VALIDATION.md` with separate adapter and bootstrap
-decisions. Do not start Phase B or promote a core trigger. The prior
-`docs/PLANS/PLAN_2026-07-30.md` remains historical context.
+Phase A decisions are AI4S `AI4S_PROJECT_ADAPTER_VALIDATED` and generic `PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`.
+Next, run the fixed AI4S and specialization
+suites with a valid provider and blinded scoring; do not start Phase B or
+promote a core trigger. The prior `docs/PLANS/PLAN_2026-07-30.md` remains
+historical context.
 
 ## References
 

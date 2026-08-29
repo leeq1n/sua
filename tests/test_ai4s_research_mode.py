@@ -48,7 +48,7 @@ def test_detail_reuses_canonical_operations_and_defines_scientific_gates():
         "MECHANISM_EQUIVALENT",
         "do_not_revive_unless",
         "expected kill value / cost",
-        "PROJECT_LAYER_SUFFICIENT",
+        "AI4S_PROJECT_ADAPTER_VALIDATED",
     ):
         assert phrase in text
 
@@ -100,7 +100,8 @@ def test_fresh_agent_discovers_ai4s_from_project_entry_points():
 def test_phase_a_validation_is_honest_and_records_terminal_decision():
     text = VALIDATION.read_text(encoding="utf-8")
     for phrase in (
-        "PROJECT_LAYER_SUFFICIENT",
+        "AI4S_PROJECT_ADAPTER_VALIDATED",
+        "PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE",
         "839 passed",
         "851 passed",
         "401",
@@ -110,4 +111,5 @@ def test_phase_a_validation_is_honest_and_records_terminal_decision():
     ):
         assert phrase in text
     state = (ROOT / "docs" / "PROJECT_STATE.md").read_text(encoding="utf-8")
-    assert "Phase A decision: `PROJECT_LAYER_SUFFICIENT`" in state
+    assert "AI4S `AI4S_PROJECT_ADAPTER_VALIDATED`" in state
+    assert "generic `PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`" in state

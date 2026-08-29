@@ -3,18 +3,17 @@
 > L0: Phase A evidence, limitations, self-audit, and project-layer promotion
 > decision for AI4S Research Mode.
 
-## Decision
+## Two-axis decision
 
-**`PROJECT_LAYER_SUFFICIENT`**
+- AI4S adapter: **`AI4S_PROJECT_ADAPTER_VALIDATED`**. Project routing, the
+  scientific-state contract, and six regressions pass structural acceptance;
+  the failed live run prevents a general behavioral-effect claim.
+- Generic specialization: **`PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`**. The Layer 1
+  adequacy audit and two non-AI4S boundary cases pass static checks, but no
+  fresh-agent behavior run demonstrates domain-general detection.
 
-The project layer is the smallest justified placement: entry documents route
-new-knowledge tasks to a compact L1 controller, L2 holds conditional detail,
-and regressions cover the supplied failure class. No evidence shows that this
-discoverability path requires a core trigger. This is an architectural and
-structural acceptance, not proof of a general behavioral effect.
-
-Commit range: `364f231..d0f5d80`, after baseline `6e020b7`. No core-layer,
-hook, agent-tool, or established P-n/M-n source changed in this range.
+AI4S success does not validate the generic detector. Commit range:
+`364f231..3cd0c8d`, after baseline `6e020b7`; no core-layer source changed.
 
 ## Baseline and treatment
 
@@ -39,17 +38,14 @@ hook, agent-tool, or established P-n/M-n source changed in this range.
   are the documented planner contract/persistence and downstream harness/e2e
   cluster plus an existing CHANGELOG prompt-hygiene finding. Phase A added no
   full-suite failure.
-- Commit-path audit lists only README, AI4S docs, project routing docs,
-  benchmark fixtures/collector, and AI4S tests.
-
 ### Controlled behavior run
 
-The configured provider reported HTTP **401** for every attempted baseline
-call, so responses were empty. The run was rejected; a treatment arm and a
-directional behavior score was not produced. The observed failure became a test:
-the collector now raises on any empty response rather than writing a misleading
-result. Therefore no numerical claim is made for autonomous trigger frequency,
-MVP false positives, or abstraction-lift latency.
+The provider reported HTTP **401** for the AI4S baseline and the addendum's
+specialization baseline. Empty responses were rejected; the latter stopped at
+`specialization-debugging-negative`. A treatment arm and directional behavior score was not produced.
+The collector now raises instead of recording empty
+evidence. No numerical claim is made for autonomous trigger frequency, false
+positives, or abstraction-lift latency.
 
 ### Validator limitation
 
@@ -74,8 +70,8 @@ was not changed; the result remains yellow.
 - Rubric judgments remain subjective by design; the collector only validates
   completeness and reports a single run as directional.
 - The ledger contract is defined but not longitudinally tested.
-- All six fixtures originate from one research history; generic phrasing and
-  noun-removal reduce but do not eliminate overfitting risk.
+- Six AI4S fixtures share one history; two authored non-AI4S boundary cases
+  reduce but do not eliminate overfitting risk.
 - No core trigger was tested or promoted, and no Phase B work began.
 - Existing planner/harness, prompt-hygiene, and advisory self-health failures
   remain outside AI4S scope.

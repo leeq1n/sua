@@ -255,14 +255,17 @@ KILL persistence, MVP blocking, and lift/reset. Also record unnecessary tool
 or role calls. A single model/run is directional evidence, not a general
 effect estimate.
 
-Phase A's core-promotion outcomes are:
+Phase A's AI4S adapter outcomes are:
 
-- `PROJECT_LAYER_SUFFICIENT`: project routing plus tests are discoverable and
+- `AI4S_PROJECT_ADAPTER_VALIDATED`: project routing plus tests are discoverable and
   treatment evidence improves the target behaviors without core edits.
-- `CORE_TRIGGER_PROPOSAL_ONLY`: project routing repeatedly fails fresh-agent
-  activation; document the smallest proposed trigger and stop.
-- `AI4S_APPROACH_FAILED`: the controller cannot improve behavior without a
+- `AI4S_ADAPTER_FAILED`: the controller cannot improve behavior without a
   rewrite larger than the problem.
+
+Generic specialization uses the separate outcomes in
+`DOMAIN_SPECIALIZATION_BOOTSTRAP.md`; adapter success is not evidence for
+`DOMAIN_SPECIALIZATION_BOOTSTRAP_VALIDATED`. A core trigger remains proposal-
+only if project routing repeatedly fails fresh-agent activation.
 
 For Phase A: Do not modify `core-layer/`, hooks, or established P-n. Any core
 trigger is proposal-only and requires separate authorization.
