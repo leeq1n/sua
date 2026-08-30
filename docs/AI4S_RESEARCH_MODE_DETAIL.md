@@ -40,7 +40,120 @@ they may block.
 K7 is not permanent truth. Strong counterevidence reopens the relevant prior
 state and updates the ledger rather than erasing the earlier decision.
 
-## 3. Epistemic triggers
+## 3. Constructive scientific discovery at K0-K2
+
+The controller separates problem generation from candidate falsification.
+Before K3 narrows onto prior art, run this bounded discovery chain:
+
+```text
+PROJECT CONSTRAINTS
+-> FUTURE OR CURRENT SYSTEM DELTA
+-> BROKEN CURRENT ASSUMPTION
+-> SCIENTIFIC PROBLEM
+-> GENERIC MECHANISM / INVARIANT
+-> DONOR-DOMAIN MECHANISM TRANSFER
+-> SURVIVING DELTA + CHEAP FALSIFIER
+-> K2 CANDIDATE
+```
+
+This is an orchestration of existing SUA operations, not a new primitive.
+
+### Future-system delta
+
+For the project's explicit research horizon (often 2-5 years), ask which
+structural properties may change and which assumptions in current systems or
+literature would then fail. Use the chain `structural change -> implicit assumption -> assumption
+failure -> candidate problem`. A forecast is a hypothesis source, not evidence:
+record its support and uncertainty, and verify the capability at
+K1 before making a capability claim. Do not generate novelty from trend labels
+alone.
+
+### Target-domain mechanism fit
+
+Project constraints participate before candidate formation. Classify required
+domain relevance as one of:
+
+1. **mechanism-bearing relevance**: a target-domain property causally creates
+   or changes the problem;
+2. **credible evaluation relevance**: the mechanism is generic, but the target
+   domain is a legitimate application or validation setting; or
+3. **decorative relabeling**: the domain changes only the noun or first-on-X
+   framing.
+
+The first two may enter K2 with their scope stated. Decorative relabeling
+cannot pass the direction gate. Domain names come from the project adapter;
+none is a universal SUA requirement.
+
+### Problem-before-method gate
+
+Default order is `problem -> generic mechanism -> cheap falsification ->
+method`. A proposed method is not authorized merely because it can be attached
+to an application. Method-first work is allowed only when the task explicitly
+requires a technique; even then, label the objective as technique evaluation
+rather than unsupported scientific discovery. Existing K2-K5 gates decide
+when implementation becomes justified.
+
+### Donor-domain mechanism transfer
+
+Use analogy generatively at K1/K2 as well as adversarially at K3/K4. Abstract
+the problem into an invariant, causal structure, information boundary, or
+resource constraint; select distant donor fields because they solve that
+structure; identify the assumption that makes each mature donor solution
+work; and generate a candidate only from the target setting's surviving
+violation of that assumption. Do not use a fixed donor-domain list. At K3,
+reverse the same bridge and ask whether the donor mechanism already kills the
+candidate.
+
+### Constructive Add reset
+
+`CONSTRUCTIVE_ADD_RESET` fires when Reduce is eliminating variants without
+creating qualitatively new problems. Diagnose the abstraction level first:
+
+- one candidate dies: update the ledger and continue only if another local
+  branch has a different generic mechanism;
+- a mechanism family saturates: stop variants and lift to its mother problem;
+- a mother space saturates: preserve the negative result, then reopen bounded
+  Add from project constraints, supported system deltas, and new
+  mechanism-driven donor bridges;
+- evidence shows the mother problem itself is exhausted or no longer valuable:
+  stop rather than brainstorm indefinitely.
+
+Thus, **literature saturation is not scientific opportunity saturation**.
+No fixed kill count is required. The trigger is repeated mechanism-equivalent
+elimination at the same abstraction level plus absence of a qualitatively new
+problem source.
+
+**Add stop condition**: stop constructive Add and select at most the smallest
+set of K2 candidates whose broken assumptions, generic mechanisms, and cheap
+falsifiers are materially distinct. If new projections or donor searches only
+repeat recorded assumptions or mechanisms, Reduce or stop. Add never weakens
+the K3/K4 tribunal.
+
+### Balanced opportunity evidence
+
+Use the research project's existing plan/state/ledger; no new file is
+required. Keep both sides visible:
+
+```text
+POSITIVE OPPORTUNITY EVIDENCE:
+supported system delta; broken assumption; unsolved need; donor invariant;
+target-domain fit; cheap decision-changing falsifier
+
+NEGATIVE SCIENTIFIC KNOWLEDGE:
+killed candidate; killing prior; generic equivalent mechanism; forbidden
+mutation/relabeling; reopening condition
+```
+
+### Compact conceptual validation
+
+`future long-lived embedded AI -> mutable runtime state -> reset/update
+constraints -> crash-consistency and secure-update donor invariants -> ask
+whether individually valid artifacts can form a jointly unassured recovered state`.
+This reaches K2 only as a problem hypothesis. The cheapest mechanism-
+level prior-art and counterexample checks still run at K3; the example does not
+assert novelty, prescribe a method, or become SUA doctrine.
+
+## 4. Epistemic triggers
 
 Triggers fire from observed evidence, independent of user wording.
 
@@ -95,7 +208,9 @@ only the minimum mechanism that survives independently; otherwise KILL.
 
 When a family repeatedly maps to mature adjacent theories, stop producing
 variants. Summarize the saturation evidence, persist it in the ledger, and
-RESET to a different scientific object. More names are not more entropy.
+apply the abstraction diagnosis in `CONSTRUCTIVE_ADD_RESET`. RESET may reopen
+bounded constructive Add from a different problem source; it must not mutate a
+killed candidate. More names are not more entropy.
 
 ### Author-claim skepticism
 
@@ -125,7 +240,7 @@ direct-prior-art reconnaissance at K3; it does not inherit the predecessor's
 coverage or higher novelty state. A parameter refinement that preserves those
 elements updates the existing note and does not reset by itself.
 
-## 4. Candidate gate: Capability -> Broken Assumption -> Mechanism
+## 5. Candidate gate: Capability -> Broken Assumption -> Mechanism
 
 Before K4, every strong candidate must state:
 
@@ -140,7 +255,7 @@ CHEAP FALSIFIER: What inexpensive result would kill or sharply bound it?
 The representation is a maturity gate, not proof of novelty. If the NEW
 MECHANISM merely restates the application, move back to K2.
 
-## 5. Cross-domain analogy scheduler
+## 6. Cross-domain analogy scheduler
 
 Before K4, search by mechanism, not by nouns. Remove domain names and build
 the strongest generic formulation: variables, causal arrows, information
@@ -168,7 +283,7 @@ Stop when all of the following hold:
 Coverage is recorded as mechanism -> field -> strongest work -> relation ->
 uncovered delta. No fixed domain count is required.
 
-## 6. Pre-Agent Evidence Gate
+## 7. Pre-Agent Evidence Gate
 
 The Pre-Agent gate sits inside K3 before an expensive Research Agent call or
 deep novelty tribunal. It asks whether decisive low-cost evidence is still
@@ -234,7 +349,7 @@ targeted cheap search or Reduce. If the bounded contract is covered and the
 ambiguity is precise, allow escalation; do not turn the gate into an endless
 search loop.
 
-## 7. Sequential novelty tribunal
+## 8. Sequential novelty tribunal
 
 Use sequential roles by default; do not introduce multi-agent orchestration in
 Phase A.
@@ -260,7 +375,7 @@ Classify each prior work using the existing-compatible minimal relation set:
 The K4 decision is `KILL`, `REDUCE`, `LIFT`, `RESET`, or
 `PROVISIONALLY_RETAIN`. Only the last enters K5.
 
-## 8. Claim type and evidence gates
+## 9. Claim type and evidence gates
 
 Use the smallest claim type that matches the sentence. Mixed claims must pass
 every applicable row.
@@ -278,12 +393,17 @@ every applicable row.
 Feasibility does not imply novelty; novelty does not imply causality; toy causal
 identification does not imply external validity.
 
-## 9. Negative scientific knowledge ledger
+## 10. Opportunity and negative scientific knowledge ledger
 
 Every KILL, REDUCE, LIFT, or RESET writes or updates a durable project ledger.
 Projects choose the ledger path; SUA defines only the schema and operating
 contract. Satellite examples remain benchmark fixtures, not SUA product
 knowledge.
+
+Positive opportunity evidence may be stored beside this schema using the
+fields in section 3. It does not survive by optimism: unsupported future
+claims are marked, and each opportunity must name a cheap result that can
+change the decision.
 
 ```yaml
 id:
@@ -307,7 +427,7 @@ broken assumption. A renamed candidate inherits the prior status unless it
 satisfies `do_not_revive_unless` with new evidence. Reopening appends the new
 evidence and decision; it does not delete the negative result.
 
-## 10. Frontier capability radar
+## 11. Frontier capability radar
 
 K1 begins from verified changes more often than attack brainstorming. Perform
 a lightweight, task-bounded scan of recent papers, preprints, mission/system
@@ -319,7 +439,7 @@ Phase A does not build a crawler. Stop when the relevant capability classes
 are represented, sources begin repeating, and unresolved availability claims
 are marked rather than guessed.
 
-## 11. Cheap falsification resource policy
+## 12. Cheap falsification resource policy
 
 Rank proposed checks qualitatively by **expected kill value / cost**. Run the
 cheapest decisive falsifier before the most impressive experiment; do not
@@ -334,7 +454,7 @@ invent unsupported probabilities. The default resource order is:
 Exceptions require an explicit non-novelty objective or evidence that the
 cheaper check cannot discriminate the claim.
 
-## 12. Benchmark and decision contract
+## 13. Benchmark and decision contract
 
 The `ai4s_regression` and `ai4s_pre_agent_regression` entries in
 `benchmarks/tasks.json` encode the original six scientific-state failures plus
@@ -366,7 +486,7 @@ only if project routing repeatedly fails fresh-agent activation.
 For Phase A: Do not modify `core-layer/`, hooks, or established P-n. Any core
 trigger is proposal-only and requires separate authorization.
 
-## 13. Self-application and pre-mortem
+## 14. Self-application and pre-mortem
 
 Before accepting this controller, attack it as follows:
 
@@ -382,6 +502,14 @@ Before accepting this controller, attack it as follows:
   only state routing and evidence gates.
 - If onboarding cost exceeds benefit, keep L1 below 7 KB and load this L2 only
   for new-knowledge tasks.
+- If future-system reasoning becomes trend storytelling, block K1 until the
+  structural change is supported and keep the forecast labeled as a hypothesis.
+- If donor analogy becomes a fixed domain checklist, delete the list and route
+  donor selection through the generic mechanism.
+- If constructive Add reset never terminates, enforce the Add stop condition
+  and retain only materially distinct broken assumptions and falsifiers.
+- If target-domain constraints become decorative or exclude valid generic
+  mechanisms, apply the three-way fit classification before K2.
 - If the agent still waits for user wording, fresh-agent treatment fails.
 - If it becomes a multi-agent framework, reduce to the sequential tribunal.
 - If extraction to a skill appears useful, defer it until repeated
@@ -391,4 +519,4 @@ Apply P7, P11, P18, P22, P28/P29, M-self-application, and
 M-add-then-reduce to the final patch. A controller that cannot KILL its own
 unnecessary structure has failed its purpose.
 
-Last P20-verified: 2026-08-29
+Last P20-verified: 2026-08-30

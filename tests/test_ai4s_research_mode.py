@@ -53,6 +53,39 @@ def test_detail_reuses_canonical_operations_and_defines_scientific_gates():
         assert phrase in text
 
 
+def test_constructive_discovery_is_orchestrated_before_prior_art_reduction():
+    summary = SUMMARY.read_text(encoding="utf-8")
+    detail = DETAIL.read_text(encoding="utf-8")
+    for phrase in (
+        "Future-system delta",
+        "Problem-before-method gate",
+        "Donor-domain mechanism transfer",
+        "Target-domain mechanism fit",
+        "CONSTRUCTIVE_ADD_RESET",
+    ):
+        assert phrase in detail
+    assert "hypothesis source, not evidence" in detail
+    assert "2-5 years" in detail
+    assert "literature saturation is not scientific opportunity saturation" in detail
+    assert "constructive Add reset" in summary
+
+
+def test_discovery_loop_has_bounded_add_and_balanced_evidence():
+    detail = DETAIL.read_text(encoding="utf-8")
+    for phrase in (
+        "mechanism-bearing relevance",
+        "credible evaluation relevance",
+        "decorative relabeling",
+        "POSITIVE OPPORTUNITY EVIDENCE",
+        "NEGATIVE SCIENTIFIC KNOWLEDGE",
+        "future long-lived embedded AI",
+        "jointly unassured recovered state",
+    ):
+        assert phrase in detail
+    assert "fixed donor-domain list" in detail
+    assert "Add stop condition" in detail
+
+
 def test_pre_agent_gate_is_bounded_and_requires_residual_ambiguity_note():
     summary = SUMMARY.read_text(encoding="utf-8")
     detail = DETAIL.read_text(encoding="utf-8")
@@ -150,6 +183,12 @@ def test_fresh_agent_discovers_ai4s_from_project_entry_points():
     ):
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "AI4S_RESEARCH_MODE.md" in text, relative
+
+    research_usage = (ROOT / "docs" / "RESEARCH_USAGE.md").read_text(
+        encoding="utf-8"
+    )
+    assert "AI4S_RESEARCH_MODE.md" in research_usage
+    assert "候选生成与候选证伪分开" in research_usage
 
 
 def test_phase_a_validation_is_honest_and_records_terminal_decision():

@@ -9,6 +9,21 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-08-30 — research-discovery adapter orchestration
+
+### Unreleased — bounded constructive Add before novelty reduction
+
+**ADAPTER UPDATE.** AI4S Research Mode now separates constructive problem
+discovery at K0-K2 from adversarial prior-art reduction at K3-K4. It schedules
+project constraints, supported future-system hypotheses, broken assumptions,
+mechanism-driven donor transfer, problem-before-method, target-domain fit, and
+a bounded constructive Add reset after family or mother-space saturation.
+
+Trade-off: the L2 adapter grows to make triggers and stop conditions explicit;
+no P-n, M-rule, core-layer, hook, K-state, or mandatory ledger file is added.
+Focused tests provide structural and fresh-agent coverage only. Live behavioral
+effect remains pending.
+
 ## 2026-07-31 — doc maintenance + Windows hook fixes
 
 ### v2.22.12 — PATH bootstrap uses $BASH not command -v (P7, P11, P14, P17)

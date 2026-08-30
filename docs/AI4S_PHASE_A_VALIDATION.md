@@ -15,6 +15,26 @@
 AI4S success does not validate the generic detector. Commit range:
 `364f231..3cd0c8d`, after baseline `6e020b7`; no core-layer source changed.
 
+## Research-discovery orchestration addendum
+
+A later tribunal found that the canonical primitives and K0-K7 states could
+express constructive discovery, but did not fully schedule it. K1 started from
+verified capability change, K3 analogy was primarily adversarial, and
+mother-space saturation reset away from a branch without specifying how to
+reopen bounded Add from a qualitatively different problem source.
+
+The project-layer adapter now schedules target constraints, future-system
+hypotheses, broken assumptions, generative donor-domain transfer, and a bounded
+constructive Add reset at K0-K2. It also makes problem-before-method and the
+three-way target-domain fit gate explicit. Structural tests cover the routing,
+stop condition, balanced opportunity/negative evidence, discoverability from
+`RESEARCH_USAGE.md`, and one genericized conceptual example.
+
+Evidence status: **`AI4S_DISCOVERY_ORCHESTRATION_STRUCTURALLY_VALIDATED_BEHAVIOR_PENDING`**.
+The change has not demonstrated more diverse or higher-quality directions in
+blinded live trials. It does not alter core principles, established M-rules,
+K-state count, novelty rigor, or the prior live-provider limitation.
+
 ## Baseline and treatment
 
 | Aspect | Baseline | Treatment | Evidence |

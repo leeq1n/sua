@@ -28,9 +28,9 @@ silently advances to implementation.
 
 | State | Knowledge condition | Required operation before advancing |
 |---|---|---|
-| **K0 Mother problem** | Scientific object and success claim are explicit | Frame the mother problem and what is not being optimized. |
-| **K1 Frontier change** | A new capability and invalidated old assumption are evidenced | Scan capabilities; expand possible mechanisms without defending a candidate. |
-| **K2 Mechanism candidate** | Capability, constraint, mechanism, and cheap falsifier are stated | Abstract away application nouns and expose necessary causal structure. |
+| **K0 Mother problem** | Scientific object, project constraints, and success claim are explicit | Frame the mother problem and what is not being optimized. |
+| **K1 Frontier change** | A supported current change or bounded future-system hypothesis exposes an old assumption | Generate problem hypotheses from assumption failure; do not treat forecasts as evidence. |
+| **K2 Mechanism candidate** | Problem, constraint, generic mechanism, and cheap falsifier are stated | Use donor analogy to generate deltas, then abstract away application nouns. |
 | **K3 Prior-art coverage** | Mechanism-level bridges cover the nearest mature theories | Schedule cross-domain analogy and strongest generic-mechanism search. |
 | **K4 Novelty decision** | Role-separated tribunal leaves an exact mechanism delta | KILL, Reduce, reset/lift, or provisionally retain; record the decision. |
 | **K5 Cheap falsification** | Cheapest decisive falsifier has been run | Reject or bound the mechanism before costly work. |
@@ -73,8 +73,15 @@ LEDGER UPDATE: ...
 
 ## Automatic routing defaults
 
+- Before narrow novelty search, run bounded constructive Add across target
+  constraints, future-system deltas, broken assumptions, and mechanism-driven
+  donor domains. A method remains unauthorized until a problem and generic
+  mechanism survive K2/K3.
 - Mechanism-equivalent collisions schedule Reduce, abstraction lift, or
   mother-space reset; they do not schedule a renamed nearby candidate.
+- Candidate-family or mother-space saturation can trigger a constructive Add
+  reset at a higher abstraction level. Literature saturation is not evidence
+  that scientific opportunity is saturated.
 - Combination-only or terminology-only novelty cannot pass K4 without a
   distinct interaction mechanism.
 - Adapter-dependent effects schedule native/adapter audit before external
@@ -111,11 +118,10 @@ Its separate decision is **`PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`**.
 
 ## Detail and use
 
-Before moving a candidate beyond K1, load
+Beyond K1, or when repeated Reduce may require constructive Add reset, load
 [AI4S_RESEARCH_MODE_DETAIL.md](AI4S_RESEARCH_MODE_DETAIL.md). It defines the
-triggers, candidate representation, analogy coverage stop, tribunal, claim
-evidence gates, KILL ledger, frontier scan, resource policy, and benchmark
-contract. The summary is the router; the detail is the operating protocol.
+discovery loop, triggers, candidate gate, analogy stop, tribunal, evidence
+gates and ledger, resource policy, and benchmark contract.
 
 ## References
 
@@ -125,4 +131,4 @@ contract. The summary is the router; the detail is the operating protocol.
   canonical adversarial operations.
 - [Benchmark tasks](../benchmarks/tasks.json) — shared fixture source.
 
-Last P20-verified: 2026-08-29
+Last P20-verified: 2026-08-30

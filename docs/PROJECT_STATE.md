@@ -24,6 +24,12 @@ cheap reconnaissance, author-claim skepticism, mutation reset, and a precise
 residual ambiguity before an expensive Research Agent call. This is
 structurally validated; live Agent-allocation behavior remains unmeasured.
 
+At K0-K2, the same adapter now separates constructive problem discovery from
+prior-art reduction: project constraints, bounded future-system hypotheses,
+broken assumptions, and mechanism-driven donor transfer can trigger a
+constructive Add reset without weakening K3/K4. This routing is structurally
+validated; its effect on fresh-agent direction quality remains unmeasured.
+
 The Phase A addendum separately tests whether SUA can detect recurring domain-
 methodology inadequacy before a user requests specialization. The Layer 1
 detector is `DOMAIN_SPECIALIZATION_BOOTSTRAP.md`; AI4S remains a Layer 2 adapter
@@ -66,10 +72,11 @@ change rarely; that file is the source of truth.
 ## Next step
 
 Phase A decisions are AI4S `AI4S_PROJECT_ADAPTER_VALIDATED` and generic `PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`.
-Next, run the fixed AI4S (including Pre-Agent) and specialization suites with
-a valid provider and blinded scoring. Measure unnecessary Agent calls and
-decision quality; do not start Phase B or promote a core trigger. The prior
-`docs/PLANS/PLAN_2026-07-30.md` remains historical context.
+Next, run the fixed AI4S (including discovery and Pre-Agent) and specialization
+suites with a valid provider and blinded scoring. Measure direction diversity,
+unnecessary Agent calls, and decision quality; do not start Phase B or promote
+a core trigger. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical
+context.
 
 ## References
 

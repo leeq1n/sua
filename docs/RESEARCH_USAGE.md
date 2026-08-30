@@ -89,6 +89,11 @@ SUA 的 5 primitives（Analyze / Reason / 联想 / 归纳 / 总结）
 | 写作 | P-14 self-contained + figure-driven-paper-experiment |
 | 验收 | M-n 29 5-step + ACCEPTANCE_PROTOCOL |
 
+当任务要发现、证伪或声称新科学知识时，本表只是工具入口；必须先加载
+[`AI4S_RESEARCH_MODE.md`](AI4S_RESEARCH_MODE.md) 的 K0-K7 状态路由。
+它把候选生成与候选证伪分开，并在反复 Reduce 后决定是停止、提升抽象层，
+还是从系统变化与 donor-domain mechanism 重新开启有界 Add。
+
 ## 4. 版本策略
 
 - 每个科研项目 pin 一个 SUA 版本（git submodule / commit hash）
