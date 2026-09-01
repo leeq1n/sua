@@ -483,8 +483,14 @@ Then MUST apply **M-n 29 5-step protocol**:
    external 5-step script BEFORE claiming task done:
 
    ```bash
-   python agent-tools/scripts/m_n29_5step.py --self --claim "<task description>"
+   python agent-tools/scripts/m_n29_5step.py --self \
+     --task-profile open-ended \
+     --claim "<task description>"
    ```
+
+   Use `open-ended` only for discovery, design, planning, or hypothesis
+   formation; replace it with `well-specified` otherwise. The script verifies
+   checklist structure; semantic PASS still requires task-specific evidence.
 
    This script externalizes M-n 29 5-step from
    LLM-self-judgment to deterministic mechanical

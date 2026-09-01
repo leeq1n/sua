@@ -1,5 +1,5 @@
 # Operating workflow rules
-Last P20-verified: 2026-07-13
+Last P20-verified: 2026-09-02
 
 |> L0: 9 operating rules (M-task-summary, M-must-read,
 |> M-context-snapshot, M-subtask-summary, M-intent-parsing,
@@ -180,6 +180,16 @@ add-then-reduce sequence, reduce phase actions, anti-patterns,
 relationship to other M-* rules) lives in
 `docs/ADD_THEN_REDUCE.md` — load when planning a multi-
 leaf task or applying M-learn.
+
+For open-ended discovery, design, planning, or hypothesis formation, Add also
+means bounded constructive search-space expansion, not merely accumulating
+artifacts or evidence. Synthesize that expansion before terminal critique.
+Well-specified execution uses the direct path and incurs no creativity gate.
+
+If locally valid terminal decisions repeat while producing no surviving
+alternative or output-space expansion, STOP the local loop and schedule a
+controller-level replan. There is no fixed rejection count; use repeated
+same-structure termination plus lack of global progress as the trigger.
 
 ### M-self-audit
 

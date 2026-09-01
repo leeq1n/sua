@@ -1,5 +1,5 @@
 # M-two-track-reasoning (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-02
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-two-
 > track-reasoning段.  Per P11 摘要+引用 + R6, this
@@ -32,6 +32,12 @@ domains and apply pattern from domain A to domain B.
 **Output format**:
 - "X is to Y as A is to B"
 - 1+ verifiable mapping between X and A
+
+For open-ended constructive use, recognition is not enough. The output must
+include a **donor-to-target mapping**, the donor assumption or invariant being
+transferred, at least one **target consequence**, and a generated alternative
+or delta. Retrieval alone may validate or kill later; it does not satisfy
+constructive association.
 
 **Worked examples in SUA**:
 - c44 5-family 类比 framework
@@ -78,6 +84,22 @@ Q3: Is high-stakes (P25 6-step requires)?
 └── No → Either (per Q1 + Q2)
 ```
 
+### Task-shape and phase-aware scheduling
+
+- **Well-specified execution**: use direct logical execution and verification.
+  It does not require constructive expansion or a creativity ceremony.
+- **Open-ended discovery/design/planning**: open a bounded constructive Add
+  window, use analogy to expand the output space, synthesize comparable
+  alternatives, then apply logical and adversarial Reduce.
+- **Mixed task**: apply the open-ended route only to the uncertain decision;
+  execute settled subproblems directly.
+
+In the open-ended route, the two reasoning tracks coexist across the task but
+need not alternate sentence by sentence. Constructive expansion and synthesis
+may run as a batch before terminal critique. This ordering does not defer
+safety, known impossibility, an explicit hard constraint, or decisive existing
+evidence; those are immediate hard stops.
+
 ## How both tracks compose
 
 Per M-n 16 (observe-think-execute 6-stage chain):
@@ -97,6 +119,9 @@ thinks 逻辑 + executes 逻辑.
 
 Both tracks required for principled reasoning, per
 P25 6-step (Read first = 类比, Analysis = 逻辑).
+
+For open-ended work, "both" means both before the decision, not forced
+interleaving that collapses each new branch before synthesis.
 
 ### Anti-pattern 2: 类比 when 逻辑 is sufficient
 

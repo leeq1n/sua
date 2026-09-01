@@ -1,5 +1,5 @@
 # M-acceptance-protocol (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-02
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-
 > acceptance-protocol段 (M-n 29).  Per P11
@@ -78,10 +78,32 @@ critical-thinking primitives (per
    - Apply 节点 生命周期 (destroy redundant
      details)
 
+### Constructive quality gate for open-ended work
+
+Primitive names are not evidence of primitive results. When the task includes
+open-ended discovery, design, planning, or hypothesis formation, PASS requires
+**observable constructive expansion** before terminal critique:
+
+1. Analyze exposes the uncertain object, boundary, and search dimensions.
+2. Reason produces alternatives with explicit causal or decision differences.
+3. Association records a donor-to-target mapping, transferred invariant or
+   constraint, target consequence, and at least one generated delta;
+   retrieval alone is insufficient.
+4. Induction changes the abstraction, mother problem, or search policy when
+   repeated cases share a failure; merely summarizing why all branches fail is
+   insufficient.
+5. Synthesis yields a comparable set of structurally distinct alternatives
+   and a justified transition to critique/selection.
+
+For well-specified execution, direct logical execution is the correct route
+and does not require constructive expansion. Apply the quality gate only to
+the open-ended portion of a mixed task.
+
 ### 4 critical-thinking primitives (per user message 2026-07-16)
 
-Apply AFTER each corresponding constructive, per
-M-n 14 two-track.  Default-on for high-stakes
+Apply phase-aware per M-n 14 two-track. For open-ended work, complete bounded
+constructive expansion and synthesis before terminal critique; hard-stop
+exceptions remain immediate. Default-on for high-stakes
 decisions (architecture, cross-project, new P-n
 or M-n lifts); optional for single-file
 refactors; skip for trivial fixes.  Full details:
@@ -112,7 +134,9 @@ Per user message Part 4 "确认没问题":
 | Check | PASS criteria |
 |---|---|
 | All acceptance criteria | 全部 PASS (no FAIL / PARTIAL) |
-| 5 constructive primitives | All 5 used |
+| 5 constructive primitives | All applicable primitives have observable outputs; labels alone fail |
+| Open-ended constructive quality | Output space expanded with structurally distinct alternatives and a donor transfer; well-specified execution is exempt |
+| Phase ordering | Bounded Add and synthesis precede terminal critique, except immediate hard stops |
 | 4 critical-thinking primitives | Default-on for high-stakes: 质疑 + 逆向 + 预演失败 + 对立论证 |
 | Evidence recorded | test output / commit hash / file size |
 | R1-R12 ALL PASS | Per c173 + per latest VERIFICATION.md |
@@ -120,6 +144,20 @@ Per user message Part 4 "确认没问题":
 | M-n compliance | All applicable M-n applied |
 | Framework-agnostic | All 4 frameworks (Hermes/Codex/Claude Code/Cursor) |
 | P17 老实说 | Don't claim green when yellow |
+
+### Global-progress acceptance
+
+A run of **locally valid terminal decisions** can still fail the task. When
+repeated rejection, KILL, stop, or rollback decisions produce no surviving
+alternative and no **output-space expansion**, trigger a **controller-level
+replan** at the final-objective and abstraction level. Preserve negative
+knowledge, diagnose whether the branch, mechanism family, mother space, or
+generation policy is saturated, and change the search source or stop with an
+explicit global infeasibility conclusion.
+
+There is **no fixed rejection count**. The trigger is evidence of repeated
+same-structure terminal decisions plus absence of global progress. A
+validation or retrieval tool must not silently become the generation policy.
 
 ### Step 4: If FAIL → 新 任务 cycle
 

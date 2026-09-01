@@ -1,8 +1,8 @@
 # Add-then-reduce cycle (M-add-then-reduce M-rule)
-Last P20-verified: 2026-07-13
+Last P20-verified: 2026-09-02
 
-> L0: 2-phase task lifecycle — Add (gather) + Reduce
-> (consolidate).  Load when: planning a multi-leaf task,
+> L0: Add expands task-relevant state; Reduce tests, consolidates, and removes what no longer earns complexity.
+> Load when: planning a multi-leaf task,
 > noticing doc/context bloat, or evaluating whether to
 > apply M-learn's 3 sub-actions.
 
@@ -10,13 +10,31 @@ Last P20-verified: 2026-07-13
 
 Tasks have a 2-phase lifecycle; the cycle repeats:
 
-- **Add (执行期)**: gather information, write code, push
-  commits, draft docs, add Temp snapshots.  Permitted to
-  be redundant during this phase — exploration needs
-  slack.  No premature compression.
+- **Add (执行期)**: expand the kind of state the task needs. Permitted to be
+  redundant during this phase — exploration needs slack. No premature
+  compression.
 - **Reduce (整理期)**: compress, abstract, dedupe, destroy
   intermediate state.  Only triggered by signal (see
   below).  This is where M-learn's 3 sub-actions run.
+
+Add has two forms. Choose from the task objective; do not silently substitute
+one for the other:
+
+- **artifact/evidence Add** gathers information, writes code or documents,
+  pushes commits, and stores snapshots. It is sufficient for well-specified
+  execution and for later verification.
+- **constructive search-space Add** is for open-ended discovery, design,
+  planning, or hypothesis formation. It generates structurally distinct
+  alternatives, mechanisms, problem representations, constraints, or donor
+  transfers. More papers, more notes, renamed variants, or more objections do
+  not by themselves expand the search space.
+
+For open-ended work, use a **bounded constructive Add window**: expand first,
+then synthesize before terminal critique. Risks may be recorded during Add,
+but terminal rejection belongs to Reduce unless a hard-stop exception applies.
+End the window when new additions repeat the same structure, the task's
+explicit diversity requirement is met, or a decision-relevant resource bound
+is reached. No universal candidate count is required.
 
 ## Trigger for reduce (3 signal types)
 
@@ -36,6 +54,11 @@ never happens.  Signal trigger balances both failure modes.
 Don't mix.  Mixing = partial reductions leaving
 inconsistencies (violates P11 摘要+引用).
 
+For constructive search-space Add, "end" means the alternatives have been
+synthesized into comparable representations. Retrieval may expose known hard
+constraints during Add, but retrieval alone must not become the generation
+policy (`idea -> search -> reject -> repeat`).
+
 ## Reduce phase actions (per M-learn)
 
 1. Pull all relevant intermediate state (child summaries,
@@ -49,6 +72,9 @@ inconsistencies (violates P11 摘要+引用).
 ## Anti-patterns
 
 - **Don't** trigger reduce during add phase (premature).
+- **Don't** count evidence volume as constructive expansion.
+- **Don't** protect unsafe, impossible, or constraint-violating branches until
+  Reduce; hard-stop exceptions interrupt Add immediately.
 - **Don't** skip reduce entirely (additive without reduce
   = doc bloat, per P13 + P14).
 - **Don't** silent-destroy — every destroy must be a

@@ -9,6 +9,26 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-02 — phase-aware constructive control
+
+### Unreleased — measurable expansion before terminal critique
+
+**CORE METHODOLOGY REPAIR.** For open-ended discovery, design, planning, and
+hypothesis formation, Add now distinguishes constructive search-space
+expansion from artifact/evidence accumulation. Association must transfer a
+donor structure and generate a target consequence; M-n 29 requires observable
+constructive outputs rather than primitive labels; critical operations run
+after bounded expansion and synthesis except for immediate safety,
+impossibility, hard-constraint, or decisive-evidence stops.
+
+Repeated locally valid terminal decisions with no global output-space
+expansion now trigger controller-level replanning without a fixed kill count.
+Well-specified execution remains direct and does not incur a creativity gate.
+The M-n 29 helper is task-generic and explicitly reports structural coverage
+only. Regression tests cover premature rejection, repeated rejection,
+checkbox gaming, deterministic execution, and hard-stop behavior. Live
+behavioral improvement remains unmeasured.
+
 ## 2026-08-30 — research-discovery adapter orchestration
 
 ### Unreleased — bounded constructive Add before novelty reduction

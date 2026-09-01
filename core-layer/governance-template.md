@@ -27,8 +27,12 @@ Any modification to:
    - **总结** (M-n 26 compression): 1-paragraph L0
 3. **Run M-n 29 5-step script**:
 ```bash
-python agent-tools/scripts/m_n29_5step.py --self --claim "<X>"
+python agent-tools/scripts/m_n29_5step.py --self \
+  --task-profile open-ended --claim "<X>"
 ```
+   - Use `open-ended` when the change requires discovery, design, planning, or
+     hypothesis formation; replace it with `well-specified` otherwise.
+   - Script output is a structural baseline, not semantic proof of acceptance.
    - If FAIL items → re-verify (cycle per M-n 29 Step 4)
    - Otherwise proceed to verify-after
 4. **Document in plan/commit body**: cite P-n / M-n per AGENTS.md

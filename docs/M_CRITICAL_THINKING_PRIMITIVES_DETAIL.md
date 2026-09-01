@@ -1,5 +1,7 @@
 > L0: M-n 35 L2 detail — 4 个对抗性思维原语 (质疑/逆向/预演失败/对立论证).
 
+Last P20-verified: 2026-09-02
+
 # M-n 35: Critical-thinking primitives (4 adversarial primitives)
 
 
@@ -289,18 +291,32 @@ don't steel-man **the strongest**.
 ## Integration with 5 constructive primitives
 
 
+Integration is **phase-aware**. For a well-specified task, applying a critical
+primitive after its corresponding constructive operation is appropriate. For
+open-ended discovery, design, planning, or hypothesis formation, the agent
+must not interleave terminal critique with every newly generated branch.
+Record risks during the bounded constructive Add window, synthesize the
+expanded space, then run the critical primitives before selection or
+execution.
+
+This ordering is not protection for bad ideas. Safety, known impossibility,
+an explicit hard constraint, or decisive existing evidence interrupts Add
+immediately. Later critique, falsification, evidence discipline, and
+anti-sunk-cost stopping remain unchanged.
+
+
 
 | Constructive (existing) | Critical (new) | Stage |
 
 |---|---|---|
 
-| **Analyze** (M-n 16) | **质疑** (Challenge) | Apply AFTER Analyze |
+| **Analyze** (M-n 16) | **质疑** (Challenge) | After Analyze, or after the bounded Add batch |
 
-| **Reason** (M-n 22) | **逆向** (Invert) | Apply AFTER Reason |
+| **Reason** (M-n 22) | **逆向** (Invert) | Before selection; not necessarily after each new branch |
 
-| **联想** (M-n 14 类比) | **预演失败** (Pre-mortem) | Apply AFTER 联想 |
+| **联想** (M-n 14 类比) | **预演失败** (Pre-mortem) | After generative transfer has produced target consequences |
 
-| **归纳** (M-n 14 induction) | **对立论证** (Steelman) | Apply AFTER 归纳 |
+| **归纳** (M-n 14 induction) | **对立论证** (Steelman) | After synthesis, before terminal decision |
 
 | **总结** (M-n 26) | (none — summary is final) | Apply LAST (final L0) |
 
@@ -403,4 +419,3 @@ M-n 29 (acceptance-protocol — modify Step 2), M-n 32 (self-
 learning-guardrail — Guardrail #5), M-n 34 (pre-task-scan
 
 self-application).
-
