@@ -13,6 +13,9 @@ ACCEPTANCE = ROOT / "docs" / "M_ACCEPTANCE_PROTOCOL_DETAIL.md"
 OPERATING = ROOT / "docs" / "OPERATING_RULES.md"
 AI4S_DETAIL = ROOT / "docs" / "AI4S_RESEARCH_MODE_DETAIL.md"
 SCRIPT = ROOT / "agent-tools" / "scripts" / "m_n29_5step.py"
+VERIFICATION = ROOT / "VERIFICATION.md"
+AGENTS_DETAIL = ROOT / "AGENTS_DETAIL.md"
+PREPARE_COMMIT_MSG = ROOT / "hooks" / "prepare-commit-msg"
 
 
 def read(path: Path) -> str:
@@ -107,3 +110,20 @@ def test_mn29_script_is_task_generic_and_honest_about_semantic_coverage():
     assert result.stdout.index("[Step 2] Execute") < result.stdout.index(
         "[Step 2a] Apply"
     )
+
+
+def test_verification_surfaces_match_phase_aware_constructive_control():
+    verification = read(VERIFICATION)
+    agents_detail = read(AGENTS_DETAIL)
+    hook = read(PREPARE_COMMIT_MSG)
+    combined = verification + agents_detail + hook
+
+    assert "Last constructive-control verification: 2026-09-02" in verification
+    assert "open-ended discovery / design / hypothesis formation" in verification
+    assert "deterministic / well-specified execution" in verification
+    assert "live behavioral improvement remains unmeasured" in verification
+    assert "7 constructive-control regressions" in verification
+    assert "critical-thinking BEFORE constructive" not in combined
+    assert "4 critical-thinking primitives** FIRST" not in combined
+    assert "15 design criteria" not in verification
+    assert "--task-profile open-ended" in hook

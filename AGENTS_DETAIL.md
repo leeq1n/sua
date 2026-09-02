@@ -412,10 +412,13 @@ agent MUST apply **5 primitives** (per M-n 16 stage 1-2
 context-decay; codified in M-n 29 Step 2):
 
 **Per M-n 14 two-track**: complete
-thinking needs BOTH constructive + adversarial.  Apply
-**4 critical-thinking primitives** FIRST (default-on for
-high-stakes, optional for single-file refactors, skip for
-trivial fixes; per
+thinking needs BOTH constructive + adversarial, with ordering selected by task
+profile. For open-ended discovery/design/planning, complete bounded
+constructive expansion and synthesis before terminal critique. For
+well-specified execution, use the direct logical path without a creativity
+ceremony. Hard-stop exceptions remain immediate. Apply the **4
+critical-thinking primitives** before selection or completion (default-on for
+high-stakes, optional for single-file refactors, skip for trivial fixes; per
 `docs/M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md`):
 
 0a. **质疑 (Challenge)**: 3 specific weaknesses + which

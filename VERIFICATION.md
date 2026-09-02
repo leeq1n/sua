@@ -4,15 +4,42 @@
 been verified + cross-refs.  Per P11 摘要+
 引用 + R6 + M-n 20 framework-agnostic.
 
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-02
 
 ## 1-axiomatic verification (per P5 measure
 twice commit once)
 
-- [x] SUA 621 tests PASS + 6 skip + 0 fail
+- [~] Latest full non-network run: 873 pass + 15 skip + 21 known
+  failures in pre-existing planner/harness/persistence/E2E/
+  prompt-hygiene families; no constructive-control regression
 - [x] `hooks/commit-msg` INSTALLED (P-n 1-29
   whitelist per c96 P28 LIFT + c167 P29 LIFT)
 - [x] All commits reference at least 1 P-n
+
+## Phase-aware constructive-control verification
+
+**Last constructive-control verification: 2026-09-02.** Scope: the
+phase-aware ordering, task-profile boundary, hard-stop exceptions, regression
+contract, and mechanical helper consistency introduced by commit `19a6ce2`.
+
+- For **open-ended discovery / design / hypothesis formation**, complete
+  meaningful bounded constructive expansion and synthesis before terminal
+  reduction or reviewer-grade critique. Objections may be recorded during
+  Add, but they do not silently terminate immature branches.
+- For **deterministic / well-specified execution**, use direct logical
+  execution and verification; no constructive-expansion ceremony is required.
+- Safety, known impossibility, explicit hard constraints, and already-decisive
+  evidence remain immediate-stop exceptions.
+- Repeated locally valid terminal decisions with no output-space progress
+  trigger controller-level replanning; superficial primitive invocation does
+  not satisfy constructive acceptance.
+
+Verification coverage: 7 constructive-control regressions cover premature
+rejection, repeated rejection, checkbox gaming, deterministic execution,
+hard-stop behavior, AI4S compatibility, and helper honesty; a separate
+documentation-consistency regression binds this file, `AGENTS_DETAIL.md`, and
+the commit reminder to the current phase-aware contract. These are structural
+and contract checks: **live behavioral improvement remains unmeasured**.
 
 ## R1-R12 invariant compliance (per c173)
 
@@ -86,8 +113,10 @@ multiple turns — claimed DONE without applying
 trigger layer:
 
 - **`agent-tools/scripts/m_n29_5step.py`** (commit `05cd4d5`):
-  deterministic baseline — 15 design criteria + 5
-  primitives + validate cycle
+  task-generic structural baseline — 6 criteria selected by
+  `open-ended` / `well-specified` profile + 5 constructive
+  primitives + 4 critical primitives + validate cycle; it
+  explicitly does not claim semantic acceptance
 - **`hooks/prepare-commit-msg`** (commit `f11b145`):
   commit-time reminder trailer when commit body
   mentions "task done" / "完成" / "PASS"
@@ -104,8 +133,9 @@ reminder + commit-time trailer + external script
 all maximize external-trigger coverage.  Future
 agents reading this project should:
 
-1. Run `python agent-tools/scripts/m_n29_5step.py --self`
-   BEFORE claiming task done
+1. Run `python agent-tools/scripts/m_n29_5step.py --self --task-profile
+   open-ended` before claiming an open-ended task done; replace the profile
+   with `well-specified` for deterministic execution
 2. Apply 5 primitives (Analyze / Reason / 联想 /
    归纳 / 总结) in plan / commit message
 3. Cite P-n / M-n values that motivated changes
@@ -172,11 +202,12 @@ thinking needs BOTH constructive + adversarial.
   (commit `d31e9de`)
 - `M_ACCEPTANCE_PROTOCOL_DETAIL.md` Step 2 includes
   both constructive + adversarial (commit `f0ba8b7`)
-- `agent-tools/scripts/m_n29_5step.py` Step 2a runs
-  critical-thinking BEFORE constructive (commit
-  `b3b56a1`)
+- `agent-tools/scripts/m_n29_5step.py` is phase-aware: the
+  `open-ended` profile runs constructive expansion before
+  Step 2a terminal critique; the `well-specified` profile
+  uses the direct execution path
 - `hooks/prepare-commit-msg` trailer checklist now
-  includes Step 2a (commit `80cad53`)
+  includes both tracks without imposing one order on every task
 
 **Default-on**: high-stakes commits (architecture
 / cross-project / new P-n or M-n lifts).
