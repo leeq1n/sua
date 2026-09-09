@@ -194,6 +194,15 @@ Per 预判 (good vs bad):
 **Net verdict**: Adoption is worth it. Reduces verify-then-fix churn,
 makes acceptance results comparable across versions.
 
+## 8a. Final promotion of externally consumed artifacts
+
+When acceptance targets a publication, release, dataset, benchmark, report,
+deck, or reproducibility bundle—and repeated local repairs, frozen proxies, a
+major mutation, killed-defect risk, or validator correlation is present—run
+the bounded [Artifact Finalization](ARTIFACT_FINALIZATION.md) gate before the
+final acceptance decision. It preserves evidence-backed freezes while
+challenging historical presentation and implementation residue.
+
 ## 9. References
 
 - tua-start `AGENTS.md` "Task-done-notify reminder" (5 primitives)

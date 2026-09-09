@@ -9,6 +9,23 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-09 — artifact-finalization governance orchestration
+
+### Unreleased — evidence-safe final-promotion adapter
+
+**ADAPTER UPDATE.** A bounded project-layer finalization gate now classifies
+evidence-backed invariants separately from publication/interface decisions and
+implementation conveniences; recovers the true objective before exact proxy
+targets; reduces obsolete patch residue; carries stable killed-defect classes
+through broad mutations; and requests one blind-first fresh audit before final
+promotion.
+
+The adapter reuses existing P/M mechanisms. It adds no P-n, M-rule, K-state,
+core change, mandatory ledger, or mandatory multi-agent framework. Focused
+tests cover discoverability, ordering, freeze protection, bounded stopping,
+and generic software/benchmark scenarios. Evidence is structural only; live
+behavioral improvement remains unmeasured.
+
 ## 2026-09-02 — phase-aware constructive control
 
 ### Unreleased — measurable expansion before terminal critique

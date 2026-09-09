@@ -4,7 +4,21 @@
 been verified + cross-refs.  Per P11 摘要+
 引用 + R6 + M-n 20 framework-agnostic.
 
-Last P20-verified: 2026-09-02
+Last P20-verified: 2026-09-09
+
+## Artifact-finalization verification
+
+**Last artifact-finalization verification: 2026-09-09.** The project-layer
+adapter preserves scientific/evidentiary freezes while challenging provisional
+interface decisions, proxy objectives, and implementation residue. It routes
+one blind-first fresh audit through the ordinary acceptance path, uses existing
+artifact-local regression or decision records for stable killed-defect classes,
+and stops after bounded reconciliation unless a major mutation occurs.
+
+Focused coverage verifies discoverability, operation ordering, anti-post-hoc
+boundaries, information-control independence, two non-manuscript scenarios,
+and honest evidence labeling. This is structural and discoverability evidence;
+live behavioral improvement remains unmeasured.
 
 ## 1-axiomatic verification (per P5 measure
 twice commit once)

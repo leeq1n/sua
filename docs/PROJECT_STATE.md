@@ -43,6 +43,13 @@ coverage only; semantic acceptance still requires evidence. These contracts
 and scenarios are structurally tested; live controller behavior remains
 unmeasured.
 
+At final promotion, the project-layer `ARTIFACT_FINALIZATION.md` adapter now
+orchestrates existing SUA primitives around evidence-safe freeze
+classification, surrogate-objective recovery, removal-first patch reduction,
+stable killed-defect regression, and one blind-first fresh audit. Structural
+and discoverability coverage passes; live behavioral improvement remains
+unmeasured.
+
 The Phase A addendum separately tests whether SUA can detect recurring domain-
 methodology inadequacy before a user requests specialization. The Layer 1
 detector is `DOMAIN_SPECIALIZATION_BOOTSTRAP.md`; AI4S remains a Layer 2 adapter
@@ -56,6 +63,7 @@ and cannot by itself validate the generic detector.
 | Knowledge library | `docs/` | principles, operating rules, design, conventions |
 | AI4S research adapter | `docs/AI4S_RESEARCH_MODE.md` | scientific-state routing and evidence gates for new-knowledge tasks |
 | Specialization detector | `docs/DOMAIN_SPECIALIZATION_BOOTSTRAP.md` | audit recurring methodological friction before adapter proposals |
+| Artifact finalization adapter | `docs/ARTIFACT_FINALIZATION.md` | evidence-safe final-promotion orchestration for externally consumed artifacts |
 | Governance | `core-layer/` | 3-layer policy (核心/用户/项目) + modification gates |
 | Commit gates | `hooks/` + `agent-tools/scripts/` | commit-msg / pre-commit / pre-push / prepare-commit-msg |
 | Legacy runtime | `core/` + `src/` + `self_upgrade/` | v1.x-v3.x self-improving agent (documented legacy, functional) |
@@ -100,6 +108,8 @@ tests. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 - AI4S Research Mode: [AI4S_RESEARCH_MODE.md](AI4S_RESEARCH_MODE.md)
 - AI4S Phase A validation: [AI4S_PHASE_A_VALIDATION.md](AI4S_PHASE_A_VALIDATION.md)
 - Domain specialization bootstrap: [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md)
+- Artifact finalization: [ARTIFACT_FINALIZATION.md](ARTIFACT_FINALIZATION.md)
+- Artifact-governance validation: [ARTIFACT_GOVERNANCE_VALIDATION.md](ARTIFACT_GOVERNANCE_VALIDATION.md)
 - User intent: [USER_INSIGHTS.md](USER_INSIGHTS.md)
 - Hard rules: [CONSTRAINTS.md](CONSTRAINTS.md)
 - Pending tasks: [../TODO.md](../TODO.md)
