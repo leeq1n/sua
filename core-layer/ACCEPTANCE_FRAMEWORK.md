@@ -9,13 +9,18 @@
 > **Purpose**: Make acceptance a first-class capability, not
 > an afterthought.
 
+P30 is the authority boundary for this framework: its tools and criteria may
+produce local verification and regression evidence, but only an evaluator that
+did not materially implement the accepted artifact state may issue terminal
+acceptance.
+
 ## 1. What acceptance capability means
 
 Per user: "验收能力修复" = acceptance capability needs fixing.
 Three parts:
 1. **Tools** — scripts that verify (existing: self_health_check, cross_repo_audit)
 2. **Criteria** — what to verify against (existing: P-14, M-n, etc.)
-3. **Process** — how to run acceptance (existing: 3-phase protocol)
+3. **Process** — how to run acceptance (the role-separated protocol)
 
 This doc adds the missing pieces: **criteria catalog + acceptance runner**.
 
@@ -194,7 +199,7 @@ Phase 2: ANALYZE (categorize findings by severity)
    ↓
 Phase 3: FIX (apply fixes)
    ↓
-Phase 4: RE-ACCEPT (run run_acceptance.sh again)
+Phase 4: RE-ACCEPT (run run_acceptance.sh again under independent evaluator authority)
 ```
 
 This is **identical** to planning framework structure. Both planning

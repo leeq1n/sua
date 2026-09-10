@@ -25,7 +25,7 @@
 |---|---|
 | Pre-task scan (M-n 34) | AGENTS_CORE.md § same |
 | Read first (in order) | AGENTS_CORE.md § same |
-| Hard rules (top 6 P-n) | AGENTS_CORE.md § same |
+| Hard rules (binding P-n) | AGENTS_CORE.md § same |
 | What NOT TO DO | AGENTS_CORE.md § same |
 | Commit message contract | AGENTS_CORE.md § same |
 | When in doubt | AGENTS_CORE.md § same |

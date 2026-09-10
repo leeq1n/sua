@@ -114,7 +114,7 @@ it at the directory once.
 
 
 
-See `docs/PRINCIPLES.md` (P1-P29 working principles, with
+See `docs/PRINCIPLES.md` (P1-P30 working principles, with
 
 P1-P30 referenced across docs). The commit-message hook
 

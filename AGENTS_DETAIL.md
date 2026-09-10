@@ -766,7 +766,7 @@ it.
 
 These are project-wide pointers; load if your task type matches.
 
-- `docs/PRINCIPLES.md` — the principles themselves (P1-P29, 25 working).
+- `docs/PRINCIPLES.md` — the principles themselves (P1-P30, 26 working).
   **Read FULLY before modifying any P-n / M-* rule** (per
   "P-n / M-* modification discipline" 段).
 - `docs/INDEX.md` — orientation map.

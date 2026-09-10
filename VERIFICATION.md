@@ -4,7 +4,7 @@
 been verified + cross-refs.  Per P11 摘要+
 引用 + R6 + M-n 20 framework-agnostic.
 
-Last P20-verified: 2026-09-09
+Last P20-verified: 2026-09-10
 
 ## Artifact-finalization verification
 
@@ -20,14 +20,28 @@ boundaries, information-control independence, two non-manuscript scenarios,
 and honest evidence labeling. This is structural and discoverability evidence;
 live behavioral improvement remains unmeasured.
 
+## P30 construction/acceptance separation
+
+The current amendment separates three states: `LOCAL FIX VERIFIED` and
+`REGRESSION PASS` are implementation-level evidence, while only
+`INDEPENDENT ACCEPTANCE PASS` may authorize terminal acceptance, freeze, or
+submission-readiness. A material modification makes the prior acceptance
+state stale. Implementer-authored checkers remain regression evidence only.
+
+The amendment is locally verified by focused contract tests, registry
+consistency, and the existing evidence/constructive safeguard regressions. It
+is not an independent acceptance of SUA; the required next step is a
+fresh-state, artifact-first audit by an evaluator that did not materially
+implement this amendment.
+
 ## 1-axiomatic verification (per P5 measure
 twice commit once)
 
 - [~] Latest full non-network run: 873 pass + 15 skip + 21 known
   failures in pre-existing planner/harness/persistence/E2E/
   prompt-hygiene families; no constructive-control regression
-- [x] `hooks/commit-msg` INSTALLED (P-n 1-29
-  whitelist per c96 P28 LIFT + c167 P29 LIFT)
+- [x] `hooks/commit-msg` INSTALLED (P-n 1-30
+  whitelist including P30 construction/acceptance separation)
 - [x] All commits reference at least 1 P-n
 
 ## Phase-aware constructive-control verification
@@ -76,7 +90,7 @@ and contract checks: **live behavioral improvement remains unmeasured**.
 
 ## P-n / M-n completeness (per c167 + c183 + c189)
 
-- **25 P-n working** (P1-P29 minus P6/P15/P16/P24)
+- **26 P-n working** (P1-P30 minus P6/P15/P16/P24)
 - **27 M-n codified** (M-n 1-27, per c183 + c189 + c197)
 - **24 M-n L2 companions** + 3 段 in OPERATING_RULES.md
 
@@ -87,7 +101,7 @@ and contract checks: **live behavioral improvement remains unmeasured**.
 | SUA | ~95% | 原则库 (P-n + M-n + R-n) |
 | skill-incubator | 100% | Skill 孵化器 (5 phases) |
 | agent-reflection-skill | 100% | 已孵化 skill (6 primitives) |
-| knowledge-graph-seed | synced | Cross-project KG (P1-P29) |
+| knowledge-graph-seed | synced | Cross-project KG (P1-P30) |
 
 ## Framework-agnostic compliance (per M-n 20 + c116)
 
@@ -98,14 +112,14 @@ and contract checks: **live behavioral improvement remains unmeasured**.
 
 ## Cross-references
 
-- SUA `docs/PRINCIPLES.md` — 25 P-n working
+- SUA `docs/PRINCIPLES.md` — 26 P-n working
 - SUA `docs/OPERATING_RULES.md` — 26 M-n codified
 - SUA `AGENTS.md` — operating rules for new agents
 - SUA `docs/PROJECT_STATE.md` — current snapshot
 - SUA `agent-tools/plans/2026-07-15_160000-replan_DETAIL.md` — Changelog
 - skill-incubator `SKILL_DESIGN.md` — 5-phase process
 - agent-reflection-skill `SKILL.md` — invocation contract
-- knowledge-graph-seed `docs/PHILOSOPHY.md` — P1-P29 sync
+- knowledge-graph-seed `docs/PHILOSOPHY.md` — P1-P30 sync
 
 ## Verification procedure for future agents
 

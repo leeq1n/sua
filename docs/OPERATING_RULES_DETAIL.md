@@ -3938,7 +3938,7 @@ definition + 3 sources mapping + lifecycle +
 
      (project-internal) + project-agnostic.
 
-     Source for 25 P-n + 26 M-n + R1-R12.
+     Source for 26 P-n + 26 M-n + R1-R12.
 
    - **skill (final 3rd source)**: portable +
 
@@ -5056,7 +5056,7 @@ follow:
 
 |---|---|---|---|
 
-| 1 | **Cite P-n or M-n** | every commit | commit-msg hook whitelist (P1-P29) |
+| 1 | **Cite P-n or M-n** | every commit | commit-msg hook whitelist (P1-P30) |
 
 | 2 | **R5 ≤ 7168 bytes** | docs L0/L1 files | pre-commit R5 check (manual via wc -c) |
 
@@ -5416,7 +5416,7 @@ M-n 14 two-track):
 
 - **P11 (摘要+引用)**: scan result is itself
 
-  a 摘要 — extracted from 25 P-n + 33 M-n
+  a 摘要 — extracted from 26 P-n + 33 M-n
 
   down to 3-5 relevant entries
 
@@ -5656,3 +5656,4 @@ M-n 36 via "Read first" item 10.
 
   to be added)
 
+Last P20-verified: 2026-09-10

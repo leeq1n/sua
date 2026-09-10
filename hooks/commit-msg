@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # commit-msg hook: enforce that commit message references at least one
-# P-n from agent-tools/hook_principles.json (single source of truth).
+# P-n (currently P1-P30) from agent-tools/hook_principles.json (single source of truth).
 # Per AGENTS.md "Commit message contract" + decision doc Q2 closure.
 #
 # TEMPLATE — install with: cp hooks/commit-msg .git/hooks/commit-msg

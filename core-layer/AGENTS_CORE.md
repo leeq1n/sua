@@ -89,7 +89,7 @@ failure mode M-n 34 is designed to prevent.
 
 ## Read first (in order)
 
-1. `docs/PRINCIPLES.md` — operating principles (P1-P29, 25 working
+1. `docs/PRINCIPLES.md` — operating principles (P1-P30, 26 working
    per docs/OPERATING_RULES.md version notes — see lift/demote history
    in PRINCIPLES_DETAIL.md).  Read the FULL file (~11 KB).
    Do not skim.
@@ -142,7 +142,7 @@ has its own governance template separate from docs/ because
 modification rules differ (核心 = agent-only).
 
 
-## Hard rules (top 6 from PRINCIPLES.md, binding)
+## Hard rules (binding P-n from PRINCIPLES.md)
 
 If you violate these, your commit is rejected by the commit-msg
 hook (it scans for the `P##` reference; the rule cited is the one
@@ -160,6 +160,10 @@ that motivated the change).
   Prefer existing file; split if a doc does two jobs.
 - **P22** — when stuck, STOP.  Look at the project state, then
   write a plan.  Do not brute-force past a wrong assumption.
+- **P30** — the constructor cannot be the final acceptor.  A role
+  that materially modified an artifact may locally verify and report
+  regressions, but only an independent fresh-state evaluator may issue
+  terminal acceptance.
 
 
 ## What NOT to do
@@ -189,7 +193,7 @@ that motivated the change).
 ## Commit message contract
 
 Every commit message MUST contain at least one `P##` reference
-(one of P1-P29) explaining which principle motivated the
+(one of P1-P30) explaining which principle motivated the
 change.  The `commit-msg` hook enforces this.
 
 **Hook install** (one-time per clone):
@@ -207,7 +211,7 @@ Format:
 ```
 <type>(<scope>): <short description>
 
-Cite one of P1-P29 here, e.g.:
+Cite one of P1-P30 here, e.g.:
 - P5 — "added tests before commit"
 - P11 — "rewrote L0/L1 boundary"
 - P17 — "documented what is NOT shipped"
@@ -218,7 +222,7 @@ Detailed body.
 Allowed `P##` values: P1, P2, P3, P4, P5, P7, P8, P9, P10,
 P11, P12, P13, P14, P17, P18, P19, P20, P21, P22, P23,
 P15 (demoted to P5 实操), P16 (demoted to P5 实操),
-P24 (merged into P3), P25, P26, P27, P28, P29
+P24 (merged into P3), P25, P26, P27, P28, P29, P30
 (lifted per docs/OPERATING_RULES.md version notes).
 See PRINCIPLES.md / PRINCIPLES_DETAIL.md for the complete
 list.

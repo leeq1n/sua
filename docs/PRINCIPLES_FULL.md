@@ -1,5 +1,5 @@
 # PRINCIPLES.md — Detail (L2)
-Last P20-verified: 2026-07-14 (split from summary per R5+R6)
+Last P20-verified: 2026-09-10 (split from summary per R5+R6)
 
 > L0: L2 detail for PRINCIPLES.md.  Per P11 摘要+引用,
 > the summary file is the L0/L1 layer (≤ 7KB); this file
@@ -7,7 +7,7 @@ Last P20-verified: 2026-07-14 (split from summary per R5+R6)
 > Per R6, this detail file is referenced from the summary.
 
 This file holds:
-1. Meta principles段 (P19, P20, P20细则, P21, P24, P25, P26)
+1. Meta principles段 (P19, P20, P20细则, P21, P24, P25, P26, P30)
 2. P-n vs M-* boundary段
 3. L2 实操段
 
@@ -685,6 +685,236 @@ verification:
 
 
 
+
+### P30. Separation of Construction and Acceptance
+
+**Core invariant**: no agent or epistemic role that materially modifies an
+artifact may issue the terminal acceptance decision for that same resulting
+artifact in the same evaluation cycle. The constructor cannot be the final
+acceptor.
+
+**CONSTRUCTOR CANNOT BE THE FINAL ACCEPTOR.**
+
+This applies to manuscripts, code, experiments, figures, tables, datasets,
+analysis pipelines, checkers, prompts, repository structures, research
+decisions, and any other artifact whose evaluated state has material authorship
+from the modifying role. It is a role-separation invariant, not a claim that a
+different model is automatically independent.
+
+#### Why this is a principle
+
+The failure mechanism is epistemic-role coupling, not merely insufficient
+model intelligence. The implementer knows why the change was made, knows the
+intended interpretation, designs checks around anticipated failure modes, and
+can unconsciously fill gaps that a fresh evaluator would notice. A self-authored
+checker covers only the dimensions it encodes. Stronger models do not remove
+this need for separation.
+
+#### Three validation states
+
+| State | Meaning | Who may issue it | What it does not mean |
+|---|---|---|---|
+| **LOCAL FIX VERIFIED** | The requested modification was implemented and the targeted local issue was checked. | Implementer. | Not artifact acceptance. |
+| **REGRESSION PASS** | Frozen invariants and previously specified checks remain satisfied. | Implementer and/or automated checker. | Not artifact acceptance. |
+| **INDEPENDENT ACCEPTANCE PASS** | A fresh-state evaluator judged the resulting artifact against the stage-level acceptance objective after independent inspection. | Only an evaluator that did not materially implement the accepted artifact state. | Not implied by a local fix or checker result. |
+
+Only **INDEPENDENT ACCEPTANCE PASS** may authorize terminal acceptance, freeze,
+or submission-readiness for that stage.
+
+#### Terminal vocabulary
+
+An agent that materially implemented the artifact must not return terminal
+language such as `PASS`, `ACCEPTED`, `FINAL`, `READY FOR SUBMISSION`,
+`SCIENTIFICALLY ACCEPTED`, or `PUBLICATION READY` for that artifact. It may
+return implementation-level status such as:
+
+- `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`;
+- `TARGETED CORRECTIONS COMPLETE / READY FOR INDEPENDENT AUDIT`;
+- `PROTOTYPE COMPLETE / READY FOR EVALUATION`; or
+- `EXPERIMENT COMPLETE / READY FOR INDEPENDENT INTERPRETATION`.
+
+`REGRESSION PASS` is allowed only as the bounded regression state defined
+above; it must not be presented as terminal artifact acceptance.
+
+#### Material modification invalidates old acceptance
+
+Any material modification automatically makes the previous acceptance state
+stale for the modified artifact:
+
+```text
+OLD_ACCEPTANCE_STATE = STALE
+```
+
+A new independent acceptance is required. A minor non-semantic change may be
+exempt only when it cannot alter the evaluated claim, result, interpretation,
+or reader-visible artifact. When uncertain, treat the change as material.
+
+#### Epistemic reset and evaluator independence
+
+Where feasible, the independent evaluator follows this order:
+
+```text
+1. ARTIFACT FIRST
+2. FRESH INDEPENDENT JUDGMENT
+3. FREEZE FIRST-PASS FINDINGS
+4. READ IMPLEMENTATION REPORTS / CHECKERS / RATIONALE
+5. RECONCILE
+6. ISSUE TERMINAL DECISION
+```
+
+The evaluator should not materially author the current artifact state, should
+not implement the change being judged, and should not design the exact local
+fix now being accepted. A new conversation or agent instance is preferred
+when practical, but a new agent label alone is insufficient if the evaluator
+is pre-anchored by an implementation-success narrative. The required
+property is epistemic independence plus artifact-first inspection.
+
+#### Implementer-authored checkers
+
+Implementer-authored checkers are **REGRESSION EVIDENCE**. They may verify
+hashes, counts, frozen numerical invariants, expected strings, protocol
+fields, build success, known prior defects, and consistency constraints. They
+are not sufficient evidence for scientific validity, manuscript quality,
+conceptual completeness, reviewer acceptance, publication readiness, or the
+absence of unknown failure modes:
+
+```text
+CHECKER PASS != INDEPENDENT ACCEPTANCE PASS
+```
+
+#### OPEN-WORLD ACCEPTANCE
+
+Targeted repair validation asks, “Did we fix the issue we already knew
+about?” Independent acceptance also asks, “What material issue remains that
+the implementer did not already target?” The evaluator must actively search
+for unanticipated contradictions, stale assumptions, side effects, newly
+introduced inconsistencies, missing evidence, misleading framing, semantic
+drift, and artifact-level quality defects. It must not limit itself to the
+implementer’s checklist.
+
+#### No self-certifying loop
+
+The following closure pattern is prohibited:
+
+```text
+IMPLEMENT → WRITE CHECKER → RUN CHECKER → PASS → FREEZE
+```
+
+The required pattern is:
+
+```text
+IMPLEMENT
+→ LOCAL VERIFICATION
+→ REGRESSION CHECK
+→ HANDOFF
+→ INDEPENDENT FRESH-STATE AUDIT
+→ ACCEPT / MODIFY / STOP
+```
+
+There is no direct path from `IMPLEMENTED` to `ACCEPTED` without independent
+audit.
+
+**No direct path from:** `IMPLEMENTED` to `ACCEPTED` without independent audit.
+
+#### Role-specific authority
+
+The implementer may modify, test, run local checks, report regressions,
+prepare the handoff, and state known limitations. The implementer may not
+issue final acceptance of its own modified artifact.
+
+The independent evaluator may inspect the artifact, identify new issues,
+classify blocker/material/optional findings, and issue the terminal decision.
+The evaluator should not silently modify the artifact during the same
+acceptance pass. If the evaluator materially edits the artifact, its
+evaluator role terminates; the artifact returns to implementation state and
+must undergo another independent audit afterward.
+
+#### Acceptance state machine
+
+```text
+ACCEPTED_n
+→ MATERIAL MODIFICATION
+→ IMPLEMENTED_n+1
+→ LOCAL FIX VERIFIED
+→ REGRESSION PASS
+→ READY FOR INDEPENDENT AUDIT
+→ INDEPENDENT ACCEPTANCE PASS
+→ ACCEPTED_n+1
+```
+
+If independent audit finds a material issue:
+
+```text
+READY FOR INDEPENDENT AUDIT
+→ MODIFY
+→ IMPLEMENTED_n+2
+→ ...
+```
+
+No direct path from `IMPLEMENTED` to `ACCEPTED` is permitted.
+
+#### Named failure class
+
+**CORRELATED VALIDATION FAILURE** is the condition in which the same
+epistemic role creates or materially modifies a claim or artifact and then
+evaluates it using checks or assumptions derived from its own construction
+process, producing false confidence in acceptance.
+
+Typical symptoms include a local fix reported as global `PASS`, a checker
+passing while a prose or semantic contradiction remains, an implementer
+explaining away ambiguity that a fresh reader would notice, new errors outside
+checker coverage, or reuse of a previous acceptance after material
+modification. This failure class triggers independent audit.
+
+#### Relation to existing SUA principles
+
+P30 supplements, and does not replace, opposing argument, failure pre-mortem,
+self-audit, falsification, anti-sunk-cost, Add-Then-Reduce, and evidence
+gates. Self-audit is necessary but not sufficient for terminal acceptance.
+The principle controls authority and information order; existing principles
+continue to control evidence, safety, falsification, and scope.
+
+#### Proportionality exception
+
+P30 is required when a material artifact was modified, a scientific result
+was generated, a manuscript was substantively revised, a method or experiment
+was constructed and then judged for terminal acceptance, or a high-stakes gate
+may freeze research state. It is not required for trivial wording
+suggestions, brainstorming, low-stakes exploratory reasoning, or non-terminal
+local checks.
+
+#### Reusable project-adapter template
+
+```text
+IMPLEMENTATION ROLE
+- may modify;
+- may locally verify;
+- may report regression results;
+- terminal status: IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT.
+
+INDEPENDENT AUDIT ROLE
+- fresh evaluator;
+- artifact-first inspection;
+- no modification during first-pass audit;
+- freeze first-pass findings before reading implementation rationale;
+- only this role may return: PASS / MODIFY / STOP.
+```
+
+#### Self-application
+
+P30 applies to the amendment that defines it: this implementation may report
+local verification and regression evidence, but it must not issue independent
+acceptance of the resulting SUA state. A future evaluator must inspect the
+updated canonical surfaces first, freeze first-pass findings, then read this
+implementation report and reconcile once.
+
+**Status for this implementation cycle**:
+
+```text
+SUA AMENDMENT IMPLEMENTED / READY FOR INDEPENDENT SUA AUDIT
+```
+
+---
 
 ### M-n 25 self-application: user message-pattern-recognition (per c183 + P28 recursion)
 

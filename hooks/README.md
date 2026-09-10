@@ -8,7 +8,7 @@
 
 | File | Purpose | Installed at | Trigger |
 |---|---|---|---|
-| `commit-msg` | Validate commit message has P1-P29 cite (via hook_principles.json loader) | `.git/hooks/commit-msg` | every commit |
+| `commit-msg` | Validate commit message has P1-P30 cite (via hook_principles.json loader) | `.git/hooks/commit-msg` | every commit |
 | `pre-commit` | Run 4 audit gates (eval_before + self_health_check + cross_repo_audit + validate_links) | `.git/hooks/pre-commit` | every commit |
 | `prepare-commit-msg` | Append M-n 29 5-step trailer when "task done" / "完成" / "PASS" detected | `.git/hooks/prepare-commit-msg` | every commit prep |
 | `pre-push` | BLOCKER-only ship gate (self_health_check + validate_links) | `.git/hooks/pre-push` | every push |

@@ -27,10 +27,10 @@ in similar-named paths.
 
 | In 核心 | NOT in 核心 |
 |---|---|
-| Agent behavior rules (M-n 25, M-n 29, M-n 34) | Project principle library (P1-P29) |
+| Agent behavior rules (M-n 25, M-n 29, M-n 34) | Project principle library (P1-P30) |
 | Skill invocation rules (M-n 27) | User habits / cross-project knowledge |
 | 5 primitives gate | Project-specific docs (L1+) |
-| Hook whitelist P1-P29 + M-n 29 trailer | R-n invariants |
+| Hook whitelist P1-P30 + M-n 29 trailer | R-n invariants |
 | Cold-start simulation method | Knowledge graph data |
 | `m_n29_5step.py` script | `docs/PRINCIPLES_FULL.md` content |
 

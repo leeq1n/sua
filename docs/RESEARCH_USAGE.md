@@ -65,8 +65,8 @@ docs/CROSS_RUNTIME_SKILL_BRIDGE.md）:
 ### 3.2 论文实验（figure-driven）
 
 - 先用 ATDD 4-phase 定义验收标准（figures 先行）
-- 实验 = 代码变更 → 用 SUA 验收协议（Phase 1 verify →
-  Phase 2 fix → Phase 3 re-verify）
+- 实验 = 代码变更 → 用 SUA 验收协议（local verify →
+  regression check → independent acceptance；有实质修改时旧接受状态失效）
 - 结果诚实（P-17）：不能验证就明确说，不假装
 
 ### 3.3 论文写作（self-contained）
@@ -121,3 +121,5 @@ bash .sua/install-hooks.sh
 **注**: hooks 是可选强化（commit 时强制 P-n 引用）。不装 hooks
 完全不影响行为约束（AGENTS.md 是主要机制）。Windows 下
 install-hooks.sh 已处理 cygpath 路径转换。
+
+Last P20-verified: 2026-09-10

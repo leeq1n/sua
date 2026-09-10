@@ -1,5 +1,5 @@
 # M-knowledge-layer-architecture (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-10
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-
 > knowledge-layer-architecture段 (M-n 27).
@@ -98,7 +98,7 @@ ABSENT.  Skill must work without hermes
 **Nature**: persistent (project-internal) +
 project-agnostic.
 
-**Examples**: 25 P-n + 26 M-n + R1-R12.
+**Examples**: 26 P-n + 26 M-n + R1-R12.
 
 **Application**: Case-2 M-n 4 P-n (主),
 case-3 self-application (level 4).

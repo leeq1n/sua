@@ -7,8 +7,10 @@
 > turn, which caused acceptance result drift (M-n 32 Guardrail #1 violation).
 > 55% of recent commits were "fix-after-verify" (per audit).
 >
-> **Decision**: 验收/修改分离 as standard practice. This document
-> codifies the protocol for future turns.
+> **Decision**: 验收/修改分离 as standard practice. P30 adds the required
+> epistemic-role boundary: local verification and regression evidence are not
+> independent artifact acceptance. This document codifies the protocol for
+> future turns.
 
 ## 1. Why separate (per 软件测试 standard practice)
 
@@ -25,37 +27,53 @@ Software testing has well-established phase separation:
 **Key principle**: Tests (incl. acceptance) should NOT modify the system under test.
 Otherwise test results drift = can't compare across runs.
 
+Per **P30**, the constructor also cannot be the final acceptor. Distinguish:
+
+| State | Issuer | Authority |
+|---|---|---|
+| **LOCAL FIX VERIFIED** | Implementer | Targeted local issue only |
+| **REGRESSION PASS** | Implementer and/or checker | Known frozen invariants and specified checks |
+| **INDEPENDENT ACCEPTANCE PASS** | Fresh evaluator with no material authorship of the accepted state | Terminal acceptance, freeze, or submission-readiness |
+
+`CHECKER PASS != INDEPENDENT ACCEPTANCE PASS`.
+
+The IMPLEMENTER may not issue final acceptance of its own modified artifact.
+
 Per tua-start `AGENTS.md` "Task-done-notify reminder" (M-n 16 stage 1-2):
 - 5 primitives must apply BEFORE any commit
 - This includes Plan / Search / Lesson / Observe / Cite
 - **None of these are "fix and ship"** — they're pre-commit gates
 
-## 2. The 3-phase protocol
+## 2. The role-separated protocol
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ Phase 1: ACCEPTANCE (verify only, NO fix)        │
-│   - Run sua-verify-*.py scripts              │
-│   - Produce ACCEPTANCE_<DATE>.md with findings  │
-│   - DO NOT modify any file in this phase        │
-│   - Exit with status: PASS / FAIL / DEFERRED    │
+│ Phase 1: IMPLEMENT / LOCAL VERIFICATION         │
+│   - Implementer applies the requested change     │
+│   - Check the targeted local issue               │
+│   - Status: LOCAL FIX VERIFIED                  │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐
-│ Phase 2: FIX (apply fixes based on acceptance)   │
-│   - Read ACCEPTANCE_<DATE>.md                    │
-│   - Plan fixes (pre-judgment per user ask)      │
-│   - Apply fixes                                  │
-│   - DO NOT re-run acceptance yet                 │
-│   - Commit fixes (one or more commits)           │
+│ Phase 2: REGRESSION CHECK (implementer/checker) │
+│   - Run specified frozen-invariant checks        │
+│   - Record REGRESSION PASS or findings           │
+│   - This is not artifact acceptance              │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐
-│ Phase 3: RE-VERIFY (acceptance on fixed state)   │
-│   - Run sua-verify-*.py AGAIN                 │
-│   - Compare results vs Phase 1                   │
-│   - If new findings → back to Phase 2            │
-│   - If all clean → ACCEPTED, ship tag            │
+│ Phase 3: INDEPENDENT ACCEPTANCE (fresh state)   │
+│   - Inspect artifact before implementation report │
+│   - Freeze first-pass findings before rationale   │
+│   - Only fresh evaluator may return PASS/MODIFY/STOP │
+│   - Do not modify during first-pass audit        │
+└─────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│ Phase 4: MODIFY / RE-AUDIT (only if material)   │
+│   - Return to implementation state               │
+│   - Material modification makes old acceptance   │
+│     stale; obtain another independent audit       │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -121,8 +139,9 @@ Each acceptance run produces a report with:
 PASS / FAIL / DEFERRED
 
 ## Next action
-If FAIL → run Phase 2 (fix), then Phase 3 (re-verify)
-If DEFERRED → capture in TODO, continue
+If independent audit finds a material issue → Phase 4, then a new Phase 3.
+If the result is implementation-only → report READY FOR INDEPENDENT AUDIT.
+If the result is deferred → capture it in TODO without claiming acceptance.
 ```
 
 ## 5. Acceptance tools (sua-verify- prefix scripts)
@@ -163,8 +182,10 @@ Two modes:
 
 ## 7. Implementation plan
 
-This is **project-layer** change (new doc + protocol), not core-layer
-(M-n 15 doesn't apply because adding new doc doesn't change core).
+The original protocol was a **project-layer** change (new doc + protocol),
+not a core-layer change. The P30 amendment is different: because it adds a
+canonical principle, its necessary registry and validation surfaces are
+updated under the principle-modification procedure.
 
 ### Files to create
 - `docs/ACCEPTANCE_PROTOCOL.md` (this file) — already done
@@ -189,7 +210,7 @@ Per 预判 (good vs bad):
 | Acceptance / Fix separation | ✅ Stable results | ⚠️ More turns |
 | User-layer acceptance | ✅ Project layer clean | ⚠️ Need new dir |
 | New validate_links.py | ✅ Prevent link drift | ⚠️ Maintenance burden |
-| 3-phase protocol | ✅ Software test standard | ⚠️ Adoption cost |
+| Role-separated protocol | ✅ Software test standard + independent authority | ⚠️ Adoption cost |
 
 **Net verdict**: Adoption is worth it. Reduces verify-then-fix churn,
 makes acceptance results comparable across versions.
@@ -201,7 +222,10 @@ deck, or reproducibility bundle—and repeated local repairs, frozen proxies, a
 major mutation, killed-defect risk, or validator correlation is present—run
 the bounded [Artifact Finalization](ARTIFACT_FINALIZATION.md) gate before the
 final acceptance decision. It preserves evidence-backed freezes while
-challenging historical presentation and implementation residue.
+challenging historical presentation and implementation residue. P30 supplies
+the authority boundary: the implementer may prepare the handoff and report
+regressions, but only an independent fresh-state evaluator may issue terminal
+acceptance.
 
 ## 9. References
 
@@ -216,3 +240,5 @@ challenging historical presentation and implementation residue.
 - P-17 no fabricate (honest value assessment)
 - Industry: 软件测试 V-model (Verification & Validation phases)
 - Industry: Test-driven development (test first, code until pass)
+
+Last P20-verified: 2026-09-10

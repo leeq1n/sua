@@ -11,9 +11,10 @@ status: "active"
 This project-layer adapter applies to publications, software releases,
 benchmark or dataset releases, technical reports, slide decks, and
 reproducibility bundles. It orchestrates existing P5/P7/P17/P18/P22/P26,
-Add-Then-Reduce, critical-thinking, negative-knowledge, and acceptance
-mechanisms. It adds no P-n, M-rule, K-state, mandatory ledger, or mandatory
-multi-agent system.
+P30, Add-Then-Reduce, critical-thinking, negative-knowledge, and acceptance
+mechanisms. P30 supplies the role boundary: local verification and regression
+evidence do not authorize the implementer to issue terminal acceptance. This
+adapter does not require a mandatory multi-agent system.
 
 ## Trigger and boundary
 
@@ -89,10 +90,17 @@ Give the auditor only:
 
 Initially withhold patch rationales, previous PASS reports, prior review
 personas, and explanations for unusual decisions. Record observations first;
-then reconcile them with history and evidence. A different agent instance is
-optional: the required independence is blind-first information control and a
-fresh observation record. Use a separate instance or human evaluator only
-when risk, cost, or correlation warrants it.
+then reconcile them with history and evidence. Under P30, the evaluator must
+be a role that did not materially implement the artifact state being accepted.
+A different agent instance is optional as a mechanism, but a fresh evaluator
+independent of material implementation is mandatory. A separate agent
+instance or human evaluator is preferred when practical; the requirement is
+epistemic independence plus blind-first information control, not agent count
+alone.
+
+The implementer may report `LOCAL FIX VERIFIED` and `REGRESSION PASS`, then
+must hand off with `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`.
+Only the independent evaluator may issue terminal acceptance.
 
 Ask: if an informed evaluator encountered only the current artifact, would its
 structure and behavior be natural, self-consistent, and appropriate for the
@@ -141,4 +149,4 @@ high-quality blind audit. Until blinded treatment trials are run, report
 - [Critical-thinking primitives](M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md)
 - [Working principles](PRINCIPLES.md)
 
-Last P20-verified: 2026-09-09
+Last P20-verified: 2026-09-10

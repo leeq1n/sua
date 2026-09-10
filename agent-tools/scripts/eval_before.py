@@ -7,7 +7,7 @@ Per user message 2026-07-16: "核心层只能由 agent 自己主动修改
 
 This script runs BEFORE commit.  It checks:
 1. Target state of file being committed exists + is not corrupted
-2. P-n / M-n cited in commit message are valid (P1-P29)
+2. P-n / M-n cited in commit message are valid (P1-P30)
 3. Sibling repos' VERIFICATION.md are in sync (no drift)
 
 Non-blocking by default (prints warnings only).  Hard FAIL
@@ -36,7 +36,7 @@ SIBLINGS = [
     ("skill-incubator", REPO.parent / "skill-incubator"),
     ("knowledge-graph-seed", REPO.parent / "knowledge-graph-seed"),
 ]
-VALID_P = set(f"P{n}" for n in range(1, 30)) - {"P6"}  # P1-P29 except P6
+VALID_P = set(f"P{n}" for n in range(1, 31)) - {"P6"}  # P1-P30 except P6
 
 
 def check_commit_message_p_cite() -> list[str]:

@@ -1,5 +1,5 @@
 # M-acceptance-protocol (full text)
-Last P20-verified: 2026-09-02
+Last P20-verified: 2026-09-10
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-
 > acceptance-protocol段 (M-n 29).  Per P11
@@ -32,7 +32,7 @@ acceptance-criteria-verification skill:
 | **framework-agnostic** | Hermes + Codex + Claude Code 全部 |
 | **跨项目 sync** | SUA ↔ skill ↔ skill-incubator ↔ KG |
 | **R1-R12** | ALL PASS (per c173 VERIFICATION.md) |
-| **P-n compliance** | 25 P-n all cited + applied |
+| **P-n compliance** | 26 P-n all cited + applied |
 | **M-n compliance** | 28 M-n all applied per context |
 | **P29 self-application** | agent 主动 reduce context |
 | **项目 整洁度 (per user message 2026-07-15 reminder)** | 路径 + 命名 + 文档结构 consistent (per M-n 19 file-naming-convention + c149-c151 .gitignore + c191 整理 + c115 整理 process) |
@@ -140,7 +140,7 @@ Per user message Part 4 "确认没问题":
 | 4 critical-thinking primitives | Default-on for high-stakes: 质疑 + 逆向 + 预演失败 + 对立论证 |
 | Evidence recorded | test output / commit hash / file size |
 | R1-R12 ALL PASS | Per c173 + per latest VERIFICATION.md |
-| P-n compliance | All 25 P-n applicable cited |
+| P-n compliance | All 26 P-n applicable cited |
 | M-n compliance | All applicable M-n applied |
 | Framework-agnostic | All 4 frameworks (Hermes/Codex/Claude Code/Cursor) |
 | P17 老实说 | Don't claim green when yellow |
@@ -240,7 +240,7 @@ M-n 29 itself):
 **Step 1 (Design 角度)**: Functional (5
 primitive protocol defined) + Framework-
 agnostic (per M-n 20) + R-n (per R1-R12) +
-P-n (per 25 P-n) + M-n (per 28 M-n).
+P-n (per 26 P-n) + M-n (per 28 M-n).
 
 **Step 2 (Execute 验收)**:
 - Analyze: M-n 29 段 IS 5-step protocol

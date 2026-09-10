@@ -1,5 +1,5 @@
 # M-self-learning-guardrail (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-10
 
 > L0: L2 detail for `OPERATING_RULES.md` §
 > M-self-learning-guardrail段 (M-n 32).
@@ -46,7 +46,7 @@ explicit directive: "新 agent 还有 可能
 **Trigger**: every commit message
 
 **Current enforcement**: commit-msg hook
-whitelist P1-P29 (per c175 + c217)
+whitelist P1-P30 (including P30 construction/acceptance separation)
 
 **Worked example**:
 - ✅ PASS: `docs(...): add foo (P11, M-n
@@ -134,7 +134,7 @@ codified.  Future new agents will have:
 - Auto-learning 4 levels documented
 - 5 modification guardrails documented
 - M_RULE_AUTHORING 3-condition gate
-- commit-msg hook enforcement (P1-P29)
+- commit-msg hook enforcement (P1-P30)
 
 ## Relationship to other M-n
 

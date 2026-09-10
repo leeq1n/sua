@@ -1,12 +1,12 @@
 {
   "_meta": {
     "purpose": "Single source of truth for principle registry used by hooks (commit-msg, pre-commit) and audit scripts. Edit here, not in hook scripts. Per decision doc IMPLEMENTATION_PLAN 2026-07-30 T3 (Q2 closure).",
-    "last_updated": "2026-07-30",
+    "last_updated": "2026-09-10",
     "schema_version": "1.0",
     "owner": "core-layer (modification requires M-n 15 multi-session + user explicit)"
   },
   "principles": {
-    "active": ["P1", "P2", "P3", "P4", "P5", "P7", "P8", "P9", "P10", "P11", "P12", "P13", "P14", "P15", "P16", "P17", "P18", "P19", "P20", "P21", "P22", "P23", "P24", "P25", "P26", "P27", "P28", "P29"],
+    "active": ["P1", "P2", "P3", "P4", "P5", "P7", "P8", "P9", "P10", "P11", "P12", "P13", "P14", "P15", "P16", "P17", "P18", "P19", "P20", "P21", "P22", "P23", "P24", "P25", "P26", "P27", "P28", "P29", "P30"],
     "merged": {
       "P6": "merged into P5 (occam + verify)",
       "P24": "merged into P3 (cleanup principle)"

@@ -9,6 +9,25 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-10 — P30 separation of construction and acceptance
+
+### Unreleased — role-separated artifact acceptance
+
+**CANONICAL PRINCIPLE AMENDMENT.** P30 now requires that a role which
+materially modifies an artifact cannot issue terminal acceptance for the same
+resulting state. The amendment distinguishes `LOCAL FIX VERIFIED`,
+`REGRESSION PASS`, and `INDEPENDENT ACCEPTANCE PASS`; invalidates prior
+acceptance after material modification; requires artifact-first fresh-state
+inspection; treats implementer-authored checkers as regression evidence only;
+and names the failure mode `CORRELATED VALIDATION FAILURE`.
+
+The acceptance and artifact-finalization protocols now route terminal authority
+to an evaluator independent of material implementation while preserving the
+existing evidence, falsification, safety, Add-Then-Reduce, and hard-stop
+boundaries. The registry and pre-commit validation surfaces include P30.
+This implementation has structural regression evidence only; independent SUA
+acceptance remains pending by design.
+
 ## 2026-09-09 — artifact-finalization governance orchestration
 
 ### Unreleased — evidence-safe final-promotion adapter

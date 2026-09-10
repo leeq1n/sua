@@ -37,7 +37,7 @@ def get_active_principles():
 def get_p_regex():
     """Return grep-compatible regex for active P-n values.
 
-    Excludes merged P6 + P24; includes demoted P15/P16 + lifted P28/P29.
+Excludes merged P6 + P24; includes demoted P15/P16 + lifted P28/P29/P30.
     """
     active = get_active_principles()
     # Strip 'P' prefix for regex

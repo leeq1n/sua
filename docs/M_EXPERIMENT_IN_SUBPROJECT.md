@@ -1,5 +1,5 @@
 # M-experiment-in-subproject (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-10
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-experiment-
 > in-subproject段.  Per P11 摘要+引用 + R6, this
@@ -108,7 +108,7 @@ conventions:
 
 - **For P-n / M-n**: minimal version of SUA's P-n
   (e.g., P22 stuck→plan, P14 docs stay current) is
-  enough.  Don't import the full 25 P-n + 11 M-n
+  enough.  Don't import the full 26 P-n + 11 M-n
   system.
 - **For commits**: 1 logical feature per commit,
   hook enforces P-n cite (or, if sub-project has

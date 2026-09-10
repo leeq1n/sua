@@ -1,14 +1,22 @@
 ---
 description: "Tribunal record for the artifact-finalization governance adapter"
-status: "structurally-validated-behavior-pending"
+status: "historical-pre-p30-structural-validation"
 ---
 
 # Artifact-Governance Validation
 
-> L0: The artifact-finalization gap is accepted at project-adapter level;
-> routing and structure pass, while live behavioral improvement is unmeasured.
+> L0: Pre-P30 artifact-finalization record; prior acceptance is stale after
+> the amendment, and independent acceptance of the updated SUA is pending.
 
-## Terminal decision
+## State after the P30 amendment
+
+This file records the pre-P30 artifact-finalization adapter decision. P30 is a
+material change to the acceptance authority and therefore invalidates that
+prior acceptance for the updated SUA state. The prior record is **STALE AFTER
+P30 AMENDMENT**; independent acceptance has not been performed for the
+amended state in this implementation cycle.
+
+## Prior terminal decision (stale after P30 amendment)
 
 `ADAPTER_UPDATE / ARTIFACT-GOVERNANCE ORCHESTRATION ACCEPTED`
 
@@ -136,8 +144,8 @@ added.
 
 Post-commit verification found the working tree clean, the commit message
 compliant, and the new suite plus cleanliness invariant **8 passed**. The
-strict verifier still reports the documented pre-existing `M-n 35
-critical-thinking in AGENTS.md` trigger-point metadata drift; this patch does
+strict verifier still reports the documented pre-existing M-n 35
+critical-thinking trigger-point metadata drift in AGENTS.md; this patch does
 not modify that unrelated legacy failure.
 
 ## Evidence level
@@ -156,4 +164,4 @@ Blinded multi-model or human trials are needed to measure decision quality,
 false-positive challenges, and whether information control materially reduces
 correlated acceptance errors.
 
-Last P20-verified: 2026-09-09
+Last P20-verified: 2026-09-10

@@ -48,7 +48,7 @@ Cite P## here with a one-line reason. For example:
 - P22 (when stuck, plan)
 ```
 
-Allowed P-n values: P1-P29 (minus P6/P15/P16/P24, demoted
+Allowed P-n values: P1-P30 (minus P6/P15/P16/P24, demoted
 during early project consolidation). See `docs/PRINCIPLES.md`
 for the complete list.
 
@@ -91,4 +91,4 @@ internal identifiers:
 - `AGENTS.md` — operating rules
 - `core-layer/AGENTS_CORE.md` — always-loaded subset
 - `docs/OPERATING_RULES.md` — M-n 1-27 operating rules
-- `docs/PRINCIPLES.md` — P-n 1-29 principles
+- `docs/PRINCIPLES.md` — P-n 1-30 principles
