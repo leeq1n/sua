@@ -1,6 +1,6 @@
 # Hooks inventory
 
-> L0: Living inventory of hooks/ in SUA. Updated 2026-07-31 after
+> L0: Living inventory of hooks/ in SUA. Updated 2026-09-10 after
 > v2.22.7 (install-hooks.sh one-click installer + Windows cygpath
 > path handling).
 
@@ -9,9 +9,9 @@
 | File | Purpose | Installed at | Trigger |
 |---|---|---|---|
 | `commit-msg` | Validate commit message has P1-P30 cite (via hook_principles.json loader) | `.git/hooks/commit-msg` | every commit |
-| `pre-commit` | Run 4 audit gates (eval_before + self_health_check + cross_repo_audit + validate_links) | `.git/hooks/pre-commit` | every commit |
+| `pre-commit` | Run audit gates plus the P30 non-terminal regression boundary | `.git/hooks/pre-commit` | every commit |
 | `prepare-commit-msg` | Append M-n 29 5-step trailer when "task done" / "完成" / "PASS" detected | `.git/hooks/prepare-commit-msg` | every commit prep |
-| `pre-push` | BLOCKER-only ship gate (self_health_check + validate_links) | `.git/hooks/pre-push` | every push |
+| `pre-push` | BLOCKER-only technical regression gate; never artifact acceptance | `.git/hooks/pre-push` | every push |
 
 ## Why 4 hooks (not 1 or 2)
 
@@ -57,5 +57,7 @@ rm .git/hooks/commit-msg .git/hooks/pre-commit .git/hooks/prepare-commit-msg .gi
 
 - Hooks are NOT auto-installed by design (users opt in).
 - Python must be on PATH for hooks to run.
-- pre-commit is fail-open (warnings, exit 0) unless STRICT_EVAL=1.
-- pre-push blocks only on BLOCKER-level findings.
+- pre-commit is fail-open (warnings, exit 0) unless STRICT_EVAL=1; its P30
+  boundary itself blocks if the shared state module is missing.
+- pre-push blocks only on BLOCKER-level findings and always reports
+  regression evidence, not terminal artifact acceptance.

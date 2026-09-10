@@ -4282,7 +4282,7 @@ self-referential and could be silently bypassed
 
 | S4 | Session commit count is multiple of 5 (per M-n 26 periodic check) | on-commit |
 
-| S5 | M-n 31 Phase 3 (task-done-notify) about to start | pre-phase |
+| S5 | M-n 31 Phase 3 (implementation-handoff) about to start | pre-phase |
 
 
 
@@ -4300,7 +4300,7 @@ external signal is unreliable).
 
 post-modify re-apply new rules check, P26
 
-fresh-agent simulation): after M-n 29 PASS
+fresh-agent simulation): after M-n 29 regression evidence
 
 notification, the report itself must include
 
@@ -4398,11 +4398,12 @@ notification.**
 
 
 
-3. **Validate 验收 condition** (per user message
+3. **Validate the regression evidence condition** (per user message
 
    Part 4 "确认没问题"):
 
-   - All acceptance criteria PASS
+   - All applicable checks have bounded evidence; for an implementer this
+     yields `REGRESSION PASS`, never terminal artifact acceptance
 
    - No open FAIL / PARTIAL items
 
@@ -4438,7 +4439,23 @@ notification.**
 
 
 
-5. **If PASS** → 明确 通知 你 (per user message
+5. **If regression evidence is sufficient** → issue the implementation handoff
+   (per P30), not terminal acceptance.  Only a fresh independent evaluator
+   may issue `INDEPENDENT ACCEPTANCE PASS` after artifact-first review.
+
+   If an independent evaluator has completed the required audit, the
+   separate terminal decision must record artifact identity, role, stale
+   state, evaluator-edit state, and first-pass ordering before acceptance.
+
+**P30 boundary**:
+
+- `IMPLEMENTER` / `UNSPECIFIED` → local verification or regression evidence;
+  terminal artifact acceptance is blocked.
+- `INDEPENDENT_EVALUATOR` with matching artifact identity, non-stale state,
+  no material edit, and recorded artifact-first audit → may issue the one
+  terminal acceptance state.
+- Any material evaluator edit terminates that evaluator's authority and
+  returns the artifact to implementation flow.
 
    Part 6):
 
@@ -4838,7 +4855,8 @@ explicit directive (including 中优先级 items
 
 | 2 | **task-execute** | do the task | M-n 16 observe-think-execute + M-n 18 sub-task summary + commit 进度 |
 
-| 3 | **task-done-notify** | 明确 通知 你 PASS | **MUST apply M-n 29 5-step first** (per L0.1 commit; M-n 29 trigger S5 = pre-Phase-3) — then Step 5 notify |
+| 3 | **implementation-handoff** | 明确 通知 你 implementation complete | **MUST apply M-n 29 regression-evidence checklist first** (per P30); then hand off with artifact identity and `READY FOR INDEPENDENT AUDIT` |
+| 3b | **independent-acceptance** | terminal artifact decision | Only a fresh independent evaluator with a matching artifact identity and valid non-edited authority may issue `INDEPENDENT ACCEPTANCE PASS` |
 
 | 4 | **task-retrospective** | capture lessons | M-n 26 context-decay + memory update + 7-check |
 
@@ -4848,15 +4866,16 @@ explicit directive (including 中优先级 items
 
 impact analysis, follow-up to L0.1 commit):
 
-Phase 3 cannot start until M-n 29 5-step
+The implementation handoff cannot start until the M-n 29 regression-evidence
 
 (Design 角度 → Execute 5 primitives → Validate
 
-→ FAIL-cycle-or-PASS → Notify) has been
+→ FAIL-cycle-or-regression-handoff → Notify) has been
 
 **completed and recorded** in the session
 
-output.  Anti-pattern: skip M-n 29 5-step
+output.  Anti-pattern: skip M-n 29 or turn its checklist output into
+terminal acceptance
 
 and go directly to "notify you" — this is
 
@@ -4868,7 +4887,7 @@ the failure mode that triggered user message
 
 message itself is a SIGNAL (per M-n 29 S1),
 
-not a substitute for the 5-step.
+not a substitute for the checklist or the independent evaluator.
 
 
 
@@ -4938,15 +4957,25 @@ observed sites):
 
   interrupt only for 真问题 (per M-n 28).
 
-- **Phase 3 (task-done-notify)**: 完成 时
+- **Phase 3 (implementation-handoff)**: 完成 时
 
-  → 用 M-n 29 Step 5 explicit notify →
+  → 用 M-n 29 regression-evidence checklist →
 
   "明确告知" 你 (per user message prior
 
-  directive) → list passed/failed items →
+  directive) → report artifact identity and
 
-  request next directive.
+  `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`.
+
+- **Phase 3b (independent-acceptance)**: a fresh
+
+  evaluator inspects the artifact first and may
+
+  issue `INDEPENDENT ACCEPTANCE PASS` only when
+
+  the P30 authority record is complete.  If the
+
+  evaluator materially edits, its authority ends.
 
 - **Phase 4 (task-retrospective)**: 之后
 
@@ -4966,15 +4995,17 @@ explicit "如果做完任务，需要你跟我明确
 
 
 
-> "✅ Task done. Per M-n 29 Step 5 +
+> "IMPLEMENTATION COMPLETE / READY FOR
+> INDEPENDENT AUDIT"
 
-> per user message directive 2 (明确告知):
+> - Artifact identity: [commit/hash/version/state id]
 
-> - PASS items: [list]
+> - Local fix status: LOCAL FIX VERIFIED / NOT RUN
 
-> - FAIL items: [list OR none]
+> - Regression status: REGRESSION PASS / REGRESSION INCOMPLETE
 
-> - Next directive needed: [OR continue]"
+> - Artifact acceptance: NOT ISSUED
+> - Next evaluator: fresh artifact-first independent evaluator
 
 
 
@@ -4992,7 +5023,7 @@ explicit "如果做完任务，需要你跟我明确
 
   ref + retention (R5).
 
-- **Archive**: 当 项目 done → freeze commits
+- **Archive**: 当 项目 has independent terminal acceptance → freeze commits
 
   + move to .archive/ + keep context for
 
@@ -5062,7 +5093,7 @@ follow:
 
 | 3 | **Cross-ref check** | file edits that drift refs | manual review per M-n 20 + P14 docs stay current |
 
-| 4 | **Acceptance protocol** | **pre-claim** (before any 'task done' / 'all pass' / 'done' message — per M-n 29 trigger S1) | MUST apply M-n 29 5-step (per L0.1 + L0.2 commits) and produce 验收 report; **NOT** allowed to claim PASS before 5-step is complete |
+| 4 | **Acceptance protocol** | **pre-handoff** (before implementation completion is reported — per M-n 29 trigger S1) | MUST apply M-n 29 regression-evidence checklist and produce a state record; **NOT** allowed to turn it into terminal artifact acceptance without P30 independent authority |
 
 | 5 | **Update order rule** | SUA change | per M-n 30 Priority 5: SUA → skill-incubator → skill |
 

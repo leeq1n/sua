@@ -686,7 +686,7 @@ verification:
 
 
 
-### P30. Separation of Construction and Acceptance
+### P30. Separation of Construction and Acceptance {#p30-separation-of-construction-and-acceptance}
 
 **Core invariant**: no agent or epistemic role that materially modifies an
 artifact may issue the terminal acceptance decision for that same resulting

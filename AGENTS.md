@@ -127,9 +127,13 @@ apply **5 primitives**:
 
 ### Post-completion verification suggestion
 
-When agent reports task completion to user, the report MUST include:
-1. **明确说明** (clear statement): "task done" / "complete" / "ACCEPTED"
-2. **建议下一步做验收** (suggest next verification)
+When the implementer reports implementation completion to the user, the
+report MUST include:
+1. **明确说明** (clear statement): "IMPLEMENTATION COMPLETE / READY FOR
+   INDEPENDENT AUDIT" or another implementation-level handoff.
+2. **建议下一步做独立验收** (suggest next verification), identifying the
+   fresh artifact-first evaluator and evidence to inspect.  This handoff is
+   not terminal artifact acceptance.
 
 **Live detail**: see AGENTS_DETAIL.md § Post-completion verification.
 

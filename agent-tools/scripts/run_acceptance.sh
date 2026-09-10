@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
-# run_acceptance.sh — single entrypoint for acceptance protocol.
+# run_acceptance.sh — single entrypoint for regression evidence.
 #
 # Per docs/ACCEPTANCE_PROTOCOL.md, this script is the SINGLE
-# ENTRYPOINT for all acceptance checks. It runs:
-# 1. validate_links.py (markdown cross-refs)
-# 2. validate_structure.py (critical paths)
-# 3. token_budget.py (file size budgets)
-# 4. self_health_check.py (SUA self-audit)
-# 5. cross_repo_audit.py (cross-repo audit)
-# 6. pytest (test suite)
+# ENTRYPOINT for bounded regression checks. It runs:
+# 1. p30_acceptance.py (non-terminal authority boundary)
+# 2. validate_links.py (markdown cross-refs)
+# 3. validate_structure.py (critical paths)
+# 4. token_budget.py (file size budgets)
+# 5. self_health_check.py (SUA self-audit)
+# 6. cross_repo_audit.py (cross-repo audit)
+# 7. pytest (test suite)
 #
 # Two modes:
-#   Default (advisory): Runs all, prints report, exits 0
-#   --gate (STRICT_EVAL=1): Exits 1 on any failure (per pre-push gate)
+#   Default (advisory): Runs all, prints regression evidence, exits 0
+#   --gate (STRICT_EVAL=1): Blocks on technical regression failure only
 #
-# Per M-n 29 5-step acceptance protocol + docs/ACCEPTANCE_PROTOCOL.md.
+# Per M-n 29 regression evidence + P30 + docs/ACCEPTANCE_PROTOCOL.md.
 
 set +e  # Don't exit on error — we want to run all checks
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SCRIPTS="$REPO_ROOT/agent-tools/scripts"
 
+if [ "$1" = "--terminal-acceptance" ]; then
+    echo "ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED"
+    echo "run_acceptance.sh emits regression evidence only."
+    exit 2
+fi
+
 echo "================================================================"
-echo "ACCEPTANCE PROTOCOL — run_acceptance.sh"
+echo "REGRESSION EVIDENCE — run_acceptance.sh"
 echo "================================================================"
 echo "Repo: $REPO_ROOT"
 echo "Mode: $([ "${STRICT_EVAL:-0}" = "1" ] || [ "$1" = "--gate" ] && echo "GATE (strict)" || echo "ADVISORY (default)")"
@@ -48,7 +55,18 @@ run_check() {
     echo
 }
 
-# 1. validate_links.py
+# 1. P30 shared boundary (must remain non-terminal)
+if [ -f "$SCRIPTS/p30_acceptance.py" ]; then
+    run_check "p30_regression_boundary" python "$SCRIPTS/p30_acceptance.py" \
+        --regression-evidence --role "${SUA_ROLE:-UNSPECIFIED}" \
+        --regression-status "REGRESSION PASS"
+else
+    echo "--- p30_regression_boundary (BLOCKED: not found) ---"
+    total_checks=$((total_checks + 1))
+    failed_checks=$((failed_checks + 1))
+fi
+
+# 2. validate_links.py
 if [ -f "$SCRIPTS/validate_links.py" ]; then
     run_check "validate_links" python "$SCRIPTS/validate_links.py"
 else
@@ -56,7 +74,7 @@ else
     echo
 fi
 
-# 2. validate_structure.py
+# 3. validate_structure.py
 if [ -f "$SCRIPTS/validate_structure.py" ]; then
     run_check "validate_structure" python "$SCRIPTS/validate_structure.py"
 else
@@ -64,7 +82,7 @@ else
     echo
 fi
 
-# 3. token_budget.py
+# 4. token_budget.py
 if [ -f "$SCRIPTS/token_budget.py" ]; then
     run_check "token_budget" python "$SCRIPTS/token_budget.py"
 else
@@ -72,7 +90,7 @@ else
     echo
 fi
 
-# 4. self_health_check.py (advisory only — per its docstring)
+# 5. self_health_check.py (advisory regression evidence)
 if [ -f "$SCRIPTS/self_health_check.py" ]; then
     echo "--- self_health_check (advisory per its docstring) ---"
     total_checks=$((total_checks + 1))
@@ -87,7 +105,7 @@ if [ -f "$SCRIPTS/self_health_check.py" ]; then
     echo
 fi
 
-# 5. cross_repo_audit.py (advisory — by design tua-start pollution)
+# 6. cross_repo_audit.py (advisory regression evidence)
 if [ -f "$SCRIPTS/cross_repo_audit.py" ]; then
     echo "--- cross_repo_audit (advisory per tua-start by-design) ---"
     total_checks=$((total_checks + 1))
@@ -100,7 +118,7 @@ if [ -f "$SCRIPTS/cross_repo_audit.py" ]; then
     echo
 fi
 
-# 6. pytest
+# 7. pytest
 if [ -d "$REPO_ROOT/tests" ]; then
     run_check "pytest" python -m pytest "$REPO_ROOT/tests" -q
 else
@@ -110,20 +128,20 @@ fi
 
 # Summary
 echo "================================================================"
-echo "ACCEPTANCE SUMMARY"
+echo "REGRESSION EVIDENCE SUMMARY"
 echo "================================================================"
 echo "Total checks: $total_checks"
 echo "Passed: $passed_checks"
 echo "Failed: $failed_checks"
 echo
 
-# Gate mode: exit 1 on any FAIL
+# Gate mode: exit 1 on technical regression failure; it never accepts the artifact.
 if [ "${STRICT_EVAL:-0}" = "1" ] || [ "$1" = "--gate" ]; then
     if [ "$failed_checks" -gt 0 ]; then
-        echo "GATE MODE: FAILED (per pre-push gate)"
+        echo "REGRESSION GATE: INCOMPLETE (per pre-push gate)"
         exit 1
     else
-        echo "GATE MODE: PASSED"
+        echo "REGRESSION GATE: COMPLETE (no artifact acceptance issued)"
         exit 0
     fi
 else

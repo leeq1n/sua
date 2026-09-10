@@ -33,12 +33,13 @@ EVAL_BEFORE="$REPO_ROOT/agent-tools/scripts/eval_before.py"
 VERIFY_AFTER="$REPO_ROOT/agent-tools/scripts/verify_after.py"
 SELF_HEALTH="$REPO_ROOT/agent-tools/scripts/self_health_check.py"
 CROSS_REPO_AUDIT="$REPO_ROOT/agent-tools/scripts/cross_repo_audit.py"
+P30_STATE="$REPO_ROOT/agent-tools/scripts/p30_acceptance.py"
 
 echo "[pre-commit] Running eval_before gate..."
 
 if [ -f "$EVAL_BEFORE" ]; then
     if py "$EVAL_BEFORE" --strict 2>&1; then
-        echo "[pre-commit] eval_before: PASS"
+        echo "[pre-commit] eval_before: OK (regression evidence)"
     else
         rc=$?
         if [ "${STRICT_EVAL:-0}" = "1" ]; then
@@ -59,7 +60,7 @@ fi
 echo "[pre-commit] Running self_health_check audit..."
 if [ -f "$SELF_HEALTH" ]; then
     if py "$SELF_HEALTH" 2>&1; then
-        echo "[pre-commit] self_health_check: PASS"
+        echo "[pre-commit] self_health_check: OK (regression evidence)"
     else
         sh_rc=$?
         if [ "${STRICT_EVAL:-0}" = "1" ]; then
@@ -81,7 +82,7 @@ fi
 echo "[pre-commit] Running cross_repo_audit..."
 if [ -f "$CROSS_REPO_AUDIT" ]; then
     if py "$CROSS_REPO_AUDIT" 2>&1; then
-        echo "[pre-commit] cross_repo_audit: PASS"
+        echo "[pre-commit] cross_repo_audit: OK (regression evidence)"
     else
         cra_rc=$?
         if [ "${STRICT_EVAL:-0}" = "1" ]; then
@@ -104,7 +105,7 @@ echo "[pre-commit] Running validate_links..."
 VALIDATE_LINKS="$REPO_ROOT/agent-tools/scripts/validate_links.py"
 if [ -f "$VALIDATE_LINKS" ]; then
     if py "$VALIDATE_LINKS" 2>&1; then
-        echo "[pre-commit] validate_links: PASS"
+        echo "[pre-commit] validate_links: OK (regression evidence)"
     else
         vl_rc=$?
         if [ "${STRICT_EVAL:-0}" = "1" ]; then
@@ -115,6 +116,20 @@ if [ -f "$VALIDATE_LINKS" ]; then
     fi
 else
     echo "[pre-commit] validate_links.py not found — skipping"
+fi
+
+# P30 boundary: pre-commit can record implementation/regression evidence,
+# but it cannot issue terminal artifact acceptance.  An unknown role remains
+# fail-closed for material acceptance.
+echo "[pre-commit] Running P30 regression boundary..."
+if [ -f "$P30_STATE" ]; then
+    py "$P30_STATE" --regression-evidence \
+        --role "${SUA_ROLE:-UNSPECIFIED}" \
+        --regression-status "REGRESSION PASS"
+    echo "[pre-commit] P30: artifact acceptance not issued"
+else
+    echo "[pre-commit] p30_acceptance.py not found — blocking" >&2
+    exit 1
 fi
 
 # Note: verify_after.py is intentionally NOT called from pre-commit

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M-n 29 5-step acceptance protocol (programmatic).
+"""M-n 29 5-step regression-evidence protocol (programmatic).
 
 External trigger: replaces LLM-self-judgment with deterministic
 mechanical checklist.  Per user message 2026-07-16 "按原则做决定" +
@@ -18,12 +18,22 @@ LLM runtime should additionally invoke 5 primitives manually for
 full coverage.
 
 Output: prints Step 1-5 checklist + 5-primitives application.
-Per M-n 29 5-step protocol (L1 in OPERATING_RULES.md).
+The checklist is regression evidence only.  Per P30 it never issues terminal
+artifact acceptance, even when every structural criterion is populated.
 """
 from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+
+from p30_acceptance import (
+    ROLE_IMPLEMENTER,
+    ROLE_INDEPENDENT_EVALUATOR,
+    ROLE_UNSPECIFIED,
+    execution_success,
+    git_artifact_identity,
+    record_regression,
+)
 
 
 def design_criteria(task_profile: str) -> list[tuple[str, str]]:
@@ -97,10 +107,21 @@ def main() -> int:
         default="well-specified",
         help="select direct execution or constructive-expansion acceptance",
     )
+    parser.add_argument(
+        "--role",
+        choices=(ROLE_IMPLEMENTER, ROLE_INDEPENDENT_EVALUATOR, ROLE_UNSPECIFIED),
+        default=ROLE_UNSPECIFIED,
+        help="explicit reporting role; this checklist never grants terminal acceptance",
+    )
+    parser.add_argument(
+        "--artifact-id",
+        default="",
+        help="artifact identity; defaults to the current git state identity",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
-    print(f"M-n 29 5-STEP ACCEPTANCE: claim={args.claim!r}")
+    print(f"M-n 29 5-STEP REGRESSION EVIDENCE: claim={args.claim!r}")
     print("=" * 60)
 
     # Step 1
@@ -135,7 +156,10 @@ def main() -> int:
     print(f"  Populated primitive fields: {pk}/5")
     print(f"  Populated structural criteria: {ck}/{len(crits)}")
     print(f"  4 critical-thinking primitives: {len(ct)} (default-on for high-stakes)")
+    structurally_complete = pk == 5 and ck == len(crits)
     print("  STRUCTURAL BASELINE ONLY: semantic acceptance still requires evidence.")
+    print("  REGRESSION EVIDENCE ONLY: this checklist cannot issue artifact acceptance.")
+    print("  EXECUTION_SUCCESS does not equal ARTIFACT_ACCEPTANCE.")
 
     # Step 4 (reconciliation)
     print("\n[Step 4] Cycle loop check")
@@ -144,16 +168,30 @@ def main() -> int:
 
     # Step 5
     print("\n[Step 5] Notify")
+    boundary = execution_success(
+        role=args.role,
+        artifact_identity=args.artifact_id or git_artifact_identity(),
+        material_artifact=True,
+    )
+    boundary = record_regression(boundary, passed=structurally_complete)
+
     if args.self:
         print(f"  SELF-MODE: agent must apply 5 primitives")
         print(f"  Currently: {pk}/5 primitive prompts populated; {ck}/{len(crits)} criteria defined")
-        print("  This output does not claim that the task passed semantic acceptance.")
+        print("  EXECUTION COMPLETE (checklist execution only)")
+        print("  IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT")
+        print("  This output does not claim terminal artifact acceptance.")
     else:
-        print(f"  Interactive mode: review checklist, decide PASS/FAIL")
+        print("  Interactive mode: record regression evidence or findings.")
+
+    print(
+        "  P30 state: "
+        f"{boundary.artifact_state}; artifact acceptance={boundary.artifact_acceptance}"
+    )
 
     # Use-case 1: agent self-invocation pre-claim
     print("\n[External trigger usage]")
-    print("  Run this script BEFORE claiming task done.")
+    print("  Run this script BEFORE reporting implementation completion.")
     print("  Per M-n 32 Guardrail #4 + AGENTS.md 'Task-done-notify reminder'.")
     print("  Per user message 2026-07-16 retrospective 4-FAIL diagnosis.")
 

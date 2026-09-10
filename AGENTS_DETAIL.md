@@ -25,7 +25,7 @@ generic continuation.
 | Case | user message signal | Agent action |
 |---|---|---|
 | **任务未完成** | 该消息隐含承接上文 (e.g., previous turn left tasks undone) | Continue: apply thinking methods (5 primitives + 4 critical-thinking + 自顶向下分治); replan if撞到一起 (per M-n 12 + M-n 28 4-condition); keep committing |
-| **任务完成** | 消息含“验收” / “完成了” / explicit done | Apply M-n 29 5-step acceptance protocol: design 验收 角度, execute 5 primitives + 4 critical-thinking, validate all PASS, cycle if FAIL, **明确告知** (per user message "完成了的时候跟我明确说明情况") |
+| **实现完成** | 消息含“验收” / “完成了” / explicit done | Apply M-n 29 regression-evidence checklist, report the artifact identity and hand off as `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`; only a fresh evaluator can issue terminal acceptance |
 
 **Anti-patterns**:
 
@@ -33,7 +33,7 @@ generic continuation.
   PITFALL 39 batch rule).
 - DON'T ignore thinking methods when continuing.
 - DON'T skip 验收 when task is done.
-- DON'T claim "task done" without M-n 29 5-step
+- DON'T claim implementation completion without M-n 29 regression evidence
   (per M-n 32 Guardrail #4).
 
 ## "学习一下" protocol
@@ -236,11 +236,11 @@ ask).  Specifically:
 
 | Verify trigger | Action |
 |---|---|
-| After any commit | Run release_audit.py (5/5 PASS) |
+| After any commit | Run release_audit.py as regression evidence; it cannot issue artifact acceptance |
 | After any doc edit | Check L0 ≤ 120 chars + cross-refs |
 | After any principle change | Apply M-n 15 6-step |
 | After any skill change | Apply portability filter + per-section triggers |
-| Before "task done" claim | Apply M-n 29 5-step |
+| Before implementation handoff | Apply M-n 29 regression-evidence checklist |
 
 ### Relationship to other protocols
 
@@ -475,15 +475,16 @@ Then MUST apply **M-n 29 5-step protocol**:
      + M-n 22 3W1H) / 联想 (M-n 14 class比 + M-n 17
      Path 2) / 归纳 (M-n 14 induction + M-n 18) /
      总结 (M-n 26 compression)
-   - **Step 3**: Validate (all PASS / no FAIL / no PARTIAL)
+   - **Step 3**: Validate regression evidence (no unresolved FAIL / PARTIAL)
    - **Step 4**: If FAIL → fix → re-verify (loop)
-   - **Step 5**: Notify (this is the "完成" message)
+   - **Step 5**: Notify implementation handoff; terminal acceptance remains
+     a separate P30 independent-evaluator decision
 
 2. **Hard external trigger**: per direct user instruction with explicit authorization
-   retrospective 4-FAIL diagnosis (M-n 29 pre-claim
+   retrospective 4-FAIL diagnosis (M-n 29 pre-handoff
    + M-n 32 #4 violations across multiple turns),
    mechanical enforcement is required.  Run the
-   external 5-step script BEFORE claiming task done:
+   external 5-step script BEFORE reporting implementation completion:
 
    ```bash
    python agent-tools/scripts/m_n29_5step.py --self \
@@ -501,17 +502,17 @@ Then MUST apply **M-n 29 5-step protocol**:
    + M-n 28 4-condition autonomous execute.
 
 3. Include a **"Cold-start simulation"** section in the
-   验收 report: list 3+ trigger points in the project
+   regression-evidence report: list 3+ trigger points in the project
    + verify each is reachable from the entry doc by a
    fresh agent (per P25 step 7 + P26 fresh-agent simulation).
 
-4. Cite the P-n / M-n that motivated each acceptance
+4. Cite the P-n / M-n that motivated each regression
    criterion (per commit-msg hook contract above).
 
 **Anti-pattern**: skipping 5-step and going directly to
 "完成" message — this is the exact failure mode user message
-flagged.  Per M-n 32 Guardrail #4 (pre-claim): NOT
-allowed to claim PASS before 5-step is complete.
+flagged.  Per P30 and M-n 32 Guardrail #4 (pre-handoff): the
+checklist cannot issue terminal artifact acceptance.
 
 **Per retrospective**: previous
 session claimed "✅ Task DONE" multiple times without
@@ -532,15 +533,15 @@ Per user message "因为有了更改, 现在应该再次验收"
 + "做完任务后, 跟用户明确说明的同时, 也需要
 跟用户说建议下一步做验收":
 
-When agent reports **task completion** to user,
+When the implementer reports **implementation completion** to the user,
 the report MUST include:
 
-1. **明确说明** (clear statement): "task done" /
-   "complete" / "ACCEPTED" — explicit.
-2. **建议下一步做验收** (suggest next verification):
-   "建议你进行下一步验收" / "建议验证 X / Y / Z"
-   / "请运行 release_audit.py 验证" — explicit
-   suggestion.
+1. **明确说明** (clear statement):
+   "IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT" or another
+   implementation-level handoff — explicit.
+2. **建议下一步做独立验收** (suggest next verification): identify the
+   fresh artifact-first evaluator and the evidence to inspect.  Do not emit
+   terminal acceptance from the implementation handoff.
 
 These 2 actions are NOT optional and NOT
 substitutable.  Both must appear in every
@@ -772,7 +773,8 @@ These are project-wide pointers; load if your task type matches.
 - `docs/INDEX.md` — orientation map.
 - `docs/PROJECT_STATE.md` — current state (1-paragraph).
 - `docs/PROJECT_STATE_DETAIL.md` — version history + vision.
-- `docs/PRINCIPLES_DETAIL.md` — full text of each P-n.
+- `docs/PRINCIPLES_DETAIL.md` — routing index for extended P-n detail; follow
+  the P30 row to `docs/PRINCIPLES_FULL.md`.
 - `docs/LITERATURE.md` + `docs/LITERATURE_DETAIL.md` — past
   research citations (per P2 搜资料 workflow).
 - `DONE.md` — project log (use `search_files` to find

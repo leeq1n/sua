@@ -1,5 +1,5 @@
 # M-task-lifecycle (full text)
-Last P20-verified: 2026-07-15
+Last P20-verified: 2026-09-10
 
 > L0: L2 detail for `OPERATING_RULES.md` §
 > M-task-lifecycle段 (M-n 31).
@@ -35,17 +35,29 @@ explicit directive.
 
 **Output**: tasks completed + commits.
 
-### Phase 3: task-done-notify
+### Phase 3: implementation-handoff
 
-**Trigger**: all sub-tasks done + 验收 pass.
+**Trigger**: all implementation sub-tasks done + local verification and
+regression evidence recorded.
 
 **Methods**:
-- M-n 29 Step 5 (5-step protocol notify)
+- M-n 29 Step 5 (regression-evidence notification)
+- P30 role/state boundary
 - user message directive: "明确告知"
-- Format: ✅ Task done + PASS items list
-  + next directive or continue
+- Format: `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT` plus
+  artifact identity and the bounded evidence list
 
-**Output**: 你 明确 知道 status.
+**Output**: the user knows the implementation status.  This phase cannot
+issue terminal artifact acceptance.
+
+### Phase 3b: independent-acceptance
+
+**Trigger**: a fresh evaluator receives the current artifact and the
+implementation handoff, then completes artifact-first review.
+
+**Authority**: only the evaluator may issue `INDEPENDENT ACCEPTANCE PASS`.
+An evaluator that materially edits the artifact loses authority for the
+resulting state and returns the work to implementation flow.
 
 ### Phase 4: task-retrospective
 
@@ -73,8 +85,8 @@ Apply M-n 31 to user message "中优先级 567 处理":
   - c228 (SUA): M-n 31 codify + L2
     companion (item 6 + 7 combined)
   - c229 (SUA): PLAN update
-- **Phase 3 (task-done-notify)**: this
-  段 IS notify per M-n 29 Step 5 + Phase 3.
+- **Phase 3 (implementation-handoff)**: this
+  段 records the non-terminal implementation handoff per M-n 29 Step 5 + P30.
 - **Phase 4 (task-retrospective)**: per
   M-n 26 → memory update if 必要.
 
@@ -83,25 +95,25 @@ Apply M-n 31 to user message "中优先级 567 处理":
 Per user message prior directive "如果做完任务，
 需要你跟我明确指出":
 
-### Template
+### Implementation handoff template
 
 ```
-✅ Task done (per M-n 31 Phase 3 + M-n 29
-   Step 5 + user message directive 2):
-- PASS items: [list]
-- FAIL items: [list OR none]
-- Next directive: [OR continue per 你]
+IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT
+- Artifact identity: [commit/hash/version/state id]
+- Current role: IMPLEMENTER
+- Local fix status: LOCAL FIX VERIFIED / NOT RUN
+- Regression status: REGRESSION PASS / REGRESSION INCOMPLETE
+- Artifact acceptance: NOT ISSUED
+- Next evaluator: fresh artifact-first independent evaluator
+- Known limits: [list]
 ```
 
-### Examples (from prior sessions)
+### Historical examples (not current terminal templates)
 
-- c221: ✅ Task done — Recent cross-
-  project sync + 3 projects PASS.
-- c226: ✅ Task done — Update order rule
-  codified + propagated to 3 projects
-  PASS.
-- c228 (this turn): ✅ Task done — 3
-  layers in skill + M-n 31 codify PASS.
+Earlier examples that used generic `Task done` / `PASS` wording are historical
+records only.  They must not be reused for a material artifact after P30.
+Use the implementation handoff template above and route terminal decisions to
+the independent evaluator.
 
 ## Project lifecycle (per user message prior)
 
@@ -118,12 +130,15 @@ Per user message prior directive "如果做完任务，
 - Cross-ref maintenance (per P21)
 - Retention R5 (per R5)
 
-### Archive phase (when project done)
+### Archive phase (after independent acceptance)
 
-- Freeze commits (tag release)
+- Freeze or tag only after a valid independent terminal decision
 - Move to .archive/ if 必要
 - Keep context for future reference
 - Update README to "completed" status
+
+An implementation commit may be complete without being accepted.  Archive
+and freeze are not reachable from the implementation-handoff phase alone.
 
 ## Cross-references
 

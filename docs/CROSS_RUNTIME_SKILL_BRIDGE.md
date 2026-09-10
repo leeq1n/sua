@@ -56,15 +56,28 @@ yourself (per P-28 self-application).
 3. **1-line lesson** — one-sentence expected learning
 4. **M-n 16 observe** — Pre-mortem Q1-Q7
 
-## 5-STEP ACCEPTANCE (before "done/complete/PASS")
+## 5-STEP REGRESSION EVIDENCE (before implementation handoff)
 
 ```
 [Build]    file paths + content
 [Content]  1-line description
-[Verdict]  PASS | FAIL | WARNING
+[Execution] EXECUTION_SUCCESS | EXECUTION_FAILED
+[Regression] REGRESSION PASS | REGRESSION INCOMPLETE | NOT RUN
+[Artifact] artifact identity: commit/hash/version/state id
+[Role]     IMPLEMENTER | INDEPENDENT_EVALUATOR | UNSPECIFIED
+[Acceptance] NOT ISSUED | ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED
+[Handoff]  IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT
 [Caveats]  scope limits / gaps / ad-hoc verification
 [Cite]     P## / M-n from PRINCIPLES.md / OPERATING_RULES.md
 ```
+
+`EXECUTION_SUCCESS` and `REGRESSION PASS` are evidence states only.  They
+must not be renamed or wrapped as artifact acceptance.  A bridge runtime must
+not infer evaluator independence from a model name, new session, runtime, or
+role label alone.  For a material artifact, only a separate P30 record with
+matching artifact identity, non-stale prior state, artifact-first first-pass
+evidence, no evaluator material edit, and valid `INDEPENDENT_EVALUATOR`
+authority may issue `INDEPENDENT ACCEPTANCE PASS`.
 
 ## HARD RULES (binding)
 
@@ -74,6 +87,7 @@ yourself (per P-28 self-application).
 - P17 老实说 (no fake green)
 - P20 README ≤ 7KB
 - P22 stuck → plan
+- P30 constructor cannot be the final acceptor; checker output is regression evidence only
 - P-130 external search first
 
 ## Coverage caveat (per AGENTS.md line 80)
@@ -125,3 +139,5 @@ content into this file.
 - `AGENTS.md` — operating rules
 - `core-layer/AGENTS_CORE.md` — cache-stable core
 - Agent Skills open standard: <https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills>
+
+Last P20-verified: 2026-09-10

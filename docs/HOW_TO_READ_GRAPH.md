@@ -6,7 +6,7 @@
 > mentioned (c56 reflection): graph (structure) →
 > sequence (reading) happens **in the reader's head**,
 > not in a tool.  This doc IS the read pattern.
-> Last P20-verified: 2026-08-29
+> Last P20-verified: 2026-09-10
 
 ## What this doc is for
 
@@ -43,6 +43,7 @@ task fits.
 **What to read** (pick ONE based on Step 1):
 - Task is "organize work" → `docs/OPERATING_RULES.md`
 - Task is "modify principles" → `docs/PRINCIPLES_DETAIL.md` P25段
+- Task is "apply P30 acceptance authority" → `docs/PRINCIPLES_DETAIL.md` P30 route → `docs/PRINCIPLES_FULL.md#p30-separation-of-construction-and-acceptance`
 - Task is "add new docs" → `docs/PRINCIPLES_DETAIL.md` P11/P13段
 - Task is "decide between options" → `docs/SWITCH_SIGNALS.md`
 - Task is "discover, establish, falsify, or claim new scientific knowledge"
@@ -66,7 +67,7 @@ type.
 
 **What to read**:
 - L1 says "see X段 in PRINCIPLES_DETAIL.md" → go
-  to that段
+  to that段 or follow the routing row for the named principle
 - L1 says "per P-n" → go to that P-n in
   PRINCIPLES_DETAIL.md
 - L1 says "see c## commit" → `git log` to find
@@ -91,7 +92,7 @@ your task fits:
 | **Verify-don't-guess** (P3, P5, P6, P16, P18, P19, P24) | Test, verify, regression | PRINCIPLES_DETAIL.md P3/P5/P6段 |
 | **Capture-in-writing** (P10, P11, P12, P14, P17, P20, P21) | Doc, cite, structure, cross-ref | PRINCIPLES_DETAIL.md P11/P14/P20段 |
 | **Minimum-viable** (P7, P8, P9, P13) | Simplify, don't over-build | PRINCIPLES_DETAIL.md P7段 |
-| **Meta-rules** (P22, P23, P25, P26) | Modify principles, audit, accept | PRINCIPLES_DETAIL.md P22/P23/P25段 |
+| **Meta-rules** (P22, P23, P25, P26, P27, P28, P30) | Modify principles, audit, accept | PRINCIPLES_DETAIL.md routing index; P30 → PRINCIPLES_FULL.md |
 
 **Decision rule**: pick the family that **best
 describes your task**.  If multiple, pick the one
@@ -228,3 +229,5 @@ as sequence.  Not a tool — a **read pattern**.
 - `docs/OPERATING_RULES.md` (M-rules for workflow)
 - `docs/PRINCIPLES_DETAIL.md` (P20 + P22 detail)
 - `AGENTS.md` "Read first" (parent reference)
+
+Last P20-verified: 2026-09-10

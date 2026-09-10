@@ -34,6 +34,22 @@ is not an independent acceptance of SUA; the required next step is a
 fresh-state, artifact-first audit by an evaluator that did not materially
 implement this amendment.
 
+### P30-A2 terminal-authority closure
+
+P30-A2 adds behavioral fail-closed plumbing for the previously open legacy
+paths.  `p30_acceptance.py` binds the decision to an artifact identity and
+distinguishes `IMPLEMENTER`, `INDEPENDENT_EVALUATOR`, and `UNSPECIFIED`; it
+records `EXECUTION_SUCCESS` separately from `ARTIFACT_ACCEPTANCE`, stales
+prior acceptance after material change, and terminates evaluator authority
+after a material evaluator edit.  M-n 29, M-n 31, the cross-runtime bridge,
+acceptance runners, and hooks now expose implementation/regression evidence
+only unless a complete independent-evaluator state record is supplied.
+
+The current evidence is behavioral contract coverage and active-path
+regression evidence.  It does not constitute independent SUA acceptance; a
+fresh artifact-first/open-world audit of the resulting commit remains
+required.
+
 ## 1-axiomatic verification (per P5 measure
 twice commit once)
 

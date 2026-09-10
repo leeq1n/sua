@@ -98,8 +98,9 @@ failure mode M-n 34 is designed to prevent.
    until you have a project overview.
 3. `docs/PROJECT_STATE.md` — current goal, version, next
    step (1-paragraph snapshot).
-4. `docs/PRINCIPLES_DETAIL.md` — full text of each P-n (L2
-   detail).  Read when you need the rationale behind a rule.
+4. `docs/PRINCIPLES_DETAIL.md` — L2 routing index for extended
+   principle semantics.  For P30, follow its link to the
+   canonical section in `docs/PRINCIPLES_FULL.md`.
 5. `docs/SWITCH_SIGNALS.md` — switch signals + action
    protocol (consulted before every user-message response;
    see conditional load below for trigger reminder).

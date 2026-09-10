@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""verify_after.py — post-commit check (verify-after gate, per M-n 32
+"""verify_after.py — post-commit regression-evidence check (per M-n 32
 Guardrail #1 + core-layer/governance-template.md).
 
 Per user message 2026-07-16: "修改时需要评估，修改后需要验收".
@@ -12,6 +12,7 @@ This script runs AFTER commit.  It checks:
    'M-n 29' reference; OR critical-thinking keyword)
 3. Cold-start simulation: 3 trigger points reachable from
    AGENTS.md entry doc
+4. P30 boundary: execution/regression evidence cannot be terminal acceptance
 
 Non-blocking by default (prints status only).  Hard FAIL on
 critical issues only.
@@ -20,8 +21,8 @@ Usage:
     python agent-tools/scripts/verify_after.py [--strict]
 
 Exit codes:
-    0 — PASS
-    1 — hard FAIL (only with --strict)
+    0 — regression evidence complete or advisory warning
+    1 — hard failure (only with --strict)
 """
 
 from __future__ import annotations
@@ -30,6 +31,14 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+from p30_acceptance import (
+    ROLE_UNSPECIFIED,
+    can_issue_terminal_acceptance,
+    execution_success,
+    git_artifact_identity,
+    record_regression,
+)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -84,14 +93,20 @@ def check_commit_message_compliance() -> tuple[bool, str]:
 def check_cold_start_simulation() -> tuple[bool, str]:
     """Check AGENTS.md + INDEX.md L0 reachability."""
     ag = REPO / "AGENTS.md"
+    core = REPO / "core-layer" / "AGENTS_CORE.md"
+    detail = REPO / "AGENTS_DETAIL.md"
     idx = REPO / "docs" / "INDEX.md"
 
     if not ag.exists():
         return False, "AGENTS.md missing"
+    if not core.exists() or not detail.exists():
+        return False, "core/detail entry surface missing"
     if not idx.exists():
         return False, "INDEX.md missing"
 
     ag_text = ag.read_text(encoding="utf-8")
+    core_text = core.read_text(encoding="utf-8")
+    detail_text = detail.read_text(encoding="utf-8")
     idx_text = idx.read_text(encoding="utf-8")
 
     # Check 3 trigger points
@@ -99,22 +114,54 @@ def check_cold_start_simulation() -> tuple[bool, str]:
         "M-n 34 pre-task scan in AGENTS.md":
             "Pre-task scan (M-n 34" in ag_text,
         "M-n 35 critical-thinking in AGENTS.md":
-            "M_CRITICAL_THINKING_PRIMITIVES_DETAIL" in ag_text,
+            "M_CRITICAL_THINKING_PRIMITIVES_DETAIL" in (
+                ag_text + core_text + detail_text
+            ),
         "core-layer reference in INDEX.md":
             "core-layer" in idx_text,
+        "P30 detail route in PRINCIPLES_DETAIL.md":
+            "P30" in (REPO / "docs" / "PRINCIPLES_DETAIL.md").read_text(encoding="utf-8")
+            and "PRINCIPLES_FULL.md" in (REPO / "docs" / "PRINCIPLES_DETAIL.md").read_text(encoding="utf-8"),
     }
 
     failed = [k for k, v in checks.items() if not v]
     if failed:
         return False, f"trigger points missing: {failed}"
-    return True, "all 3 trigger points reachable"
+    return True, "all documented trigger points reachable"
+
+
+def check_p30_boundary() -> tuple[bool, str]:
+    """Verify post-commit evidence remains a non-terminal handoff."""
+    record = execution_success(
+        role=ROLE_UNSPECIFIED,
+        artifact_identity=git_artifact_identity(REPO),
+        material_artifact=True,
+    )
+    record = record_regression(record, passed=True)
+    allowed, reason = can_issue_terminal_acceptance(record)
+    if allowed:
+        return False, f"P30 boundary incorrectly authorized acceptance: {reason}"
+    return True, (
+        "REGRESSION EVIDENCE ONLY; artifact state="
+        f"{record.artifact_state}; terminal acceptance not issued"
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="verify_after gate")
     parser.add_argument("--strict", action="store_true",
                         help="exit 1 on any FAIL")
+    parser.add_argument(
+        "--terminal-acceptance",
+        action="store_true",
+        help="refuse: terminal acceptance requires a separate P30 state record",
+    )
     args = parser.parse_args()
+
+    if args.terminal_acceptance:
+        print("ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED")
+        print("verify_after.py emits regression evidence only.")
+        return 2
 
     print("=" * 60)
     print("VERIFY_AFTER GATE (per M-n 32 Guardrail #1)")
@@ -124,24 +171,25 @@ def main() -> int:
         check_working_tree_clean(),
         check_commit_message_compliance(),
         check_cold_start_simulation(),
+        check_p30_boundary(),
     ]
 
     print("\nChecks:")
     all_pass = True
     for ok, detail in checks:
-        status = "PASS" if ok else "FAIL"
+        status = "OK" if ok else "FAIL"
         print(f"  {status}: {detail}")
         if not ok:
             all_pass = False
 
     print("\n" + "=" * 60)
     if all_pass:
-        print("RESULT: PASS (all 3 checks)")
+        print("RESULT: REGRESSION EVIDENCE COMPLETE (all checks)")
         return 0
     if args.strict:
-        print("RESULT: FAIL (--strict)")
+        print("RESULT: REGRESSION EVIDENCE INCOMPLETE (--strict)")
         return 1
-    print("RESULT: FAIL (non-blocking)")
+    print("RESULT: REGRESSION EVIDENCE INCOMPLETE (non-blocking)")
     return 0
 
 

@@ -9,6 +9,8 @@ This script runs BEFORE commit.  It checks:
 1. Target state of file being committed exists + is not corrupted
 2. P-n / M-n cited in commit message are valid (P1-P30)
 3. Sibling repos' VERIFICATION.md are in sync (no drift)
+4. P30 boundary remains fail-closed: pre-commit evidence cannot be terminal
+   artifact acceptance
 
 Non-blocking by default (prints warnings only).  Hard FAIL
 on critical errors (per R2 + P17 honest report).
@@ -17,7 +19,7 @@ Usage:
     python agent-tools/scripts/eval_before.py [--strict]
 
 Exit codes:
-    0 — PASS or warning only
+    0 — regression evidence recorded, or warning only
     1 — hard FAIL (only with --strict)
 """
 
@@ -28,6 +30,14 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+from p30_acceptance import (
+    ROLE_UNSPECIFIED,
+    can_issue_terminal_acceptance,
+    execution_success,
+    git_artifact_identity,
+    record_regression,
+)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -101,11 +111,36 @@ def check_repo_clean() -> list[str]:
     return warnings
 
 
+def check_p30_boundary() -> list[str]:
+    """Ensure pre-commit evidence cannot be mistaken for acceptance."""
+    role = os.environ.get("SUA_ROLE", ROLE_UNSPECIFIED)
+    record = execution_success(
+        role=role,
+        artifact_identity=git_artifact_identity(REPO),
+        material_artifact=True,
+    )
+    record = record_regression(record, passed=True)
+    allowed, reason = can_issue_terminal_acceptance(record)
+    if allowed:
+        return [f"P30 boundary failed closed-check: {reason}"]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="eval_before gate")
     parser.add_argument("--strict", action="store_true",
                         help="exit 1 on any warning")
+    parser.add_argument(
+        "--terminal-acceptance",
+        action="store_true",
+        help="refuse: terminal acceptance requires a separate P30 state record",
+    )
     args = parser.parse_args()
+
+    if args.terminal_acceptance:
+        print("ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED")
+        print("eval_before.py emits regression evidence only.")
+        return 2
 
     print("=" * 60)
     print("EVAL_BEFORE GATE (per M-n 32 Guardrail #1)")
@@ -115,6 +150,7 @@ def main() -> int:
     all_warnings.extend(check_commit_message_p_cite())
     all_warnings.extend(check_sibling_sync())
     all_warnings.extend(check_repo_clean())
+    all_warnings.extend(check_p30_boundary())
 
     print("\nChecks:")
     for w in all_warnings:
@@ -122,12 +158,12 @@ def main() -> int:
 
     print("\n" + "=" * 60)
     if not all_warnings:
-        print("RESULT: PASS (no warnings)")
+        print("RESULT: REGRESSION EVIDENCE COMPLETE (no warnings)")
         return 0
     if args.strict:
-        print(f"RESULT: FAIL ({len(all_warnings)} warnings, --strict)")
+        print(f"RESULT: REGRESSION EVIDENCE INCOMPLETE ({len(all_warnings)} warnings, --strict)")
         return 1
-    print(f"RESULT: WARN ({len(all_warnings)} warnings, non-blocking)")
+    print(f"RESULT: REGRESSION EVIDENCE WITH WARNINGS ({len(all_warnings)}, non-blocking)")
     return 0
 
 

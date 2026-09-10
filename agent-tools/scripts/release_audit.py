@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""release_audit.py — pre-release check (M-n 36, per user message 2026-07-16
+"""release_audit.py — pre-release regression check (M-n 36, per user message 2026-07-16
 retrospective audit).
 
 Per user message "判断下问题在哪，怎么处理":
@@ -17,8 +17,11 @@ Default target: SUA itself.  For sibling repos:
     python agent-tools/scripts/release_audit.py ../agent-reflection-skill
 
 Exit codes:
-    0 — PASS (all 5 checks OK, or warnings only)
-    1 — FAIL (at least 1 check found a hard issue)
+    0 — regression evidence complete (all 5 checks OK, or warnings only)
+    1 — regression evidence incomplete (at least 1 hard issue)
+
+This audit never issues artifact acceptance.  P30 terminal acceptance needs a
+separate, explicit state record with independent-evaluator authority.
 """
 
 from __future__ import annotations
@@ -29,6 +32,14 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+from p30_acceptance import (
+    ROLE_UNSPECIFIED,
+    can_issue_terminal_acceptance,
+    execution_success,
+    git_artifact_identity,
+    record_regression,
+)
 
 
 def git(*args, cwd: Path) -> tuple[int, str, str]:
@@ -162,16 +173,33 @@ def main() -> int:
     print("\nChecks:")
     all_pass = True
     for label, (ok, detail) in checks:
-        status = "PASS" if ok else "FAIL"
+        status = "OK" if ok else "FAIL"
         print(f"  [{status}] {label}: {detail}")
         if not ok:
             all_pass = False
 
+    p30_record = execution_success(
+        role=ROLE_UNSPECIFIED,
+        artifact_identity=git_artifact_identity(target),
+        material_artifact=True,
+    )
+    p30_record = record_regression(p30_record, passed=all_pass)
+    p30_allowed, p30_reason = can_issue_terminal_acceptance(p30_record)
+    print("\nP30 boundary:")
+    print(
+        "  REGRESSION EVIDENCE ONLY: "
+        f"artifact_state={p30_record.artifact_state}; "
+        f"artifact_acceptance={p30_record.artifact_acceptance}"
+    )
+    if p30_allowed:
+        print(f"  ERROR: terminal authority unexpectedly available: {p30_reason}")
+        return 2
+
     print("\n" + "=" * 60)
     if all_pass:
-        print(f"RESULT: PASS (all 5 checks for {target.name})")
+        print(f"RESULT: REGRESSION EVIDENCE COMPLETE (all 5 checks for {target.name})")
         return 0
-    print(f"RESULT: FAIL (1+ checks failed for {target.name})")
+    print(f"RESULT: REGRESSION EVIDENCE INCOMPLETE (1+ checks failed for {target.name})")
     return 1
 
 

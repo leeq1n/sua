@@ -69,7 +69,7 @@ fi
     echo "#   Step 2a 4 critical-thinking primitives — Y / N"
     echo "#     (质疑 / 逆向 / 预演失败 / 对立论证 — per M-n 35)"
     echo "#   Order by task profile: open-ended expands/synthesizes before terminal critique; well-specified executes directly"
-    echo "#   Step 3 Validate (all PASS) — Y / N"
+    echo "#   Step 3 Validate regression evidence (not terminal acceptance) — Y / N"
     echo "#   Step 4 If FAIL → re-verify cycle — Y / N"
     echo "#   Step 5 Notify this 'task done' — Y / N"
     echo "# Run: python agent-tools/scripts/m_n29_5step.py --self --task-profile open-ended --claim 'task'"

@@ -127,23 +127,37 @@ refactors; skip for trivial fixes.  Full details:
    - 2-3 strongest opposing arguments
    - Acknowledge valid opposing points
 
-## Step 3: Validate 验收 condition
+## Step 3: Validate regression evidence and authority condition
 
 Per user message Part 4 "确认没问题":
 
-| Check | PASS criteria |
+| Check | Required evidence |
 |---|---|
-| All acceptance criteria | 全部 PASS (no FAIL / PARTIAL) |
+| Implementation checks | Bounded evidence only; implementer reports `REGRESSION PASS`, not terminal acceptance |
 | 5 constructive primitives | All applicable primitives have observable outputs; labels alone fail |
 | Open-ended constructive quality | Output space expanded with structurally distinct alternatives and a donor transfer; well-specified execution is exempt |
 | Phase ordering | Bounded Add and synthesis precede terminal critique, except immediate hard stops |
 | 4 critical-thinking primitives | Default-on for high-stakes: 质疑 + 逆向 + 预演失败 + 对立论证 |
-| Evidence recorded | test output / commit hash / file size |
+| Evidence recorded | test output / commit hash / file size / artifact identity |
 | R1-R12 ALL PASS | Per c173 + per latest VERIFICATION.md |
 | P-n compliance | All 26 P-n applicable cited |
 | M-n compliance | All applicable M-n applied |
 | Framework-agnostic | All 4 frameworks (Hermes/Codex/Claude Code/Cursor) |
 | P17 老实说 | Don't claim green when yellow |
+
+For a material artifact, the M-n 29 checklist is not sufficient for terminal
+acceptance.  The shared P30 state boundary must also show:
+
+- `CURRENT_ROLE = INDEPENDENT_EVALUATOR`;
+- a matching `ARTIFACT_IDENTITY` and non-stale prior state;
+- `INDEPENDENT_AUDIT_STATUS = INDEPENDENT AUDIT COMPLETE`;
+- artifact-first review with first-pass findings frozen before rationale;
+- `EVALUATOR_MATERIAL_EDIT = NO`; and
+- `EVALUATOR_AUTHORITY_VALID = YES`.
+
+Missing, unknown, contradictory, or stale fields fail closed to
+`ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED`.  An implementer or checker
+may produce regression evidence but cannot issue `INDEPENDENT ACCEPTANCE PASS`.
 
 ### Global-progress acceptance
 
@@ -159,7 +173,7 @@ There is **no fixed rejection count**. The trigger is evidence of repeated
 same-structure terminal decisions plus absence of global progress. A
 validation or retrieval tool must not silently become the generation policy.
 
-### Step 4: If FAIL → 新 任务 cycle
+### Step 4: If regression evidence fails or the evaluator materially edits → 新 任务 cycle
 
 Per user message Part 5: "如果验收没通过，就需
 要当作新任务继续修改（每次你认为做完任务
@@ -168,30 +182,43 @@ Per user message Part 5: "如果验收没通过，就需
 1. Create new task in PLAN_DETAIL
 2. Re-execute fix
 3. Re-verify (回到 step 2)
-4. Loop until ALL PASS
+4. Loop until bounded regression evidence is complete, then hand off for a
+   fresh independent audit.  Do not loop from implementation directly to
+   terminal artifact acceptance.
 
-### Step 5: If PASS → 明确 通知 你
+### Step 5: If regression evidence is sufficient → implementation handoff
 
 Per user message Part 6: "通过了得跟用户明确说明":
 
-- 明确 indicate "任务 完成 + 验收 通过"
-- List acceptance criteria + evidence
-- Per P17: don't claim PASS without evidence
+- 明确 indicate `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`
+- List artifact identity and bounded regression evidence
+- Mark artifact acceptance `NOT ISSUED`
+- Per P30: only the later fresh evaluator may issue terminal acceptance
 - Per M-n 24: pace-continuity 中 明确 通知
   you is allowed
 
-## 验收 report template
+## Regression-evidence / acceptance-state template
 
 Per Claude acceptance-criteria-verification
 skill + NASA SWE-034:
 
 ```
-## Verification Report
+## Verification / Acceptance-State Report
 
 **Run**: 2026-07-15T15:30:00Z
 **By**: agent
 **Commit**: <hash>
 **Branch**: master
+**ARTIFACT_IDENTITY**: <commit/hash/version/state id>
+**CURRENT_ROLE**: IMPLEMENTER / INDEPENDENT_EVALUATOR / UNSPECIFIED
+**MATERIAL_MODIFICATION_SINCE_LAST_ACCEPTANCE**: YES / NO / UNKNOWN
+**PRIOR_ACCEPTANCE_STATE**: VALID / STALE / NONE
+**LOCAL_FIX_STATUS**: LOCAL FIX VERIFIED / NOT RUN
+**REGRESSION_STATUS**: REGRESSION PASS / REGRESSION INCOMPLETE / NOT RUN
+**INDEPENDENT_AUDIT_STATUS**: INDEPENDENT AUDIT COMPLETE / INDEPENDENT AUDIT REQUIRED / NOT RUN
+**EVALUATOR_MATERIAL_EDIT**: YES / NO / UNKNOWN
+**EVALUATOR_AUTHORITY_VALID**: YES / NO / UNKNOWN
+**TERMINAL_ACCEPTANCE_STATUS**: NOT ISSUED / ACCEPTANCE BLOCKED / INDEPENDENT ACCEPTANCE PASS
 
 ### Results
 
@@ -205,7 +232,7 @@ skill + NASA SWE-034:
 
 | Status | Count |
 |--------|-------|
-| PASS | X |
+| REGRESSION PASS | X |
 | FAIL | X |
 | PARTIAL | X |
 | SKIP | X |
@@ -229,7 +256,8 @@ skill + NASA SWE-034:
 ### Next steps
 
 - [ ] <if FAIL: action items>
-- [x] <if PASS: notification>
+- [x] <if implementation-only: `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`>
+- [ ] <if terminal acceptance requested: independent artifact-first decision record>
 ```
 
 ## Worked example (c203 self-application)
@@ -257,19 +285,22 @@ P-n (per 26 P-n) + M-n (per 28 M-n).
 - 总结: this L2 companion IS the protocol
   总结.
 
-**Step 3 (Validate)**: All PASS.
+**Step 3 (Validate)**: Regression evidence is complete; this does not issue
+terminal artifact acceptance.
 
 **Step 4 (FAIL check)**: No FAIL.
 
-**Step 5 (PASS notification)**: This
-section.
+**Step 5 (implementation handoff)**: This
+section.  A separate fresh evaluator is required
+for any terminal artifact decision.
 
 ## Relationship to M-n 28
 
 M-n 28 (plan-conditional) is BEFORE M-n 29
 (acceptance):
 - M-n 28 = when to plan vs continue.
-- M-n 29 = when task complete, verify.
+- M-n 29 = when implementation is complete, record regression evidence and
+  hand off; terminal artifact acceptance remains a separate P30 decision.
 
 Sequence: plan (M-n 28) → execute → accept
 (M-n 29) → notify.

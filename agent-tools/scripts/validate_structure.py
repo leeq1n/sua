@@ -35,6 +35,7 @@ CRITICAL_PATHS = [
     "agent-tools/scripts/validate_links.py",
     "agent-tools/scripts/validate_structure.py",
     "agent-tools/scripts/token_budget.py",
+    "agent-tools/scripts/p30_acceptance.py",
     # Hook config
     "agent-tools/hook_principles.json",
     # Open source compliance (per v2.3.0)

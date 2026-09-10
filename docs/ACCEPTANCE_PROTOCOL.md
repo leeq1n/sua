@@ -98,30 +98,44 @@ Practical file naming:
 - `docs/ACCEPTANCE_PROTOCOL.md` — this protocol (project layer)
 - `~/.config/sua/acceptance/ACCEPTANCE_<DATE>.md` — your state (user layer)
 
-## 4. Acceptance report structure
+## 4. Acceptance state/report structure
 
-Each acceptance run produces a report with:
+Each terminal material-artifact workflow produces a P30 state record before
+any terminal decision.  Ordinary checkers may produce regression evidence
+without creating an acceptance record.  The shared fail-closed state boundary
+is implemented in `agent-tools/scripts/p30_acceptance.py`.
 
 ```markdown
-# Acceptance Report — <DATE>
+# Artifact Acceptance State Record — <DATE>
 
-## State at acceptance
+## Artifact and authority state
 - HEAD: <git SHA>
+- ARTIFACT_IDENTITY: <commit/hash/version/state id>
 - Tag: <vX.Y.Z if tagged>
 - Working tree: clean / dirty
 - Python version: <ver>
 - Platform: <Windows/Mac/Linux>
+- MATERIAL_ARTIFACT: YES / NO
+- CURRENT_ROLE: IMPLEMENTER / INDEPENDENT_EVALUATOR / UNSPECIFIED
+- ARTIFACT_STATE: UNACCEPTED / ACCEPTED / STALE_AFTER_MATERIAL_CHANGE / READY_FOR_INDEPENDENT_AUDIT
+- MATERIAL_MODIFICATION_SINCE_LAST_ACCEPTANCE: YES / NO / UNKNOWN
+- PRIOR_ACCEPTANCE_STATE: VALID / STALE / NONE
+- PRIOR_ARTIFACT_IDENTITY: <identity or NONE>
+- EVALUATOR_MATERIAL_EDIT: YES / NO / UNKNOWN
+- EVALUATOR_AUTHORITY_VALID: YES / NO / UNKNOWN
 
 ## Run command
 - bash sua-verify-<name>.py
 - python -m pytest tests/
 
-## Results
+## Evidence states
 | Check | Result | Detail |
 |---|---|---|
-| pytest | PASS / FAIL | passed=X/Y |
-| cross_repo_audit | PASS / FAIL | total_failures=N |
-| self_health_check | PASS / FAIL | failures=[...] |
+| local fix | LOCAL FIX VERIFIED / NOT RUN | targeted issue evidence |
+| regression | REGRESSION PASS / REGRESSION INCOMPLETE / NOT RUN | specified checks only |
+| execution | EXECUTION_SUCCESS / EXECUTION_FAILED | runtime/task completion only |
+| independent audit | INDEPENDENT AUDIT COMPLETE / INDEPENDENT AUDIT REQUIRED / NOT RUN | fresh artifact-first evaluator |
+| evaluator edit | YES / NO / UNKNOWN | material edit terminates evaluator authority |
 | ... | ... | ... |
 
 ## Findings
@@ -135,21 +149,35 @@ Each acceptance run produces a report with:
 - MINOR: can defer to next session
 - INFO: documentation only
 
-## Verdict
-PASS / FAIL / DEFERRED
+## Terminal decision
+- LOCAL_FIX_STATUS: <status>
+- REGRESSION_STATUS: <status>
+- INDEPENDENT_AUDIT_STATUS: <status>
+- TERMINAL_ACCEPTANCE_STATUS: NOT ISSUED / ACCEPTANCE BLOCKED / INDEPENDENT ACCEPTANCE PASS
+- ISSUER_ROLE: <explicit role>
+
+For a material artifact, an unknown, missing, contradictory, or stale
+authority field yields `ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED`.
+Only a fresh `INDEPENDENT_EVALUATOR` with matching artifact identity,
+artifact-first first-pass evidence, no material edit, and valid authority may
+issue `INDEPENDENT ACCEPTANCE PASS`.  `EXECUTION_SUCCESS`, checker output,
+`REGRESSION PASS`, and an implementation handoff never issue it.
 
 ## Next action
 If independent audit finds a material issue → Phase 4, then a new Phase 3.
 If the result is implementation-only → report READY FOR INDEPENDENT AUDIT.
-If the result is deferred → capture it in TODO without claiming acceptance.
+If a material evaluator edit occurs → terminate that evaluator authority,
+mark the resulting state stale, and return to implementation flow.
 ```
 
-## 5. Acceptance tools (sua-verify- prefix scripts)
+## 5. Regression-evidence tools (sua-verify- prefix scripts)
 
 Currently 3 scripts in `agent-tools/scripts/`:
 - `self_health_check.py` — string pattern checks
 - `cross_repo_audit.py` — sibling pollution check
 - `hook_principles_loader.py` — Q2 closure registry
+- `p30_acceptance.py` — shared role/state/identity boundary; terminal mode is
+  fail-closed unless all P30 evidence fields are explicit
 
 Recommended new tools (per gap analysis):
 - `validate_links.py` — markdown cross-reference integrity (22 broken refs found)
@@ -162,23 +190,29 @@ These should be invoked from a single entrypoint:
 bash agent-tools/scripts/run_acceptance.sh
 ```
 
-This produces the ACCEPTANCE_<DATE>.md report.
+This produces regression evidence only.  It does not produce or imply
+`INDEPENDENT ACCEPTANCE PASS`.
 
-## 6. Acceptance as gate (notifier + rejector)
+## 6. Regression evidence as gate (notifier + rejector)
 
 Two modes:
 
 ### 6a. Advisory mode (default)
 
-- Run acceptance → produce report
+- Run regression checks → produce evidence
 - Decision is human's
 - No automatic reject
 
 ### 6b. Gate mode (STRICT_EVAL=1)
 
-- Run acceptance → if FAIL, reject commit
+- Run regression checks → if incomplete, reject the technical transition
 - Pre-commit hook: `bash agent-tools/scripts/run_acceptance.sh --gate`
 - Set in `.git/hooks/pre-commit`
+
+`--gate` is a technical regression gate only.  It never authorizes artifact
+acceptance.  A request for terminal acceptance must use the P30 state record;
+missing role, identity, non-stale state, artifact-first evidence, or clean
+evaluator-authority fields is refused.
 
 ## 7. Implementation plan
 
@@ -191,11 +225,21 @@ updated under the principle-modification procedure.
 - `docs/ACCEPTANCE_PROTOCOL.md` (this file) — already done
 - `agent-tools/scripts/run_acceptance.sh` — single entrypoint
 - `agent-tools/scripts/validate_links.py` — link integrity check
+- `agent-tools/scripts/p30_acceptance.py` — shared P30 authority/state boundary
 
 ### Files to modify
 - `hooks/pre-commit` — add acceptance run (gated by STRICT_EVAL)
 - `docs/PROJECT_STATE.md` — add acceptance protocol reference
 - `AGENTS.md` — add acceptance phase to task-done-notify
+
+### P30-A2 active-path correction
+
+The current active-path correction keeps M-n 29/M-n 31 execution and
+implementation completion useful, but routes their output to regression
+evidence and an independent-audit handoff.  `run_acceptance.sh`,
+`verify_after.py`, `eval_before.py`, `release_audit.py`, and the pre-commit and
+pre-push hooks call or enforce the shared P30 boundary.  A terminal request
+without a complete role/identity/audit state is refused.
 
 ### Files NOT to modify (留新 session)
 - `core-layer/AGENTS_CORE.md` — core layer change requires M-n 15

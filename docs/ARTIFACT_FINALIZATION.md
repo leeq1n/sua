@@ -100,7 +100,11 @@ alone.
 
 The implementer may report `LOCAL FIX VERIFIED` and `REGRESSION PASS`, then
 must hand off with `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`.
-Only the independent evaluator may issue terminal acceptance.
+The handoff must carry the current `ARTIFACT_IDENTITY`, `CURRENT_ROLE`, prior
+acceptance/material-change state, regression status, and evaluator-edit state.
+Only the independent evaluator may issue terminal acceptance.  The shared
+`p30_acceptance.py` boundary fails closed when those fields are missing,
+contradictory, stale, or not backed by an artifact-first audit.
 
 Ask: if an informed evaluator encountered only the current artifact, would its
 structure and behavior be natural, self-consistent, and appropriate for the
@@ -123,6 +127,11 @@ and no unresolved finding threatens evidence or interface fitness. Do not
 start another polish cycle without a new material finding. The normal outcome
 is promote, hold, or return to the existing owning process; these are not new
 SUA decision states.
+
+If the evaluator materially edits the artifact during audit, mark
+`EVALUATOR_AUTHORITY_VALID = NO`, terminate that evaluator's authority, mark
+the resulting artifact state stale, and return to implementation flow.  The
+same evaluator cannot issue the terminal decision for that edited state.
 
 ## Mechanism-general examples
 

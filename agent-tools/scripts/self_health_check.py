@@ -18,9 +18,11 @@ What it audits (read-only, output as JSON):
   5. No 'I promise / I will remember' in recent commit
      messages (R159 verbal-only commitment detector).
 
-Output: JSON to stdout. CI integration: nonzero exit if any
-check fails. By default the audit is *advisory*; fail-nonzero
-is informational and the calling hook decides enforcement.
+Output: JSON to stdout.  The JSON is explicitly classified as
+``REGRESSION_EVIDENCE`` and ``artifact_acceptance=NOT_ISSUED``.  CI
+integration: nonzero exit if any check fails. By default the audit is
+*advisory*; fail-nonzero is informational and the calling hook decides
+enforcement.  This checker never issues terminal artifact acceptance.
 
 Run: python agent-tools/scripts/self_health_check.py
 """
@@ -75,7 +77,7 @@ def audit_changelog_covers_recent_tags():
 
 def audit_sua_scripts_intact():
     p = SUA / "agent-tools" / "scripts"
-    expected = ["eval_before.py", "verify_after.py"]
+    expected = ["eval_before.py", "verify_after.py", "p30_acceptance.py"]
     missing = [e for e in expected if not (p / e).exists()]
     return {"missing_sua_scripts": missing}
 
@@ -187,6 +189,8 @@ def audit_recent_commits_cite_mn34_pre_task(n=10):
 def main():
     report = {
         "audit_target": str(SUA),
+        "evidence_class": "REGRESSION_EVIDENCE",
+        "artifact_acceptance": "NOT_ISSUED",
         "audit_timestamp_utc": _git("-C", str(SUA), "log", "-1", "--pretty=%cI").strip() or "unknown",
         "checks": {
             "recent_commits_pn_in_body": audit_recent_commits_pn_in_body(),
@@ -204,7 +208,11 @@ def main():
             if isinstance(v, list) and v:
                 failures.append(f"{name}.{k}")
     report["failures"] = failures
-    report["verdict"] = "PASS" if not failures else "FAIL"
+    report["verdict"] = (
+        "REGRESSION_EVIDENCE_COMPLETE"
+        if not failures
+        else "REGRESSION_EVIDENCE_INCOMPLETE"
+    )
     print(json.dumps(report, indent=2, ensure_ascii=False))
     return 1 if failures else 0
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pre-push hook — final ship gate before GitHub push.
+# pre-push hook — final technical regression gate before GitHub push.
 #
 # Per "Why Bugs Reach Production" (Total Shift Left) + RCA
 # best practices, this hook runs the FULL verification suite
@@ -15,13 +15,15 @@
 #
 # Per M-n 32 Guardrail #1 (verify target state before ship)
 # + M-n 34 pre-task scan (verifying pre-push = verifying
-# pre-ship).
+# pre-ship).  This hook never issues terminal artifact acceptance; P30
+# requires a separate independent-evaluator state record.
 
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SELF_HEALTH="$REPO_ROOT/agent-tools/scripts/self_health_check.py"
 VALIDATE_LINKS="$(cygpath -w "$REPO_ROOT/agent-tools/scripts/validate_links.py" 2>/dev/null || echo "$REPO_ROOT/agent-tools/scripts/validate_links.py")"
+P30_STATE="$REPO_ROOT/agent-tools/scripts/p30_acceptance.py"
 
 echo "================================================================"
 echo "PRE-PUSH GATE (per RCA: test before release)"
@@ -57,9 +59,9 @@ try:
     failures = d.get('failures', [])
     blocker = [f for f in failures if 'BLOCKER' in str(f) or 'blocker' in str(f)]
     # Note: current self_health_check doesn't have severity
-    # field; treat all as advisory. Check if verdict = FAIL
-    # and check if any failure indicates BLOCKER.
-    if d.get('verdict') == 'FAIL':
+    # field; treat all as advisory. Check the explicit regression status
+    # and whether any failure indicates BLOCKER.
+    if 'INCOMPLETE' in str(d.get('verdict', '')).upper():
         # Heuristic: look for 'BLOCKER' keyword in failures
         blocker = [f for f in failures if 'BLOCKER' in str(f).upper()]
     print(len(blocker))
@@ -76,7 +78,7 @@ except Exception:
         echo "self_health_check: FAIL but advisory only (per its docstring)"
         echo "  Not blocking pre-push. See docs/ for full failure list."
     else
-        echo "self_health_check: PASS"
+        echo "self_health_check: OK (regression evidence)"
     fi
 else
     echo "self_health_check.py not found — skipping"
@@ -93,7 +95,7 @@ if [ -f "$VALIDATE_LINKS" ]; then
         VALIDATE_LINKS_NATIVE="$VALIDATE_LINKS"
     fi
     if python "$VALIDATE_LINKS_NATIVE" 2>&1; then
-        echo "validate_links: PASS"
+        echo "validate_links: OK (regression evidence)"
     else
         rc=$?
         echo
@@ -121,11 +123,29 @@ if [ "$violations" != "0" ]; then
         AGENTS.md core-layer/AGENTS_CORE.md AGENTS_DETAIL.md CHANGELOG.md 2>/dev/null
     exit 1
 else
-    echo "P-14: PASS (0 violations)"
+    echo "P-14: OK (0 violations; regression evidence)"
+fi
+
+# 4. P30 authority boundary (always non-terminal)
+echo
+echo "--- 4. P30 acceptance boundary ---"
+if [ -f "$P30_STATE" ]; then
+    if command -v cygpath >/dev/null 2>&1; then
+        P30_STATE_NATIVE="$(cygpath -w "$P30_STATE")"
+    else
+        P30_STATE_NATIVE="$P30_STATE"
+    fi
+    python "$P30_STATE_NATIVE" --regression-evidence \
+        --role "${SUA_ROLE:-UNSPECIFIED}" \
+        --regression-status "REGRESSION PASS"
+    echo "P30: regression evidence recorded; artifact acceptance not issued"
+else
+    echo "PRE-PUSH BLOCKED: p30_acceptance.py not found" >&2
+    exit 1
 fi
 
 echo
 echo "================================================================"
-echo "PRE-PUSH PASSED — safe to push"
+echo "PRE-PUSH REGRESSION GATE COMPLETE — no artifact acceptance issued"
 echo "================================================================"
 exit 0

@@ -9,6 +9,22 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-10 — P30-A2 terminal-authority closure
+
+### Unreleased — fail-closed acceptance plumbing
+
+The P30-A2 correction closes the remaining legacy M-n 29/M-n 31 and
+cross-runtime completion paths that could be mistaken for artifact acceptance.
+It adds a shared role/state/artifact-identity boundary, separates
+`EXECUTION_SUCCESS` from `ARTIFACT_ACCEPTANCE`, records material-change
+staleness and evaluator-edit authority termination, and routes the generic
+principle-detail entry to the canonical P30 section.  Active checkers and
+hooks now report regression evidence only; terminal acceptance remains
+blocked unless a complete independent-evaluator state record is supplied.
+
+This entry records implementation scope and regression evidence only.  A
+fresh independent SUA audit remains required.
+
 ## 2026-09-10 — P30 separation of construction and acceptance
 
 ### Unreleased — role-separated artifact acceptance
