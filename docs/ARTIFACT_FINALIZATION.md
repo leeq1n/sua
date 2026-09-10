@@ -110,6 +110,24 @@ verifier may confirm that the record matches the exact unchanged clean
 artifact, but it cannot create the decision or prove that the evaluator was
 genuinely independent.
 
+### P30-A4 post-acceptance liveness
+
+Once the external evaluator has produced the P30-A3 record, the repository's
+only post-acceptance entry point is
+`finalize_accepted_artifact(external_acceptance_record)` (also exposed as
+`--finalize-accepted-artifact`). It consumes the record from outside the
+candidate repository, delegates schema/role/decision/identity checks to the
+existing verifier, recomputes the clean current identity immediately before
+finalization, and rejects any drift or dirty state.
+
+Successful finalization writes one atomic JSON ledger outside the candidate
+repository with `ACCEPTED_FROZEN` as its canonical state. The ledger records
+the exact accepted commit identity and the reference to the external record;
+it does not change the audited tree, create a terminal decision, or claim
+`repository_proved_independence = true`. A failed verification or failed
+ledger write leaves no new accepted/frozen marker. The old candidate APIs and
+automatic loops remain nonterminal and candidate-only.
+
 P30-A3 has two enforcement layers:
 
 - **Machine-enforceable:** computed artifact identity, clean-state requirement,

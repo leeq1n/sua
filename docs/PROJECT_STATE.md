@@ -54,6 +54,11 @@ local tooling computes the exact clean artifact identity and regression state,
 but only verifies an already-existing external independent-audit record outside
 the candidate repository. The verifier cannot manufacture or prove
 independence; the amended state still requires a fresh independent SUA audit.
+P30-A4 adds the single explicit post-acceptance liveness edge: after that
+external record is verified against the unchanged clean commit, a finalizer
+atomically records one external `ACCEPTED_FROZEN` ledger for the exact
+identity. It does not modify the audited tree, create the external decision,
+or reopen legacy candidate-to-core promotion.
 
 The Phase A addendum separately tests whether SUA can detect recurring domain-
 methodology inadequacy before a user requests specialization. The Layer 1

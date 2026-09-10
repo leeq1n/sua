@@ -119,7 +119,12 @@ The shared boundary is implemented in
 name is retained only as a compatibility alias for external-record
 verification; without `--external-record` it fails closed. The local API
 `issue_terminal_acceptance()` is a compatibility trap that always refuses
-creation.
+creation. After an independent evaluator has produced a matching external
+record, the dedicated `--finalize-accepted-artifact` path may consume that
+record and write the one canonical accepted/frozen finalization ledger. This
+path records the externally supplied decision; it does not create
+`INDEPENDENT ACCEPTANCE PASS`, prove evaluator independence, or mutate the
+audited candidate commit.
 
 ```markdown
 # Artifact Implementation Handoff — <DATE>
@@ -219,14 +224,48 @@ the evaluator or convert a self-authored JSON file into proof of independence.
 The record path is required to resolve outside the candidate repository so the
 implementer cannot accept itself by committing a record into the candidate.
 
+### 4b. Post-acceptance finalization (P30-A4)
+
+The complete material-artifact lifecycle is:
+
+1. Produce a clean candidate commit.
+2. Run local regression and retain candidate-only evidence.
+3. Hand off the exact computed commit identity for a fresh independent audit.
+4. The fresh evaluator produces the external P30-A3 acceptance record outside
+   the candidate repository.
+5. Invoke the dedicated finalizer with that record and an external ledger:
+
+   ```text
+   python agent-tools/scripts/p30_acceptance.py \
+     --finalize-accepted-artifact \
+     --repo <candidate-repository> \
+     --external-record <external-audit-record.json> \
+     --finalization-ledger <external-finalization-ledger.json>
+   ```
+
+6. The finalizer recomputes the current clean identity, reuses the P30-A3
+   verifier, requires exact equality, and atomically records the
+   `ACCEPTED_FROZEN` state for that exact commit.
+7. The external ledger is the canonical post-acceptance state; it contains
+   the accepted identity, external-record reference, external decision,
+   timestamp, action, and canonical state. Writing it does not alter the
+   audited candidate tree or HEAD.
+
+Step 5 cannot substitute for Step 4. Missing, dirty, stale, drifted,
+inside-repository, incomplete, non-accepting, or evaluator-edited records are
+rejected before any accepted/frozen marker is written. Ordinary
+`promote_candidate`, `promote_patch`, and automatic candidate paths remain
+candidate-only.
+
 ## 5. Regression-evidence tools (sua-verify- prefix scripts)
 
 Currently 3 scripts in `agent-tools/scripts/`:
 - `self_health_check.py` — string pattern checks
 - `cross_repo_audit.py` — sibling pollution check
 - `hook_principles_loader.py` — Q2 closure registry
-- `p30_acceptance.py` — computes identity, prepares handoffs, and verifies
-  external records; it never creates terminal acceptance
+- `p30_acceptance.py` — computes identity, prepares handoffs, verifies
+  external records, and provides the explicit post-acceptance finalizer; it
+  never creates terminal acceptance
 
 Recommended new tools (per gap analysis):
 - `validate_links.py` — markdown cross-reference integrity (22 broken refs found)

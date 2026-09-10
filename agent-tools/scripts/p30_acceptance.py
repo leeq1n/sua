@@ -17,7 +17,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
+import tempfile
+from datetime import datetime, timezone
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Mapping
@@ -54,6 +57,11 @@ ACCEPTANCE_BLOCKED = "ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED"
 
 P30_SCHEMA_VERSION = "P30-A3/v1"
 EXTERNAL_RECORD_TYPE = "P30_EXTERNAL_INDEPENDENT_AUDIT"
+P30_A4_SCHEMA_VERSION = "P30-A4/v1"
+CANONICAL_STATE_ACCEPTED_FROZEN = "ACCEPTED_FROZEN"
+FINALIZATION_ACTION_CANONICAL_ACCEPTED_FROZEN = "CANONICAL_ACCEPTED_FROZEN"
+CANONICAL_FINALIZATION_RECORDED = "CANONICAL_FINALIZATION_RECORDED"
+CANONICAL_FINALIZATION_REJECTED = "CANONICAL_FINALIZATION_REJECTED"
 EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT = (
     "EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT"
 )
@@ -116,6 +124,35 @@ class ExternalAcceptanceVerification:
     machine_independence_statement: str = MACHINE_INDEPENDENCE_PROOF
     artifact_acceptance: str = NOT_ISSUED
     terminal_acceptance_status: str = NOT_ISSUED
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class CanonicalFinalization:
+    """Identity-preserving post-acceptance finalization result.
+
+    The finalizer consumes an already-existing external decision.  It never
+    creates ``INDEPENDENT ACCEPTANCE PASS`` and never asserts that evaluator
+    independence was machine-proven.  The durable ledger is the one
+    canonical accepted/frozen state and is kept outside the candidate repo so
+    recording it does not change the audited commit identity.
+    """
+
+    finalized: bool
+    status: str
+    reason: str
+    accepted_artifact_identity: str
+    external_acceptance_record_reference: str = ""
+    external_decision: str = ""
+    finalization_timestamp: str = ""
+    finalization_action: str = ""
+    current_canonical_state: str = "NOT_FINALIZED"
+    finalization_ledger_path: str = ""
+    external_verification_status: str = EXTERNAL_ACCEPTANCE_RECORD_REJECTED
+    repository_proved_independence: bool = False
+    terminal_acceptance_status: str = ACCEPTANCE_BLOCKED
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -631,6 +668,245 @@ def verify_external_acceptance_record(
     )
 
 
+def _rejected_finalization(
+    *,
+    current: CurrentArtifactIdentity,
+    reason: str,
+    ledger_path: Path | None = None,
+    record_path: Path | None = None,
+    external_verification_status: str = EXTERNAL_ACCEPTANCE_RECORD_REJECTED,
+    external_decision: str = "",
+) -> CanonicalFinalization:
+    return CanonicalFinalization(
+        finalized=False,
+        status=CANONICAL_FINALIZATION_REJECTED,
+        reason=reason,
+        accepted_artifact_identity=current.identity,
+        external_acceptance_record_reference=str(record_path) if record_path else "",
+        external_decision=external_decision,
+        finalization_ledger_path=str(ledger_path) if ledger_path else "",
+        external_verification_status=external_verification_status,
+        repository_proved_independence=False,
+        terminal_acceptance_status=ACCEPTANCE_BLOCKED,
+    )
+
+
+def finalize_accepted_artifact(
+    external_acceptance_record: Mapping[str, object] | None,
+    *,
+    repo: Path | str | None = None,
+    record_path: Path | str | None = None,
+    finalization_ledger: Path | str | None = None,
+) -> CanonicalFinalization:
+    """Consume a matching external decision and record canonical finality.
+
+    This is the sole P30-A4 post-acceptance entry point.  It first delegates
+    all acceptance checks to :func:`verify_external_acceptance_record`, then
+    recomputes the identity once more immediately before the atomic ledger
+    write.  The ledger is required outside the candidate repository, so the
+    audited commit remains the exact accepted identity and the candidate
+    tree is not mutated during finalization.
+
+    The function deliberately records the external decision as consumed; it
+    does not create that decision and does not claim machine proof of
+    evaluator independence.
+    """
+
+    root = Path(repo).resolve() if repo is not None else Path(__file__).resolve().parents[2]
+    current = compute_current_artifact_identity(root)
+    record = Path(record_path).resolve() if record_path is not None else None
+    ledger = Path(finalization_ledger).resolve() if finalization_ledger is not None else None
+
+    if record is None:
+        return _rejected_finalization(
+            current=current,
+            reason="external audit record path is required",
+            ledger_path=ledger,
+        )
+    if ledger is None:
+        return _rejected_finalization(
+            current=current,
+            reason="finalization ledger path is required",
+            record_path=record,
+        )
+    if record == ledger:
+        return _rejected_finalization(
+            current=current,
+            reason="external audit record and finalization ledger must be distinct",
+            ledger_path=ledger,
+            record_path=record,
+        )
+    if not _record_path_is_external(ledger, root):
+        return _rejected_finalization(
+            current=current,
+            reason="finalization ledger must be outside the candidate repository",
+            ledger_path=ledger,
+            record_path=record,
+        )
+    if not ledger.parent.is_dir():
+        return _rejected_finalization(
+            current=current,
+            reason="finalization ledger parent directory does not exist",
+            ledger_path=ledger,
+            record_path=record,
+        )
+    if ledger.exists() and not ledger.is_file():
+        return _rejected_finalization(
+            current=current,
+            reason="finalization ledger path is not a regular file",
+            ledger_path=ledger,
+            record_path=record,
+        )
+
+    verification = verify_external_acceptance_record(
+        external_acceptance_record,
+        repo=root,
+        record_path=record,
+    )
+    if not verification.verified:
+        return _rejected_finalization(
+            current=compute_current_artifact_identity(root),
+            reason=verification.reason,
+            ledger_path=ledger,
+            record_path=record,
+            external_verification_status=verification.status,
+            external_decision=verification.external_terminal_decision,
+        )
+
+    # The verifier computes identity itself.  Recompute after it returns so a
+    # commit or working-tree change between verification and finalization
+    # cannot be silently accepted.
+    current_after_verification = compute_current_artifact_identity(root)
+    if (
+        not current_after_verification.clean
+        or current_after_verification.identity != verification.artifact_identity
+    ):
+        return _rejected_finalization(
+            current=current_after_verification,
+            reason="artifact changed after external acceptance verification",
+            ledger_path=ledger,
+            record_path=record,
+            external_verification_status=verification.status,
+            external_decision=verification.external_terminal_decision,
+        )
+
+    finalization_timestamp = datetime.now(timezone.utc).isoformat()
+    finalization_record = {
+        "schema_version": P30_A4_SCHEMA_VERSION,
+        "record_type": "P30_CANONICAL_FINALIZATION",
+        "accepted_artifact_identity": verification.artifact_identity,
+        "external_acceptance_record_reference": str(record),
+        "external_decision": verification.external_terminal_decision,
+        "finalization_timestamp": finalization_timestamp,
+        "finalization_action": FINALIZATION_ACTION_CANONICAL_ACCEPTED_FROZEN,
+        "current_canonical_state": CANONICAL_STATE_ACCEPTED_FROZEN,
+        "repository_proved_independence": False,
+    }
+
+    if ledger.exists():
+        try:
+            existing = json.loads(ledger.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return _rejected_finalization(
+                current=current_after_verification,
+                reason=f"existing finalization ledger is unreadable: {exc}",
+                ledger_path=ledger,
+                record_path=record,
+                external_verification_status=verification.status,
+                external_decision=verification.external_terminal_decision,
+            )
+        if not isinstance(existing, Mapping):
+            return _rejected_finalization(
+                current=current_after_verification,
+                reason="existing finalization ledger is not a JSON object",
+                ledger_path=ledger,
+                record_path=record,
+                external_verification_status=verification.status,
+                external_decision=verification.external_terminal_decision,
+            )
+        stable_fields = (
+            "accepted_artifact_identity",
+            "external_acceptance_record_reference",
+            "external_decision",
+            "finalization_action",
+            "current_canonical_state",
+            "repository_proved_independence",
+        )
+        if any(existing.get(field) != finalization_record[field] for field in stable_fields):
+            return _rejected_finalization(
+                current=current_after_verification,
+                reason="existing finalization ledger conflicts with the requested artifact",
+                ledger_path=ledger,
+                record_path=record,
+                external_verification_status=verification.status,
+                external_decision=verification.external_terminal_decision,
+            )
+        return CanonicalFinalization(
+            finalized=True,
+            status=CANONICAL_FINALIZATION_RECORDED,
+            reason="canonical accepted/frozen finalization was already recorded",
+            accepted_artifact_identity=verification.artifact_identity,
+            external_acceptance_record_reference=str(record),
+            external_decision=verification.external_terminal_decision,
+            finalization_timestamp=str(existing.get("finalization_timestamp", "")),
+            finalization_action=FINALIZATION_ACTION_CANONICAL_ACCEPTED_FROZEN,
+            current_canonical_state=CANONICAL_STATE_ACCEPTED_FROZEN,
+            finalization_ledger_path=str(ledger),
+            external_verification_status=verification.status,
+            repository_proved_independence=False,
+            terminal_acceptance_status=verification.status,
+        )
+
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=ledger.parent,
+            prefix=f".{ledger.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            json.dump(finalization_record, temporary, ensure_ascii=False, indent=2, sort_keys=True)
+            temporary.write("\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, ledger)
+        temporary_path = None
+    except (OSError, TypeError, ValueError) as exc:
+        return _rejected_finalization(
+            current=current_after_verification,
+            reason=f"canonical finalization ledger write failed: {exc}",
+            ledger_path=ledger,
+            record_path=record,
+            external_verification_status=verification.status,
+            external_decision=verification.external_terminal_decision,
+        )
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
+
+    return CanonicalFinalization(
+        finalized=True,
+        status=CANONICAL_FINALIZATION_RECORDED,
+        reason="matching external acceptance consumed and canonical accepted/frozen state recorded",
+        accepted_artifact_identity=verification.artifact_identity,
+        external_acceptance_record_reference=str(record),
+        external_decision=verification.external_terminal_decision,
+        finalization_timestamp=finalization_timestamp,
+        finalization_action=FINALIZATION_ACTION_CANONICAL_ACCEPTED_FROZEN,
+        current_canonical_state=CANONICAL_STATE_ACCEPTED_FROZEN,
+        finalization_ledger_path=str(ledger),
+        external_verification_status=verification.status,
+        repository_proved_independence=False,
+        terminal_acceptance_status=verification.status,
+    )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="P30 nonterminal boundary and external-record verifier")
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -638,10 +914,12 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--regression-evidence", action="store_true")
     mode.add_argument("--prepare-independent-audit", action="store_true")
     mode.add_argument("--verify-external-acceptance", action="store_true")
+    mode.add_argument("--finalize-accepted-artifact", action="store_true")
     # Compatibility alias: it may only verify an existing external record.
     mode.add_argument("--terminal-acceptance", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--repo", default="", help="candidate repository root (default: this repository)")
     parser.add_argument("--external-record", default="", help="external JSON record outside the candidate repository")
+    parser.add_argument("--finalization-ledger", default="", help="durable canonical finalization ledger outside the candidate repository")
     # These legacy fields remain parseable for compatibility, but are never
     # trusted for acceptance and never override computed repository identity.
     parser.add_argument("--role", choices=sorted(VALID_ROLES), default=ROLE_UNSPECIFIED)
@@ -688,6 +966,46 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     repo = Path(args.repo).resolve() if args.repo else Path(__file__).resolve().parents[2]
     current = compute_current_artifact_identity(repo)
+
+    if args.finalize_accepted_artifact:
+        if not args.external_record:
+            print(json.dumps(_blocked_payload(
+                current,
+                "post-acceptance finalization requires an already-existing external independent-audit record",
+                caller_artifact_id=args.artifact_id,
+            ), ensure_ascii=False, sort_keys=True))
+            return 2
+        if not args.finalization_ledger:
+            print(json.dumps(_blocked_payload(
+                current,
+                "post-acceptance finalization requires an external finalization ledger path",
+                caller_artifact_id=args.artifact_id,
+            ), ensure_ascii=False, sort_keys=True))
+            return 2
+        if not args.material_artifact:
+            print(json.dumps(_blocked_payload(
+                current,
+                "caller-declared non-materiality is not a finalization authority",
+                caller_artifact_id=args.artifact_id,
+            ), ensure_ascii=False, sort_keys=True))
+            return 2
+        try:
+            record = json.loads(Path(args.external_record).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(json.dumps(_blocked_payload(
+                current,
+                f"external independent-audit record could not be read: {exc}",
+                caller_artifact_id=args.artifact_id,
+            ), ensure_ascii=False, sort_keys=True))
+            return 2
+        result = finalize_accepted_artifact(
+            record,
+            repo=repo,
+            record_path=args.external_record,
+            finalization_ledger=args.finalization_ledger,
+        )
+        print(json.dumps(result.to_dict(), ensure_ascii=False, sort_keys=True))
+        return 0 if result.finalized else 2
 
     if args.terminal_acceptance or args.verify_external_acceptance:
         if not args.external_record:
