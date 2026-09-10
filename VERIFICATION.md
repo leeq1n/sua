@@ -34,21 +34,27 @@ is not an independent acceptance of SUA; the required next step is a
 fresh-state, artifact-first audit by an evaluator that did not materially
 implement this amendment.
 
-### P30-A2 terminal-authority closure
+### P30-A3 removal of self-attested terminal authority
 
-P30-A2 adds behavioral fail-closed plumbing for the previously open legacy
-paths.  `p30_acceptance.py` binds the decision to an artifact identity and
-distinguishes `IMPLEMENTER`, `INDEPENDENT_EVALUATOR`, and `UNSPECIFIED`; it
-records `EXECUTION_SUCCESS` separately from `ARTIFACT_ACCEPTANCE`, stales
-prior acceptance after material change, and terminates evaluator authority
-after a material evaluator edit.  M-n 29, M-n 31, the cross-runtime bridge,
-acceptance runners, and hooks now expose implementation/regression evidence
-only unless a complete independent-evaluator state record is supplied.
+P30-A3 removes the remaining self-attestation boundary. `p30_acceptance.py`
+computes the exact current artifact identity and clean/dirty state, keeps local
+execution and regression evidence nonterminal, and verifies an already-existing
+machine-readable external record only when that record is outside the candidate
+repository and matches the exact unchanged clean artifact. Caller-supplied
+role, identity, materiality, audit, freeze, or evaluator-edit claims cannot
+create acceptance. The verifier reports
+`EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT` and explicitly does not
+prove evaluator independence.
 
-The current evidence is behavioral contract coverage and active-path
-regression evidence.  It does not constitute independent SUA acceptance; a
-fresh artifact-first/open-world audit of the resulting commit remains
-required.
+The legacy runners, promotion APIs, and auto-commit path now retain or stage
+candidate outputs only; they do not promote `candidate -> core -> accepted`.
+The weekly audit reports scheduled regression status separately from
+`ARTIFACT ACCEPTANCE: NOT ISSUED`.
+
+The current evidence is adversarial behavioral contract coverage and
+active-path regression evidence. It does not constitute independent SUA
+acceptance; a fresh artifact-first/open-world audit of the resulting commit
+remains required. This verification summary is implementation-level only.
 
 ## 1-axiomatic verification (per P5 measure
 twice commit once)

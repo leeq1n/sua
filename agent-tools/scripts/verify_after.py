@@ -33,11 +33,7 @@ import sys
 from pathlib import Path
 
 from p30_acceptance import (
-    ROLE_UNSPECIFIED,
-    can_issue_terminal_acceptance,
-    execution_success,
-    git_artifact_identity,
-    record_regression,
+    prepare_independent_audit_handoff,
 )
 
 
@@ -132,18 +128,12 @@ def check_cold_start_simulation() -> tuple[bool, str]:
 
 def check_p30_boundary() -> tuple[bool, str]:
     """Verify post-commit evidence remains a non-terminal handoff."""
-    record = execution_success(
-        role=ROLE_UNSPECIFIED,
-        artifact_identity=git_artifact_identity(REPO),
-        material_artifact=True,
-    )
-    record = record_regression(record, passed=True)
-    allowed, reason = can_issue_terminal_acceptance(record)
-    if allowed:
-        return False, f"P30 boundary incorrectly authorized acceptance: {reason}"
+    handoff = prepare_independent_audit_handoff(REPO)
+    if handoff["terminal_acceptance_status"] != "NOT_ISSUED":
+        return False, "P30 boundary incorrectly exposed terminal acceptance"
     return True, (
         "REGRESSION EVIDENCE ONLY; artifact state="
-        f"{record.artifact_state}; terminal acceptance not issued"
+        f"{handoff['artifact_state']}; terminal acceptance not issued"
     )
 
 
@@ -154,7 +144,7 @@ def main() -> int:
     parser.add_argument(
         "--terminal-acceptance",
         action="store_true",
-        help="refuse: terminal acceptance requires a separate P30 state record",
+        help="refuse: terminal acceptance requires an external P30 record outside the candidate repository",
     )
     args = parser.parse_args()
 

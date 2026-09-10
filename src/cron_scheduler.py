@@ -1,7 +1,7 @@
 """Cron-based daily-loop scheduler (per SA v4.0.0).
 
 Per 你 vision 2026-07-08 '我希望这个项目之后可以自己独立运行':
-- True autonomous deployment
+- True autonomous candidate generation (canonical deployment remains external)
 - Cron-style scheduling
 - Per LITERATURE Signal-to-Fix: autonomous with safety nets
 
@@ -74,7 +74,8 @@ def schedule_loop(do_round, cron_expr="2 0", max_iterations=None,
                   state_path=None, log_fn=None):
     """Run daily-loop on cron schedule (per v4.0.0 MVP).
 
-    Per 你 vision 终极目标: 真 autonomous deployment.
+    Per 你 vision 终极目标: autonomous scheduling; P30-A3 keeps the result
+    at candidate/regression evidence and does not authorize canonical deployment.
     Per LITERATURE: minimal, 奥卡姆.
 
     Args:
@@ -115,7 +116,7 @@ def schedule_loop(do_round, cron_expr="2 0", max_iterations=None,
                                            interval=0, state_path=state_path)
             runs_completed += 1
             last_run_at = datetime.datetime.now().isoformat()
-            log_fn(f"[cron] Run done: kept={result.get('kept_count', 0)} "
+            log_fn(f"[cron] Run complete: candidates_retained={result.get('kept_count', 0)} "
                    f"failed={result.get('failures_count', 0)}")
     except KeyboardInterrupt:
         log_fn("[cron] Stopped by user (Ctrl-C)")
@@ -137,7 +138,7 @@ def main():
     print(f"Seconds until next 00:02: {secs}s")
     print()
     print("Per LITERATURE Seed: minimal, 奥卡姆.")
-    print("Sub-task 1 done: cron logic + CLI")
+    print("Sub-task 1 implemented: cron logic + CLI")
     print("Sub-task 2 pending: real OS cron integration")
     return 0
 

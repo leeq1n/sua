@@ -244,7 +244,7 @@ def run_pipeline(
         try:
             _switcher_init()
             candidate_path = deploy_candidate(skill_name, skill_md, code if code else None)
-            logger.info(f"  D. Candidate deployed: {candidate_path}")
+            logger.info(f"  D. Candidate saved for review: {candidate_path}")
         except Exception as e:
             logger.warning(f"  D. Candidate deploy failed: {e}")
         
@@ -294,22 +294,25 @@ def run_pipeline(
 
         if decision["decision"] == "keep":
             result.upgrades_kept += 1
-            logger.info(f"  -> KEPT by decision")
-            # Promote if auto_promote enabled and sandbox passed
+            logger.info(f"  -> CANDIDATE RETAINED by local decision")
+            # The legacy auto_promote option now stages only.  It cannot
+            # write core/ or create P30 acceptance from local evidence.
             if getattr(config.pipeline, 'auto_promote', False) and sandbox_ok:
                 try:
                     promo = promote_candidate(skill_name)
-                    if promo["status"] == "promoted":
-                        logger.info(f"  E. -> AUTO-PROMOTED: {skill_name}")
+                    logger.info(
+                        f"  E. -> CANDIDATE STAGED ONLY: {skill_name} "
+                        f"({promo['status']}; P30 acceptance not issued)"
+                    )
                 except Exception:
-                    logger.warning(f"  E. Promote failed")
+                    logger.warning(f"  E. Candidate staging failed")
             elif sandbox_ok:
-                logger.info(f"  E. Manual approval required: review candidate {skill_name} before promoting")
+                logger.info(f"  E. Candidate ready: review {skill_name} before any external acceptance/deployment")
             else:
-                logger.info(f"  E. Sandbox failed, candidate archived")
+                logger.info(f"  E. Sandbox failed, candidate retained for inspection only")
         else:
             result.upgrades_reverted += 1
-            logger.info(f"  -> REVERTED by decision")
+            logger.info(f"  -> CANDIDATE REJECTED by local decision")
             if not dry_run:
                 rollback_skill(skill_path, backup_path)
 

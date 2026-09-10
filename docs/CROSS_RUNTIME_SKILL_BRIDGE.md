@@ -74,10 +74,23 @@ yourself (per P-28 self-application).
 `EXECUTION_SUCCESS` and `REGRESSION PASS` are evidence states only.  They
 must not be renamed or wrapped as artifact acceptance.  A bridge runtime must
 not infer evaluator independence from a model name, new session, runtime, or
-role label alone.  For a material artifact, only a separate P30 record with
-matching artifact identity, non-stale prior state, artifact-first first-pass
-evidence, no evaluator material edit, and valid `INDEPENDENT_EVALUATOR`
-authority may issue `INDEPENDENT ACCEPTANCE PASS`.
+role label alone. For a material artifact, the fresh evaluator must produce a
+machine-readable P30 record outside the candidate repository. Repository
+tooling may verify the record's schema, exact clean artifact identity, and
+absence of drift, returning `EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT`;
+it must not create `INDEPENDENT ACCEPTANCE PASS` or claim to prove evaluator
+independence from self-attested fields.
+
+P30-A3 trust boundary:
+
+- machine checks cover identity, clean state, drift/staleness, schema, and
+  nonterminal local evidence;
+- the human/orchestrator owns the governance facts of fresh identity, hidden
+  authorship, artifact-first ordering, first-pass freeze, and independent
+  production of the record.
+
+P30 proportionality may keep trivial non-semantic work outside a formal
+terminal workflow; a caller-declared non-material flag cannot create acceptance.
 
 ## HARD RULES (binding)
 
@@ -87,7 +100,7 @@ authority may issue `INDEPENDENT ACCEPTANCE PASS`.
 - P17 老实说 (no fake green)
 - P20 README ≤ 7KB
 - P22 stuck → plan
-- P30 constructor cannot be the final acceptor; checker output is regression evidence only
+- P30 constructor cannot be the final acceptor; checker output is regression evidence only, and external records are verified rather than created
 - P-130 external search first
 
 ## Coverage caveat (per AGENTS.md line 80)

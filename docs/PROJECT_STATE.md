@@ -49,9 +49,11 @@ classification, surrogate-objective recovery, removal-first patch reduction,
 stable killed-defect regression, and one blind-first fresh audit. Structural
 and discoverability coverage passes; live behavioral improvement remains
 unmeasured. P30 now separates implementation and regression evidence from
-independent terminal acceptance. P30-A2 closes the remaining legacy
-completion/bridge bypasses with fail-closed role, state, and artifact-identity
-plumbing; the amended state still requires an independent SUA audit.
+independent terminal acceptance. P30-A3 removes repository self-attestation:
+local tooling computes the exact clean artifact identity and regression state,
+but only verifies an already-existing external independent-audit record outside
+the candidate repository. The verifier cannot manufacture or prove
+independence; the amended state still requires a fresh independent SUA audit.
 
 The Phase A addendum separately tests whether SUA can detect recurring domain-
 methodology inadequacy before a user requests specialization. The Layer 1

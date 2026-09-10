@@ -119,8 +119,8 @@ else
 fi
 
 # P30 boundary: pre-commit can record implementation/regression evidence,
-# but it cannot issue terminal artifact acceptance.  An unknown role remains
-# fail-closed for material acceptance.
+# but it cannot issue terminal artifact acceptance.  Any local role, identity,
+# materiality, or audit claim remains non-authoritative.
 echo "[pre-commit] Running P30 regression boundary..."
 if [ -f "$P30_STATE" ]; then
     py "$P30_STATE" --regression-evidence \

@@ -782,6 +782,34 @@ absence of unknown failure modes:
 CHECKER PASS != INDEPENDENT ACCEPTANCE PASS
 ```
 
+#### Machine enforcement versus governance enforcement (P30-A3 clarification)
+
+Repository tooling may compute artifact identity, clean state, tracked and
+untracked drift, local-fix completion, regression evidence, structural
+invariants, readiness for audit, and whether an already-existing external
+record targets the unchanged current artifact. It must not create terminal
+independent acceptance from caller-supplied role, identity, audit, materiality,
+or evaluator-edit claims. A clean commit hash establishes identity/integrity;
+it does not prove who performed the audit.
+
+For a formal material-artifact workflow, the terminal verifier requires a
+machine-readable independent-audit record produced outside the candidate
+repository. The record binds the exact artifact identity, terminal decision,
+evaluator-role declaration, artifact-first status, first-pass freeze status,
+evaluator material-edit status, timestamp, report reference, and schema
+version. The verifier may validate the record's schema, identity equality,
+decision value, stale/current relationship, clean-state requirement, and lack
+of artifact drift. Its result means only
+`EXTERNAL ACCEPTANCE RECORD MATCHES CURRENT ARTIFACT`; it does not mean that
+the repository proved evaluator independence.
+
+Genuinely fresh evaluation, absence of hidden authorship, artifact-first
+ordering, first-pass freezing, and independent production of the report are
+governance/orchestrator facts. No local role string, token, flag, or same-repo
+record can authenticate them. P30 proportionality may exempt trivial
+non-semantic work from requiring a formal independent-audit workflow, but a
+caller-declared non-material flag must never create `ARTIFACT ACCEPTED`.
+
 #### OPEN-WORLD ACCEPTANCE
 
 Targeted repair validation asks, “Did we fix the issue we already knew
@@ -897,6 +925,7 @@ INDEPENDENT AUDIT ROLE
 - artifact-first inspection;
 - no modification during first-pass audit;
 - freeze first-pass findings before reading implementation rationale;
+- writes the external audit decision for the exact clean artifact;
 - only this role may return: PASS / MODIFY / STOP.
 ```
 

@@ -36,7 +36,7 @@ def _lazy_v2():
 
 def _format_round_result(r) -> str:
     """One-line summary of a RoundResult."""
-    return (f"decision={r.decision} elapsed={r.elapsed_s:.1f}s "
+    return (f"candidate_decision={r.decision} elapsed={r.elapsed_s:.1f}s "
             f"tests_passed={r.tests_passed} tests_failed={r.tests_failed} "
             f"target={r.target_module}"
             + (f" error={r.error[:80]}" if r.error else ""))
@@ -45,32 +45,24 @@ def _format_round_result(r) -> str:
 def _do_auto_commit(target, r, multi):
     """Per user 2026-07-10: '区分开自动更新和手动更新'.
 
-    When --auto-commit is set and round KEPT, commit the patched file
-    with author 'Auto Upgrade <auto@self-upgrade.local>' and [auto]
-    prefix.  Also write a patch bundle to upgrades/auto-patches/ for
-    human review / selective apply / rejection.
+    When --auto-commit is set and a round locally retains a candidate, retain a patch bundle for
+    human review.  Automatic canonical commits are disabled by the P30-A3
+    boundary; local candidate success cannot create an accepted artifact.
 
     Per P7 奥卡姆: helper function, not a new abstraction.  Per
     P22 找共性: reuses v3_persist's save pattern (write to disk).
-    Per P18: only commits KEPT (atomic + tested).
+    Per P18: only retains candidate evidence from a passing local decision.
     """
-    from src.v3_auto_commit import write_patch_bundle, auto_commit
+    from src.v3_auto_commit import write_patch_bundle
     bundle = write_patch_bundle(target)
     paper_id = ""
     # Extract paper id if available
     if hasattr(r, "paper") and r.paper:
         paper_id = getattr(r.paper, "arxiv_id", "") or str(r.paper)
-    commit_hash = auto_commit(
-        target_module=target,
-        paper_id=paper_id,
-        tests_passed=getattr(r, "tests_passed", 0),
-        bundle_path=bundle,
-    )
-    if commit_hash:
-        click.echo(f"  [auto-commit] {commit_hash[:8]} by Auto Upgrade")
-        click.echo(f"  [auto-commit] bundle: {bundle or '(no diff)'}")
+    if bundle:
+        click.echo(f"  [candidate] patch bundle retained: {bundle}")
     else:
-        click.echo("  [auto-commit] FAILED (see git error above)")
+        click.echo("  [candidate] no patch bundle retained (no diff)")
 
 
 @click.group()
@@ -96,7 +88,7 @@ def cli(mock):
 @click.option("--count", default=1, type=int,
               help="Run N consecutive rounds (default: 1).")
 @click.option("--auto-commit/--no-auto-commit", default=False,
-              help="Auto-commit KEPT patches with [auto] author (default: no).")
+              help="Retain candidate patch bundles for review; no canonical commit (default: no).")
 @click.option("--interval", default=0, type=int,
               help="Seconds between rounds (default: 0; only used with --count > 1).")
 @click.option("--mock/--no-mock", default=False,
@@ -113,7 +105,7 @@ def improve(obj, target, paper, test_path, multi, max_retries, count,
       improve                                    # 1 round multi, 2 retries
       improve --single --paper 2310.02170        # specific paper
       improve --count 5 --interval 0             # 5 rounds back-to-back
-      improve --auto-commit                      # auto-commit KEPT with [auto]
+      improve --auto-commit                      # retain candidate bundle for review
     """
     if test_path is None:
         test_path = "tests/test_v2_round.py" if multi else "tests/test_pipeline.py"
@@ -158,7 +150,7 @@ def improve(obj, target, paper, test_path, multi, max_retries, count,
                 _do_auto_commit(target, r, multi)
         elif auto_commit and hasattr(r, "decision") and r.decision in ("REVERTED", "APPLY_FAILED"):
             # Auto-commit was attempted but round failed: nothing to commit.
-            click.echo("  [auto-commit skipped: round did not KEPT]")
+            click.echo("  [auto-commit skipped: candidate was not retained]")
 
         # Back-to-back: sleep between rounds if count > 1 and not last
         if count > 1 and i < count - 1 and interval > 0:
@@ -167,7 +159,7 @@ def improve(obj, target, paper, test_path, multi, max_retries, count,
 
     if count > 1:
         click.echo(f"===== Summary =====")
-        click.echo(f"KEPT: {kept_count}/{count} ({100*kept_count//count}%)")
+        click.echo(f"CANDIDATE RETAINED: {kept_count}/{count} ({100*kept_count//count}%)")
     sys.exit(0 if (count == 1 and hasattr(r, "decision") and r.decision == "KEPT")
                   or (count > 1 and kept_count == count) else 1)
 
@@ -231,8 +223,8 @@ def test_scale(obj, n_rounds, target, paper):
     click.echo()
     click.echo("=== SUMMARY ===")
     click.echo(f"Total elapsed: {total_t:.1f}s")
-    click.echo(f"Decisions: {decisions}")
-    click.echo(f"KEPT: {kept}/{n_rounds}  REVERTED: {reverted}/{n_rounds}  "
+    click.echo(f"Candidate decisions: {decisions}")
+    click.echo(f"CANDIDATE RETAINED: {kept}/{n_rounds}  CANDIDATE REJECTED: {reverted}/{n_rounds}  "
                f"NO_PATCH: {no_patch}/{n_rounds}  "
                f"APPLY_FAILED: {apply_failed}/{n_rounds}")
     if kept == n_rounds:
@@ -242,7 +234,7 @@ def test_scale(obj, n_rounds, target, paper):
     else:
         click.echo("=> Loop is MIXED (LLM temperature is non-zero)")
     click.echo()
-    click.echo("To restore core/planner.py if a round KEPT:")
+    click.echo("To restore core/planner.py after a local candidate round:")
     click.echo("  git checkout core/planner.py")
 
 
@@ -285,11 +277,11 @@ def improve_multi(obj, target, test_path, no_judge_llm, count):
 @click.option("--test-path", default="tests/test_v2_round.py",
               help="Test path for decision gate (default: tests/test_v2_round.py).")
 @click.option("--auto-commit/--no-auto-commit", default=False,
-              help="Auto-commit KEPT patches with [auto] author (default: no).")
+              help="Retain candidate patch bundles for review; no canonical commit (default: no).")
 @click.option("--mock/--no-mock", default=False,
               help="Use mock LLM (no API call, default: real LLM).")
 @click.option("--enable-ab/--no-ab", default=False,
-              help="Enable A/B benchmark (per v3.3.0 MVP, statistical KEPT/REJECT).")
+              help="Enable A/B benchmark for statistical candidate decisions.")
 @click.pass_obj
 def daily_loop(obj, target, interval, max_rounds, multi, max_retries,
                test_path, auto_commit, mock, enable_ab):
@@ -304,7 +296,7 @@ def daily_loop(obj, target, interval, max_rounds, multi, max_retries,
       python -m self_upgrade daily-loop --interval 60         # 1 min (testing)
       python -m self_upgrade daily-loop --max-rounds 5        # 5 rounds then stop
       python -m self_upgrade daily-loop --target core/x.py    # different target
-      python -m self_upgrade daily-loop --auto-commit         # auto-commit KEPT
+      python -m self_upgrade daily-loop --auto-commit         # retain candidate bundles
     """
     run_one_round, run_one_round_multi, _, run_with_harness, _, _ = _lazy_v2()
     from src.llm import LLMConfig
@@ -356,7 +348,7 @@ def daily_loop(obj, target, interval, max_rounds, multi, max_retries,
     except KeyboardInterrupt:
         click.echo("\n[stopped by user]")
 
-    click.echo(f"\n===== Daily loop done: {rounds} rounds, {kept} KEPT, {rejected} REJECT =====")
+    click.echo(f"\n===== Daily loop complete: {rounds} rounds, {kept} candidates retained, {rejected} candidates rejected =====")
     sys.exit(0 if kept > 0 else 1)
 
 
@@ -393,7 +385,7 @@ def chat(obj, system, history_path, max_history, stream):
 
 @cli.command(name="cron")
 @click.option("--install", "do_install", is_flag=True, default=False,
-              help="Generate OS cron config (dry-run by default per P9).")
+              help="Generate OS cron config for candidate runs (dry-run by default per P9).")
 @click.option("--apply", "do_apply", is_flag=True, default=False,
               help="Actually write config to disk (CAUTION: real install).")
 @click.option("--show", is_flag=True, default=False,
@@ -402,7 +394,7 @@ def chat(obj, system, history_path, max_history, stream):
               help="Cron expression 'H M' (default: 0 2 = 02:00 daily).")
 @click.pass_obj
 def cron(obj, do_install, do_apply, show, cron_expr):
-    """v4.0.0 cron deployment (per 你 vision 2026-07-08).
+    """v4.0.0 cron scheduling for candidate runs (per 你 vision 2026-07-08).
 
     Per 自上而下/分治 (user meta-principle):
     - Big: SA v4.0.0 cron execution

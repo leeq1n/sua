@@ -126,7 +126,7 @@ class TestV2CliHarnessCount:
         assert result.exit_code == 0, f"got {result.exit_code}, output: {result.output}"
         # Summary printed
         assert "Summary" in result.output
-        assert "KEPT: 3/3" in result.output
+        assert "CANDIDATE RETAINED: 3/3" in result.output
         # 3 rounds printed
         assert "Round 1/3" in result.output
         assert "Round 3/3" in result.output
@@ -149,7 +149,7 @@ class TestV2CliHarnessCount:
                                           "--max-retries", "0"])
         # No KEPT -> exit 1
         assert result.exit_code == 1
-        assert "KEPT: 0/2" in result.output
+        assert "CANDIDATE RETAINED: 0/2" in result.output
 
     def test_count_mixed_results(self):
         """--count 3 with 1 KEPT + 2 NO_PATCH -> exit 1, summary 1/3 (33%)."""
@@ -175,7 +175,7 @@ class TestV2CliHarnessCount:
                                           "--target", "x.py",
                                           "--max-retries", "0"])
         assert result.exit_code == 1
-        assert "KEPT: 1/3" in result.output
+        assert "CANDIDATE RETAINED: 1/3" in result.output
 
     def test_count_1_no_summary(self):
         """--count 1 (default): no summary printed (single round)."""
@@ -223,7 +223,7 @@ class TestV2CliImproveMultiCount:
                                           "--target", "x.py",
                                           "--no-judge-llm"])
         assert result.exit_code == 0, f"got {result.exit_code}, out: {result.output}"
-        assert "KEPT: 3/3" in result.output
+        assert "CANDIDATE RETAINED: 3/3" in result.output
         assert "Round 1/3" in result.output
         assert "Round 3/3" in result.output
 
@@ -241,7 +241,7 @@ class TestV2CliImproveMultiCount:
                                           "--target", "x.py",
                                           "--no-judge-llm"])
         assert result.exit_code == 1
-        assert "KEPT: 0/2" in result.output
+        assert "CANDIDATE RETAINED: 0/2" in result.output
 
     def test_count_1_no_summary(self):
             from self_upgrade.__main__ import cli
@@ -280,7 +280,7 @@ class TestV2CliImproveMultiCount:
                                           "--target", "x.py",
                                           "--no-judge-llm"])
         assert result.exit_code == 1
-        assert "KEPT: 1/3" in result.output
+        assert "CANDIDATE RETAINED: 1/3" in result.output
 
 
 class TestV2CliUnifiedImprove:
@@ -367,7 +367,7 @@ class TestV2CliUnifiedImprove:
             result = runner.invoke(cli, ["improve", "--count", "3",
                                           "--target", "x.py"])
         assert result.exit_code == 0
-        assert "KEPT: 3/3" in result.output
+        assert "CANDIDATE RETAINED: 3/3" in result.output
         assert "Round 1/3" in result.output
         assert "Round 3/3" in result.output
 
@@ -439,7 +439,7 @@ class TestV2CliDailyLoop:
                 "--max-retries", "0",
             ])
         assert m.call_count == 3
-        assert "Daily loop done: 3 rounds, 3 KEPT" in result.output
+        assert "Daily loop complete: 3 rounds, 3 candidates retained" in result.output
         assert result.exit_code == 0
 
     def test_max_rounds_zero_kept(self):
@@ -459,7 +459,7 @@ class TestV2CliDailyLoop:
                 "--interval", "0",
                 "--max-retries", "0",
             ])
-        assert "Daily loop done: 2 rounds, 0 KEPT" in result.output
+        assert "Daily loop complete: 2 rounds, 0 candidates retained" in result.output
         assert result.exit_code == 1
 
     def test_interval_zero_skips_sleep(self):
@@ -506,7 +506,7 @@ class TestV2CliDailyLoop:
                 "--interval", "0",
                 "--max-retries", "0",
             ])
-        assert "Daily loop done: 3 rounds, 2 KEPT" in result.output
+        assert "Daily loop complete: 3 rounds, 2 candidates retained" in result.output
         assert result.exit_code == 0
 
 

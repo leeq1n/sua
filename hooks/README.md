@@ -9,7 +9,7 @@
 | File | Purpose | Installed at | Trigger |
 |---|---|---|---|
 | `commit-msg` | Validate commit message has P1-P30 cite (via hook_principles.json loader) | `.git/hooks/commit-msg` | every commit |
-| `pre-commit` | Run audit gates plus the P30 non-terminal regression boundary | `.git/hooks/pre-commit` | every commit |
+| `pre-commit` | Run audit gates plus the P30 non-terminal/external-record boundary | `.git/hooks/pre-commit` | every commit |
 | `prepare-commit-msg` | Append M-n 29 5-step trailer when "task done" / "完成" / "PASS" detected | `.git/hooks/prepare-commit-msg` | every commit prep |
 | `pre-push` | BLOCKER-only technical regression gate; never artifact acceptance | `.git/hooks/pre-push` | every push |
 
@@ -58,6 +58,8 @@ rm .git/hooks/commit-msg .git/hooks/pre-commit .git/hooks/prepare-commit-msg .gi
 - Hooks are NOT auto-installed by design (users opt in).
 - Python must be on PATH for hooks to run.
 - pre-commit is fail-open (warnings, exit 0) unless STRICT_EVAL=1; its P30
-  boundary itself blocks if the shared state module is missing.
+  boundary itself blocks if the shared state module is missing or local tooling
+  attempts to create terminal acceptance. A terminal result is only verified
+  when an external P30 record exists outside the candidate repository.
 - pre-push blocks only on BLOCKER-level findings and always reports
   regression evidence, not terminal artifact acceptance.

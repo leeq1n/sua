@@ -1,6 +1,6 @@
 # PRINCIPLES_DETAIL — Detail (L2)
 
-Last P20-verified: 2026-07-14 (split from summary per R5+R6)
+Last P20-verified: 2026-09-10 (P30-A3 active-path clarification)
 
 
 
@@ -496,27 +496,18 @@ reproduces it before fixing.  Per Test root.
 
 **Boundary: auto vs manual (per user 2026-07-10)**:
 
-KEPT patches come in two flavors:
+Candidate-retention results come in two flavors:
 
 - Manual commits (user runs `git commit`): the source of truth for
 
   human-curated changes
 
-- Auto commits (daily-loop / improve with `--auto-commit`): KEPT
+- Auto candidate bundles (daily-loop / improve with `--auto-commit`): retained
+  reviewable patches written to `upgrades/auto-patches/<date>-<hash>.patch`.
+  P30-A3 disables agent-authored canonical commits and material promotion from
+  local `KEPT` evidence.
 
-  patches committed by the agent itself, distinguishable by:
-
-  - Author: `Auto Upgrade <auto@self-upgrade.local>` (never the user)
-
-  - Prefix: `[auto]` in commit message
-
-  - Bundle: also written to `upgrades/auto-patches/<date>-<hash>.patch`
-
-    for human review, selective apply, or rejection
-
-- `git log --author="Auto"` filters auto commits in 1 step
-
-- Default behavior (no `--auto-commit`): KEPT files stay in working
+- Default behavior (no `--auto-commit`): retained files stay in working
 
   tree (or auto-revert per existing logic).  User stays in control.
 
@@ -663,4 +654,3 @@ acceptance fresh-agent check) are defined in
 file (where applicable) should be added in future
 
 commits.
-

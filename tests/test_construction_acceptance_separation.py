@@ -1,6 +1,7 @@
 """Regression contract for P30: construction and acceptance are separate."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -30,6 +31,12 @@ EVAL_BEFORE_SCRIPT = SCRIPTS / "eval_before.py"
 RELEASE_AUDIT = SCRIPTS / "release_audit.py"
 SELF_HEALTH = SCRIPTS / "self_health_check.py"
 PRE_PUSH = ROOT / "hooks" / "pre-push"
+WEEKLY_AUDIT = ROOT / "agent-tools" / "scripts" / "weekly_audit.sh"
+LEGACY_RUNNERS = (
+    ROOT / "run_1round.py",
+    ROOT / "run_3rounds_manual.py",
+    ROOT / "run_stable.py",
+)
 
 sys.path.insert(0, str(SCRIPTS))
 
@@ -37,18 +44,22 @@ from p30_acceptance import (  # noqa: E402
     ARTIFACT_STATE_ACCEPTED,
     ARTIFACT_STATE_READY_FOR_INDEPENDENT_AUDIT,
     ARTIFACT_STATE_STALE_AFTER_MATERIAL_CHANGE,
+    EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT,
     ROLE_IMPLEMENTER,
     ROLE_INDEPENDENT_EVALUATOR,
     ROLE_UNSPECIFIED,
     P30AuthorityError,
     can_issue_terminal_acceptance,
+    compute_current_artifact_identity,
     execution_success,
     issue_terminal_acceptance,
     mark_evaluator_material_edit,
     mark_material_change,
     new_acceptance_record,
+    prepare_independent_audit_handoff,
     record_independent_audit,
     record_regression,
+    verify_external_acceptance_record,
 )
 
 
@@ -182,7 +193,7 @@ def test_implementer_checker_success_cannot_issue_terminal_acceptance():
     assert record.artifact_state == ARTIFACT_STATE_READY_FOR_INDEPENDENT_AUDIT
     allowed, reason = can_issue_terminal_acceptance(record)
     assert allowed is False
-    assert "independent evaluator" in reason.lower()
+    assert "external" in reason.lower()
     with pytest.raises(P30AuthorityError):
         issue_terminal_acceptance(record)
 
@@ -202,6 +213,7 @@ def test_legacy_m29_completion_is_non_terminal_regression_evidence():
         capture_output=True,
         text=True,
         encoding="utf-8",
+        env={**os.environ, "PYTHONUTF8": "1"},
         check=False,
     )
     assert result.returncode == 0
@@ -235,7 +247,16 @@ def test_material_modification_stales_prior_acceptance():
         first_pass_frozen=True,
         evaluator_material_edit=False,
     )
-    prior = issue_terminal_acceptance(prior)
+    # A terminal state can only be an externally produced fact in this test;
+    # the repository API must not manufacture it.
+    prior = prior.__class__(
+        **{
+            **prior.to_dict(),
+            "artifact_state": ARTIFACT_STATE_ACCEPTED,
+            "artifact_acceptance": "EXTERNAL_DECISION",
+            "terminal_acceptance_status": "EXTERNAL_DECISION",
+        }
+    )
     assert prior.artifact_state == ARTIFACT_STATE_ACCEPTED
 
     changed = mark_material_change(
@@ -250,7 +271,7 @@ def test_material_modification_stales_prior_acceptance():
     assert can_issue_terminal_acceptance(changed)[0] is False
 
 
-def test_matching_independent_evaluator_can_issue_terminal_acceptance():
+def test_self_attested_complete_record_cannot_create_terminal_acceptance():
     record = execution_success(
         role=ROLE_INDEPENDENT_EVALUATOR,
         artifact_identity="commit-independent",
@@ -264,10 +285,11 @@ def test_matching_independent_evaluator_can_issue_terminal_acceptance():
         evaluator_material_edit=False,
     )
 
-    accepted = issue_terminal_acceptance(record)
-    assert accepted.artifact_state == ARTIFACT_STATE_ACCEPTED
-    assert accepted.terminal_acceptance_status == "INDEPENDENT ACCEPTANCE PASS"
-    assert accepted.artifact_acceptance == "ACCEPTED"
+    allowed, reason = can_issue_terminal_acceptance(record)
+    assert allowed is False
+    assert "external" in reason.lower()
+    with pytest.raises(P30AuthorityError):
+        issue_terminal_acceptance(record)
 
 
 def test_evaluator_material_edit_terminates_that_evaluator_authority():
@@ -302,7 +324,7 @@ def test_unspecified_role_fails_closed_for_material_terminal_acceptance():
     record = record_regression(record, passed=True)
     allowed, reason = can_issue_terminal_acceptance(record)
     assert allowed is False
-    assert "role" in reason.lower()
+    assert "external" in reason.lower()
 
 
 def test_checker_pass_alone_cannot_produce_acceptance():
@@ -340,7 +362,7 @@ def test_terminal_cli_refuses_missing_authority_fields():
     assert payload["artifact_acceptance"] != "ACCEPTED"
 
 
-def test_terminal_cli_accepts_only_a_complete_independent_record():
+def test_terminal_cli_never_self_issues_from_caller_claims():
     result = subprocess.run(
         [
             sys.executable,
@@ -372,9 +394,281 @@ def test_terminal_cli_accepts_only_a_complete_independent_record():
         check=False,
     )
     payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["artifact_acceptance"] != "ACCEPTED"
+    assert payload["terminal_acceptance_status"].startswith("ACCEPTANCE BLOCKED")
+    assert "INDEPENDENT ACCEPTANCE PASS" not in result.stdout
+
+
+def test_caller_artifact_id_cannot_override_computed_identity():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "p30_acceptance.py"),
+            "--execution-success",
+            "--artifact-id",
+            "FABRICATED-NOT-HEAD",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    payload = json.loads(result.stdout)
     assert result.returncode == 0
-    assert payload["artifact_state"] == ARTIFACT_STATE_ACCEPTED
-    assert payload["terminal_acceptance_status"] == "INDEPENDENT ACCEPTANCE PASS"
+    assert payload["artifact_identity"] != "FABRICATED-NOT-HEAD"
+
+
+def test_non_material_flag_cannot_create_terminal_acceptance():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "p30_acceptance.py"),
+            "--terminal-acceptance",
+            "--role",
+            ROLE_IMPLEMENTER,
+            "--non-material-artifact",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "ACCEPTED" not in result.stdout
+
+
+def _git_repo_with_commit(tmp_path, content="initial"):
+    repo = tmp_path / "candidate"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "P30 Test"], cwd=repo, check=True)
+    (repo / "artifact.txt").write_text(content, encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "initial"], cwd=repo, check=True)
+    return repo
+
+
+def _external_record(identity, **overrides):
+    record = {
+        "schema_version": "P30-A3/v1",
+        "record_type": "P30_EXTERNAL_INDEPENDENT_AUDIT",
+        "artifact_identity": identity,
+        "accepted_artifact_identity": identity,
+        "terminal_decision": "INDEPENDENT ACCEPTANCE PASS",
+        "evaluator_role_declaration": "INDEPENDENT_EVALUATOR",
+        "artifact_first_audit_status": "COMPLETE",
+        "first_pass_freeze_status": "FROZEN",
+        "evaluator_material_edit_status": "NO",
+        "audit_timestamp": "2026-09-10T00:00:00+08:00",
+        "audit_report_reference": "external-audit-store/p30-a3-report.md",
+    }
+    record.update(overrides)
+    return record
+
+
+def test_external_record_identity_mismatch_is_rejected(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    record_path = tmp_path / "external-audit.json"
+    record_path.write_text(
+        json.dumps(_external_record("FABRICATED-NOT-HEAD")), encoding="utf-8"
+    )
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is False
+    assert "identity" in result.reason.lower()
+    assert result.status != EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT
+
+
+def test_matching_external_record_is_only_verified_not_created(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "external-audit.json"
+    record_path.write_text(
+        json.dumps(_external_record(identity)), encoding="utf-8"
+    )
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is True
+    assert result.status == EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT
+    assert result.repository_proved_independence is False
+    assert result.external_terminal_decision == "INDEPENDENT ACCEPTANCE PASS"
+
+
+def test_cli_verifies_external_record_without_issuing_local_acceptance(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "external-audit.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "p30_acceptance.py"),
+            "--verify-external-acceptance",
+            "--repo",
+            str(repo),
+            "--external-record",
+            str(record_path),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["status"] == EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT
+    assert payload["artifact_acceptance"] == "EXTERNAL_DECISION_VERIFIED"
+    assert payload["repository_proved_independence"] is False
+    assert payload["terminal_acceptance_status"] != "INDEPENDENT ACCEPTANCE PASS"
+
+
+def test_legacy_terminal_cli_alias_only_verifies_external_record(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "external-audit-alias.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "p30_acceptance.py"),
+            "--terminal-acceptance",
+            "--repo",
+            str(repo),
+            "--external-record",
+            str(record_path),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["status"] == EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT
+    assert payload["artifact_acceptance"] == "EXTERNAL_DECISION_VERIFIED"
+    assert payload["repository_proved_independence"] is False
+
+
+def test_current_artifact_drift_invalidates_the_same_external_record(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "external-audit.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+
+    (repo / "artifact.txt").write_text("changed", encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "material change"], cwd=repo, check=True)
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is False
+    assert "identity" in result.reason.lower()
+
+
+def test_dirty_artifact_rejects_external_terminal_verification(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "external-audit.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+    (repo / "untracked.txt").write_text("untracked", encoding="utf-8")
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is False
+    assert "dirty" in result.reason.lower()
+
+
+def test_external_record_inside_candidate_repository_is_rejected(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = repo / "self-authored-acceptance.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is False
+    assert "outside" in result.reason.lower()
+
+
+def test_external_role_declaration_does_not_prove_independence(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    identity = compute_current_artifact_identity(repo).identity
+    record_path = tmp_path / "spoofed-evaluator-claim.json"
+    record_path.write_text(json.dumps(_external_record(identity)), encoding="utf-8")
+
+    result = verify_external_acceptance_record(
+        json.loads(record_path.read_text(encoding="utf-8")),
+        repo=repo,
+        record_path=record_path,
+    )
+    assert result.verified is True
+    assert result.external_terminal_decision == "INDEPENDENT ACCEPTANCE PASS"
+    assert result.repository_proved_independence is False
+    assert "did not prove evaluator independence" in result.reason
+
+
+def test_handoff_routes_computed_clean_artifact_to_fresh_audit(tmp_path):
+    repo = _git_repo_with_commit(tmp_path)
+    current = compute_current_artifact_identity(repo)
+    handoff = prepare_independent_audit_handoff(repo)
+    assert handoff["artifact_identity"] == current.identity
+    assert handoff["clean"] is True
+    assert handoff["artifact_acceptance"] == "NOT_ISSUED"
+    assert handoff["terminal_acceptance_status"] == "NOT_ISSUED"
+    assert handoff["external_audit_record_required"] == "YES"
+    assert handoff["repository_proved_independence"] is False
+
+
+def test_legacy_finality_surfaces_are_candidate_only():
+    for path in LEGACY_RUNNERS:
+        text = read(path)
+        assert "RUN COMPLETE / CANDIDATE RESULTS" in text
+        assert "candidate_decision" in text
+        assert 'print("FINAL' not in text
+        assert 'print("DONE' not in text
+
+    weekly = read(WEEKLY_AUDIT)
+    assert "ALL SCHEDULED REGRESSION CHECKS PASSED" in weekly
+    assert "ARTIFACT ACCEPTANCE: NOT ISSUED" in weekly
+    assert "ALL AUDITS PASSED" not in weekly
+
+
+def test_automatic_commit_path_only_retains_candidate_bundle(monkeypatch):
+    import src.v3_auto_commit as auto_commit_module
+
+    monkeypatch.setattr(auto_commit_module, "check_callers", lambda target: (True, []))
+    monkeypatch.setattr(
+        auto_commit_module,
+        "write_patch_bundle",
+        lambda target: "candidate-bundle.patch",
+    )
+    result = auto_commit_module.auto_commit("core/planner.py")
+    assert result == ""
 
 
 def test_acceptance_identity_must_match_the_material_change_record():
@@ -400,7 +694,7 @@ def test_acceptance_identity_must_match_the_material_change_record():
     )
     allowed, reason = can_issue_terminal_acceptance(record)
     assert allowed is False
-    assert "identity" in reason.lower()
+    assert "external" in reason.lower()
 
 
 def test_fresh_agent_detail_route_exposes_p30_canonical_section():
@@ -428,6 +722,7 @@ def test_normal_implementation_completion_remains_non_terminal():
         capture_output=True,
         text=True,
         encoding="utf-8",
+        env={**os.environ, "PYTHONUTF8": "1"},
         check=False,
     )
     assert result.returncode == 0

@@ -30,8 +30,8 @@ from p30_acceptance import (
     ROLE_IMPLEMENTER,
     ROLE_INDEPENDENT_EVALUATOR,
     ROLE_UNSPECIFIED,
+    compute_current_artifact_identity,
     execution_success,
-    git_artifact_identity,
     record_regression,
 )
 
@@ -116,7 +116,7 @@ def main() -> int:
     parser.add_argument(
         "--artifact-id",
         default="",
-        help="artifact identity; defaults to the current git state identity",
+        help="legacy label retained for compatibility; computed identity is authoritative",
     )
     args = parser.parse_args()
 
@@ -168,9 +168,10 @@ def main() -> int:
 
     # Step 5
     print("\n[Step 5] Notify")
+    current = compute_current_artifact_identity()
     boundary = execution_success(
         role=args.role,
-        artifact_identity=args.artifact_id or git_artifact_identity(),
+        artifact_identity=current.identity,
         material_artifact=True,
     )
     boundary = record_regression(boundary, passed=structurally_complete)
@@ -188,6 +189,9 @@ def main() -> int:
         "  P30 state: "
         f"{boundary.artifact_state}; artifact acceptance={boundary.artifact_acceptance}"
     )
+    print(f"  Computed artifact identity: {current.identity} (clean={current.clean})")
+    if args.artifact_id:
+        print("  Caller artifact-id ignored; it cannot override computed identity.")
 
     # Use-case 1: agent self-invocation pre-claim
     print("\n[External trigger usage]")

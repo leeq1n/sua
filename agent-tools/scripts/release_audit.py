@@ -34,11 +34,7 @@ import zipfile
 from pathlib import Path
 
 from p30_acceptance import (
-    ROLE_UNSPECIFIED,
-    can_issue_terminal_acceptance,
-    execution_success,
-    git_artifact_identity,
-    record_regression,
+    prepare_independent_audit_handoff,
 )
 
 
@@ -178,21 +174,15 @@ def main() -> int:
         if not ok:
             all_pass = False
 
-    p30_record = execution_success(
-        role=ROLE_UNSPECIFIED,
-        artifact_identity=git_artifact_identity(target),
-        material_artifact=True,
-    )
-    p30_record = record_regression(p30_record, passed=all_pass)
-    p30_allowed, p30_reason = can_issue_terminal_acceptance(p30_record)
+    p30_handoff = prepare_independent_audit_handoff(target)
     print("\nP30 boundary:")
     print(
         "  REGRESSION EVIDENCE ONLY: "
-        f"artifact_state={p30_record.artifact_state}; "
-        f"artifact_acceptance={p30_record.artifact_acceptance}"
+        f"artifact_state={p30_handoff['artifact_state']}; "
+        f"artifact_acceptance={p30_handoff['artifact_acceptance']}"
     )
-    if p30_allowed:
-        print(f"  ERROR: terminal authority unexpectedly available: {p30_reason}")
+    if p30_handoff["terminal_acceptance_status"] != "NOT_ISSUED":
+        print("  ERROR: terminal authority unexpectedly exposed")
         return 2
 
     print("\n" + "=" * 60)

@@ -1,11 +1,11 @@
 L0: Skill framework — auto-discovered patches with lifecycle metadata.
 Per LITERATURE SkillOpt paper + user 2026-07-11 push next.
-Last P20-verified: 2026-07-11
+Last P20-verified: 2026-09-10
 
 # Skills
 > L0: Skills registered for this project.  Load when: looking for available skills.
 
-Reusable patterns discovered from auto-committed LLM patches.  Per
+Reusable patterns discovered from auto-generated LLM candidate patches.  Per
 [LITERATURE_DETAIL.md SkillOpt entry](LITERATURE_DETAIL.md#skillopt-paper)
 and your vision (TODO #6 "skill lifecycle v3.2.0").
 
@@ -17,7 +17,7 @@ and your vision (TODO #6 "skill lifecycle v3.2.0").
 
 ## Discovery (auto-pipeline)
 
-1. LLM KEPT patch → `auto-commit` runs → `upgrades/auto-patches/<date>-<hash>.patch`
+1. LLM candidate retained → `--auto-commit` writes a reviewable bundle → `upgrades/auto-patches/<date>-<hash>.patch`
 2. **NEW (this commit)**: `upgrades/auto-patches/<date>-<hash>.meta.json` paired
 3. Meta has: `status: "candidate"`, `applied_count: 0`, `success_count: 0`,
    `paper_id`, `target_module`, `tests_passed`.
@@ -44,7 +44,7 @@ State transition rules (per SkillOpt paper):
 For LLM to **reuse** a skill instead of inventing from scratch:
 
 ```
-patch_path = upgrades/skills/<id>.patch   # promoted bundle
+patch_path = upgrades/skills/<id>.patch   # externally reviewed bundle
 apply_patch(patch_path, target_module)    # existing v2_apply pipeline
 on success: meta.applied_count += 1; success_count += 1
 on failure: meta.success_count += 0; consider demotion
@@ -60,12 +60,13 @@ on failure: meta.success_count += 0; consider demotion
 
 - 2 successful sibling `[auto]` commits (`278cee9` + `4c99443`)
 - Pre-existing bundles in `upgrades/auto-patches/` (no .meta.json yet — pre-meta)
-- **NEW**: future auto-commits will write `*.meta.json` per LITERATURE SkillOpt pattern
+- **NEW**: future candidate bundles may write `*.meta.json` per LITERATURE SkillOpt pattern
 
 ## Forward-looking (planned)
 
 - `promote_skill()` helper: scan candidates, apply retention rules
-- Auto-promote on `--auto-commit` (apply rules after each successful commit)
+- Auto-promote on `--auto-commit` is disabled by P30-A3; retain candidates for
+  external review instead
 - Daily-loop integrates: scan candidates, apply high-success ones to next rounds
 
 Per 奥卡姆 (P7): each step is its own logical commit.  Started

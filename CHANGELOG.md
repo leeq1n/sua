@@ -9,6 +9,28 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-10 — P30-A3 removal of self-attested terminal authority
+
+### Unreleased — external-record-only terminal verification
+
+**TRUST-BOUNDARY CORRECTION.** P30-A3 removes repository self-attestation as
+an acceptance authority. The shared boundary computes the exact current clean
+artifact identity, records implementation/regression evidence as nonterminal,
+and verifies (without creating or proving) a machine-readable external
+independent-audit record produced outside the candidate repository. Missing,
+malformed, stale, mismatched, dirty, in-repository, or caller-fabricated
+terminal evidence fails closed. Non-material caller flags cannot create
+acceptance.
+
+Legacy runners, promotion APIs, and `--auto-commit` retain candidate outputs
+only; no `candidate -> core -> accepted` path remains. The weekly audit now
+reports scheduled regression status separately from `ARTIFACT ACCEPTANCE:
+NOT ISSUED`.
+
+This entry records implementation scope and structural/adversarial regression
+evidence only. It is not independent SUA acceptance; a fresh independent audit
+of the exact resulting artifact remains required.
+
 ## 2026-09-10 — P30-A2 terminal-authority closure
 
 ### Unreleased — fail-closed acceptance plumbing

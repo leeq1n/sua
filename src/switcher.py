@@ -1,10 +1,10 @@
 """Bootloader: 安全管理核心模块的代码版本。
 
-[FROZEN v1.1.0] — stable API, tested, do not modify.
+[LEGACY API] — candidate staging and rollback surface; terminal promotion is disabled by P30-A3.
 
 Operations:
   deploy_candidate  → 保存候选代码到 upgrades/candidates/
-  promote_patch     → 原子写入 core/{target_module}，备份旧版本
+  promote_patch     → 兼容入口：只标记候选已暂存，不写入 core/
   rollback_patch    → 从备份恢复 core/{target_module}
   get_module_versions → 查看当前各核心模块版本
 
@@ -185,132 +185,56 @@ def discard_candidate(skill_name: str) -> dict:
     return {"status": "no_candidate"}
 
 
-# ── Bootloader: deploy to core/ ───────────────────
+# ── Candidate staging (not P30 terminal promotion) ─────────
 
-def promote_patch(skill_name: str) -> dict:
-    """Promote a candidate patch → atomically write to core/{target_module}.
+def stage_candidate(skill_name: str) -> dict:
+    """Mark an existing candidate as staged without changing ``core/``.
 
-    Steps:
-    1. Read candidate's code.py and meta.json
-    2. Backup existing core module
-    3. Write new code to core module
-    4. Update manifest
-
-    Returns:
-        {"status": "promoted"|"no_candidate"|"no_code",
-         "target_module": str,
-         "backup": str}
+    ``core/`` is an active execution surface, so writing it from a local
+    candidate decision would be a material promotion path.  P30-A3 keeps
+    candidate generation and retention useful while making this legacy
+    promotion API explicitly nonterminal.  A separate external workflow must
+    own any later canonical deployment decision.
     """
     init()
     cand = os.path.join(_dir(_CANDIDATE), skill_name)
+    if not os.path.isdir(cand):
+        return {"status": "no_candidate", "candidate": cand}
 
-    if not os.path.exists(cand):
-        return {"status": "no_candidate"}
-
-    # Read metadata
     meta_path = os.path.join(cand, "meta.json")
     meta = {}
     if os.path.exists(meta_path):
-        with open(meta_path) as f:
+        with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
-
-    target_module = meta.get("target_module", "planner.py")
-
-    # Read code
-    code_path = os.path.join(cand, "code.py")
-    if not os.path.exists(code_path):
-        return {"status": "no_code", "target_module": target_module}
-
-    with open(code_path, encoding="utf-8") as f:
-        code = f.read()
-
-    # Extract only the function part (before # --- test ---)
-    function_code = code.split("# --- test ---")[0].strip()
-
-    # Backup existing core module
-    backup_path = _backup_module(target_module)
-    if not backup_path:
-        return {"status": "backup_failed", "target_module": target_module}
-
-    # Apply the patch via the shared surgical-merge function so imports,
-    # __version__, and module-level metadata are preserved.  This is the
-    # same code path used by pipeline_lg.node_evaluate for A/B comparison,
-    # so the deployed version matches what was benchmarked.
-    dst = CORE_MODULES[target_module]
-    try:
-        from src.pipeline_lg import _apply_patch_to_module
-        merged_code = _apply_patch_to_module(dst, function_code)
-    except ImportError:
-        # Fallback: if pipeline_lg can't be imported (e.g. langgraph missing),
-        # use the legacy full-file write so we never silently lose the patch.
-        logger.warning("pipeline_lg not importable, using legacy full-file write")
-        merged_code = function_code
-
-    # Check available disk space before writing to core/
-    try:
-        import shutil as _shutil
-        free_space = _shutil.disk_usage(os.path.dirname(dst) or ".").free
-        if free_space < len(merged_code) * 2 + 4096:
-            logger.error(
-                f"Insufficient disk space: {free_space} bytes free, "
-                f"need at least {len(merged_code) * 2 + 4096}"
-            )
-            return {"status": "out_of_disk_space", "target_module": target_module}
-    except Exception:
-        pass  # disk_usage not available on all platforms
-
-    # Write to core module (atomic: write to temp, then rename)
-    tmp_dst = dst + ".tmp"
-    try:
-        with open(tmp_dst, "w", encoding="utf-8") as f:
-            f.write(merged_code)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_dst, dst)  # atomic on POSIX + Windows
-    except Exception:
-        if os.path.exists(tmp_dst):
-            os.remove(tmp_dst)
-        raise
-
-    # Update manifest
-    manifest = _read_manifest()
-    version_entry = {
-        "skill_name": skill_name,
-        "target_module": target_module,
-        "promoted_at": datetime.now().isoformat(),
-        "backup": backup_path,
-        "code_size": len(merged_code),
-    }
-    manifest["history"].append(version_entry)
-    manifest["modules"][target_module] = version_entry
-    _write_manifest(manifest)
-
-    logger.info(
-        f"Promoted {skill_name} → core/{target_module} "
-        f"(surgical merge, {len(merged_code)} bytes, backup: {backup_path})"
-    )
     return {
-        "status": "promoted",
-        "target_module": target_module,
-        "backup": backup_path,
-        "skill": skill_name,
-        "code_size": len(merged_code),
-        "merge_strategy": "surgical",
+        "status": "candidate_staged",
+        "candidate": cand,
+        "target_module": meta.get("target_module", "planner.py"),
+        "p30_artifact_acceptance": "NOT_ISSUED",
+        "p30_terminal_status": "READY FOR INDEPENDENT AUDIT",
     }
+
+def promote_patch(skill_name: str) -> dict:
+    """Compatibility alias for :func:`stage_candidate`.
+
+    The old name must not retain a material ``candidate → core/`` promotion
+    side effect.  It now returns an explicit candidate-only status.
+    """
+    result = stage_candidate(skill_name)
+    result["legacy_api"] = "promote_patch"
+    result["promotion_disabled"] = True
+    return result
 
 
 def promote_candidate(skill_name: str) -> dict:
-    """Backward-compatible wrapper: promote to legacy active/ dir + core module."""
-    result = promote_patch(skill_name)
-    # Also maintain legacy active/ directory for backward compat
-    if result["status"] == "promoted":
-        cand = os.path.join(_dir(_CANDIDATE), skill_name)
-        active = os.path.join(os.path.dirname(_dir(_CANDIDATE)), "active", skill_name)
-        os.makedirs(os.path.dirname(active), exist_ok=True)
-        if os.path.exists(active):
-            shutil.rmtree(active, ignore_errors=True)
-        shutil.copytree(cand, active)
-        result["legacy_active"] = active
+    """Backward-compatible candidate-only wrapper.
+
+    Legacy ``active/`` and ``core/`` writes are intentionally not performed;
+    local keep/sandbox success is not P30 acceptance.
+    """
+    result = stage_candidate(skill_name)
+    result["legacy_api"] = "promote_candidate"
+    result["promotion_disabled"] = True
     return result
 
 

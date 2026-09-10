@@ -1,9 +1,10 @@
-"""Auto-commit helper for daily-loop / improve.
+"""Candidate-bundle helper for daily-loop / improve.
 
-Per user 2026-07-10 '区分开自动更新和手动更新': machine-applied
-patches get a distinct author + [auto] prefix + a reviewable bundle
-in upgrades/auto-patches/, so the user can tell auto from manual commits
-at a glance.
+Per user 2026-07-10 '区分开自动更新和手动更新': machine-generated
+patches get a reviewable bundle in upgrades/auto-patches/.  P30-A3 keeps
+that candidate evidence but disables automatic canonical commits: a local
+keep decision or compile check cannot promote a material artifact to the
+repository's active state.
 
 Per P9 (hard rule, not LLM-judged): callers must resolve BEFORE commit.
 Per P18 (failure -> regression test): 24 tests fail on 2026-07-10 taught
@@ -130,9 +131,10 @@ def write_skill_meta(target_module, paper_id, tests_passed, bundle_path, commit_
     (candidate → active → archived) tracked via metadata.
 
     Per P14 docs stay current + P19 data flow observability:
-    each auto-commit produces a paired .meta.json for future
-    skill lifecycle management (discovery, apply, review,
-    retain/drop).
+    each explicitly retained candidate bundle may carry a paired .meta.json
+    for future skill lifecycle management (discovery, apply, review,
+    retain/drop).  The automatic canonical commit path never calls this
+    helper after the P30-A3 correction.
 
     Returns path to meta file, or "" on failure.
     """
@@ -165,13 +167,16 @@ def write_skill_meta(target_module, paper_id, tests_passed, bundle_path, commit_
 
 
 def auto_commit(target_module, paper_id="", tests_passed=0, bundle_path=""):
-    """Commit KEPT patch with auto author + [auto] prefix.
+    """Refuse automatic canonical commit and retain candidate evidence.
 
-    Returns commit hash, or "" on failure.
+    The function name is retained for API compatibility, but it never stages
+    or commits a material target.  Candidate generation remains available via
+    ``write_patch_bundle``.  A later external workflow may decide whether a
+    separately audited exact artifact can be deployed.
 
-    Per P9 (hard rule) + P18 (failure -> regression test):
-    caller validation runs BEFORE commit.  If any caller of target_module
-    fails to compile, auto-commit is skipped (returns "").
+    Returns an empty string by design.  Caller validation still runs first so
+    existing callers retain the regression guard and no side effect occurs on
+    a failed validation.
     """
     # Per P9 + P18: validate callers BEFORE staging (cheap compile check)
     ok, errors = check_callers(target_module)
@@ -181,52 +186,12 @@ def auto_commit(target_module, paper_id="", tests_passed=0, bundle_path=""):
             print(f"    - {e}")
         return ""
 
-    # Stage the target file
-    _run_git(["add", "--", target_module])
-
-    # Build commit message
-    msg_lines = [f"[auto] KEPT patch to {target_module}"]
-    if paper_id:
-        msg_lines.append(f"Paper: {paper_id}")
-    if tests_passed:
-        msg_lines.append(f"Tests: {tests_passed} passed")
-    if bundle_path:
-        msg_lines.append(f"Bundle: {bundle_path}")
-    msg_lines.append("")
-    msg_lines.append("Auto-committed by self-upgrade daily-loop/improve.")
-    msg_lines.append("Per user 2026-07-10 '区分开自动更新和手动更新'.")
-    msg_lines.append(f"Author: {AUTO_AUTHOR} <{AUTO_EMAIL}>")
-    msg = "\n".join(msg_lines)
-
-    # Commit with auto author (per git config override)
-    env_args = [
-        "-c", f"user.name={AUTO_AUTHOR}",
-        "-c", f"user.email={AUTO_EMAIL}",
-    ]
-    r = subprocess.run(
-        ["git"] + env_args + ["commit", "-m", msg],
-        capture_output=True,
-        cwd=os.getcwd(), timeout=15,
-        encoding="utf-8",
-        errors="replace",
+    if not bundle_path:
+        bundle_path = write_patch_bundle(target_module)
+    print(
+        "  [auto-commit] BLOCKED: automatic canonical commit disabled; "
+        "candidate remains nonterminal"
     )
-    if r.returncode != 0:
-        return ""
-
-    # Get commit hash
-    rc, out, _ = _run_git(["rev-parse", "HEAD"])
-    commit_hash = out.strip() if rc == 0 else ""
-
-    # Per LITERATURE SkillOpt paper: write skill metadata alongside bundle
-    if commit_hash:
-        meta_path = write_skill_meta(
-            target_module=target_module,
-            paper_id=paper_id,
-            tests_passed=tests_passed,
-            bundle_path=bundle_path,
-            commit_hash=commit_hash,
-        )
-        if meta_path:
-            print(f"  [auto-commit] skill meta: {meta_path}")
-
-    return commit_hash
+    if bundle_path:
+        print(f"  [candidate] bundle: {bundle_path}")
+    return ""

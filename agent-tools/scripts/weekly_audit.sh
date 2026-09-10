@@ -61,10 +61,12 @@ echo "pytest exit: $PYTEST_EXIT"
 # By design, audit scripts return FAIL even on expected failures
 # (tua-start siblings + recursive changelog gap). Don't treat as error.
 if [ "$SHC_EXIT" -eq 0 ] && [ "$CRA_EXIT" -eq 0 ] && [ "$PYTEST_EXIT" -eq 0 ]; then
-    echo "Overall: ALL AUDITS PASSED"
+    echo "Overall: ALL SCHEDULED REGRESSION CHECKS PASSED"
+    echo "ARTIFACT ACCEPTANCE: NOT ISSUED"
     exit 0
 else
-    echo "Overall: at least one audit returned non-zero"
+    echo "Overall: at least one scheduled regression check returned non-zero"
+    echo "ARTIFACT ACCEPTANCE: NOT ISSUED"
     echo "  (Note: FAIL is by design for some checks — review output above)"
     exit 0  # Don't fail cron on expected FAIL
 fi

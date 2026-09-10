@@ -4,7 +4,7 @@ Main pipeline:
   R (Research) → F (Filter) → G (Generate Patch) → X (Sandbox Test)
     → T (Reflect & Retry) if failed
     → E (Evaluate: real A/B benchmark) if passed
-    → D (Decide & Deploy)
+    → D (Decide & Stage Candidate)
 
 This pipeline replaces the legacy pipeline.py skillgen path. It uses patchgen
 to generate actual Python code patches targeting core/ modules.
@@ -860,7 +860,7 @@ def node_evaluate(state: dict) -> dict:
 
 
 def node_decide(state: dict) -> dict:
-    """Phase 6: Decide and deploy — keep or revert."""
+    """Phase 6: Decide and stage candidate — retain or reject locally."""
     eval_data = state.get("evaluation", {})
     cfg = state.get("config")
     best = state.get("best_paper")
@@ -930,12 +930,18 @@ def node_decide(state: dict) -> dict:
             if decision["decision"] == "kept":
                 if getattr(cfg.pipeline, "auto_promote", False):
                     result = promote_candidate(patch_name)
-                    logger.info(f"   AUTO-PROMOTED to core/{target_module}: {result['status']}")
+                    logger.info(
+                        f"   CANDIDATE STAGED ONLY (legacy auto-promote disabled): "
+                        f"{patch_name}: {result['status']}; P30 acceptance not issued"
+                    )
                 else:
-                    logger.info(f"   KEPT. Manual approval required: review candidate {patch_name} before applying")
+                    logger.info(
+                        f"   CANDIDATE RETAINED. Review {patch_name} before any "
+                        "external acceptance/deployment"
+                    )
             else:
                 discard_candidate(patch_name)
-                logger.info(f"   REVERTED. Candidate discarded: {patch_name}")
+                logger.info(f"   CANDIDATE REJECTED. Candidate discarded: {patch_name}")
 
             # v1.8.1: log decision to decision_log (knowledge persistence).
             # Free-text failure_mode lets LLM categorize without enum.
@@ -982,8 +988,8 @@ def node_decide(state: dict) -> dict:
                 except Exception as e:
                     logger.debug(f"mark_paper_seen failed (non-fatal): {e}")
     except Exception as e:
-        state["errors"].append(f"Deploy: {e}")
-        logger.warning(f"   Deploy error: {e}")
+        state["errors"].append(f"Candidate stage: {e}")
+        logger.warning(f"   Candidate-stage error: {e}")
 
     state["done"] = True
     return state

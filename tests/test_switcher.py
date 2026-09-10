@@ -76,10 +76,10 @@ def test_get_module_versions(clean_switcher):
     assert versions["planner.py"]["exists"]
 
 
-def test_promote_and_rollback(clean_switcher):
-    """Promote a candidate patch → write to core/ → rollback restores original."""
+def test_promotion_api_stages_candidate_without_writing_core(clean_switcher):
+    """Legacy promotion names remain candidate-only under P30-A3."""
     from src.switcher import (
-        deploy_candidate, promote_patch, rollback_patch, get_module_versions,
+        deploy_candidate, promote_candidate, promote_patch,
     )
 
     # Create candidate targeting planner.py
@@ -90,38 +90,24 @@ def test_promote_and_rollback(clean_switcher):
     }
     deploy_candidate("test-boot", "# Test", code, target_module="planner.py")
 
-    # Read original planner content before promote
+    # Read original planner content before the compatibility call.
     planner_path = os.path.join(os.path.dirname(__file__), "..", "core", "planner.py")
     with open(planner_path, "r", encoding="utf-8") as f:
         original_content = f.read()
 
-    # Promote (this writes to core/planner.py and creates a backup)
+    # The old API name must not write to core/ or create a P30 acceptance.
     result = promote_patch("test-boot")
-    assert result["status"] == "promoted"
+    assert result["status"] == "candidate_staged"
     assert result["target_module"] == "planner.py"
-    assert result.get("merge_strategy") == "surgical", (
-        "promote_patch must use surgical merge to preserve imports/version"
-    )
-    assert os.path.exists(result["backup"])
+    assert result["p30_artifact_acceptance"] == "NOT_ISSUED"
+    assert result["promotion_disabled"] is True
 
-    # Verify core/planner.py was changed
+    candidate_result = promote_candidate("test-boot")
+    assert candidate_result["status"] == "candidate_staged"
+    assert candidate_result["p30_artifact_acceptance"] == "NOT_ISSUED"
+    assert candidate_result["promotion_disabled"] is True
+
+    # Verify core/planner.py was not changed.
     with open(planner_path, "r", encoding="utf-8") as f:
-        patched_content = f.read()
-    assert "patched planner" in patched_content
-    assert "step1" in patched_content
-    assert patched_content != original_content
-
-    # CRITICAL: surgical merge must preserve module-level metadata
-    assert '__version__' in patched_content, "surgical merge dropped __version__"
-    assert "from typing" in patched_content or "import typing" in patched_content, (
-        "surgical merge dropped typing imports"
-    )
-
-    # Rollback
-    result2 = rollback_patch("planner.py")
-    assert result2["status"] == "rolled_back"
-
-    # Verify core/planner.py was restored
-    with open(planner_path, "r", encoding="utf-8") as f:
-        restored_content = f.read()
-    assert restored_content == original_content
+        current_content = f.read()
+    assert current_content == original_content

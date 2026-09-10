@@ -5,6 +5,8 @@
 > file is the L2 layer (code legacy + CLI + history).
 > Per R6, this companion is referenced from the README.
 
+Last P20-verified: 2026-09-10
+
 ---
 
 ## Code legacy (v1.x-v3.x)
@@ -24,7 +26,7 @@ CLI scripts exercise `src/` (removing it would break CI).
 5. REFLECT   → 失败后 LLM 自动修复 (最多 3 轮)
 6. EVALUATE  → 真实 benchmark A/B 对比 (baseline vs patched) + bootstrap 显著性
 7. DECIDE    → 阈值判断 + 统计 CI → keep 或 revert
-8. DEPLOY    → bootloader 原子写入 core/ 模块, 备份旧版本
+8. STAGE     → 保留候选补丁/候选束；不自动写入 core/ 或发布终态
 9. LIFECYCLE → 版本追踪、使用统计、定期修剪
 ```
 
@@ -98,7 +100,10 @@ pytest tests/  # ~875 tests
 - v2.x: docs + P-n + M-n + skill-generation-knowledge
   (agent discipline knowledge library focus)
 
-完整发布日志见 `CHANGELOG.md`。
+完整发布日志见 `CHANGELOG.md`。P30-A3 后，legacy CLI 的 `--auto-commit`
+和 promotion 入口只保留候选结果/补丁束；它们不能把候选写入 canonical
+`core/`，也不能创建终端验收。正式验收必须由候选仓库外的新鲜 evaluator
+产生外部 machine-readable record，再由仓库验证 exact clean identity。
 
 ---
 

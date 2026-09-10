@@ -32,11 +32,7 @@ import sys
 from pathlib import Path
 
 from p30_acceptance import (
-    ROLE_UNSPECIFIED,
-    can_issue_terminal_acceptance,
-    execution_success,
-    git_artifact_identity,
-    record_regression,
+    prepare_independent_audit_handoff,
 )
 
 
@@ -113,16 +109,9 @@ def check_repo_clean() -> list[str]:
 
 def check_p30_boundary() -> list[str]:
     """Ensure pre-commit evidence cannot be mistaken for acceptance."""
-    role = os.environ.get("SUA_ROLE", ROLE_UNSPECIFIED)
-    record = execution_success(
-        role=role,
-        artifact_identity=git_artifact_identity(REPO),
-        material_artifact=True,
-    )
-    record = record_regression(record, passed=True)
-    allowed, reason = can_issue_terminal_acceptance(record)
-    if allowed:
-        return [f"P30 boundary failed closed-check: {reason}"]
+    handoff = prepare_independent_audit_handoff(REPO)
+    if handoff["terminal_acceptance_status"] != "NOT_ISSUED":
+        return ["P30 boundary failed: handoff exposed terminal acceptance"]
     return []
 
 
@@ -133,7 +122,7 @@ def main() -> int:
     parser.add_argument(
         "--terminal-acceptance",
         action="store_true",
-        help="refuse: terminal acceptance requires a separate P30 state record",
+        help="refuse: terminal acceptance requires an external P30 record outside the candidate repository",
     )
     args = parser.parse_args()
 

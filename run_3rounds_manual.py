@@ -7,8 +7,9 @@ This runs the pipeline 3 times with the same 3 papers, reports
 real-time state of core/planner.py and history.db, and saves
 results to upgrades/3round_manual_<timestamp>.json.
 
-Stops on first round that successfully promotes (decision=kept).
-If all 3 revert, still saves results and reports the situation.
+Stops on first round that locally retains a candidate (decision=kept).
+Candidate retention is not canonical deployment or P30 acceptance.  If all
+3 candidates are rejected, still saves results and reports the situation.
 
 Cost: ~50 LLM calls per round × 3 rounds = ~150 calls.
 Uses claude-sonnet-4-5 on api.minimaxi.com/anthropic endpoint.
@@ -162,7 +163,7 @@ def run_one_round(n, paper):
     }
 
     print(f"  Elapsed: {elapsed:.1f}s")
-    print(f"  done={result['done']} decision={result['decision']}")
+    print(f"  run_done={result['done']} candidate_decision={result['decision']}")
     if result["delta"] is not None:
         print(f"  A/B: baseline={result['baseline_rate']:.2%} upgraded={result['upgraded_rate']:.2%} delta={result['delta']:+.2%}")
     print(f"  sandbox={'passed' if result['sandbox_passed'] else 'fail'} reflect_attempts={result['reflect_attempts']}")
@@ -192,7 +193,7 @@ for n in range(1, 4):
 
 # Final state
 print("\n" + "=" * 60)
-print("FINAL")
+print("RUN COMPLETE / CANDIDATE RESULTS")
 print("=" * 60)
 preflight()  # final safety
 final_md5 = md5_lf(PLANNER)
@@ -207,8 +208,8 @@ print(f"git status: {r.stdout!r}")
 kept_rounds = [r for r in results if r["decision"] == "kept"]
 reverted_rounds = [r for r in results if r["decision"] == "reverted"]
 print(f"\n3 rounds summary:")
-print(f"  kept: {len(kept_rounds)}")
-print(f"  reverted: {len(reverted_rounds)}")
+print(f"  candidates retained: {len(kept_rounds)}")
+print(f"  candidates rejected: {len(reverted_rounds)}")
 print(f"  failed: {len([r for r in results if r['decision'] is None])}")
 print(f"  total LLM calls: ~{sum(1 for _ in results) * 50} (estimated)")
 
@@ -244,4 +245,4 @@ for root, dirs, files in os.walk(project_root):
             n_cleaned += 1
             dirs.remove(d)
 print(f"Auto-cleaned {n_cleaned} __pycache__ dirs")
-print("\nDONE")
+print("\nRUN COMPLETE / CANDIDATE RESULTS SAVED")

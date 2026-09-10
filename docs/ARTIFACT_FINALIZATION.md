@@ -92,6 +92,8 @@ Initially withhold patch rationales, previous PASS reports, prior review
 personas, and explanations for unusual decisions. Record observations first;
 then reconcile them with history and evidence. Under P30, the evaluator must
 be a role that did not materially implement the artifact state being accepted.
+Only the independent evaluator may issue terminal acceptance. Under P30-A3,
+that evaluator must be fresh and independent of material implementation.
 A different agent instance is optional as a mechanism, but a fresh evaluator
 independent of material implementation is mandatory. A separate agent
 instance or human evaluator is preferred when practical; the requirement is
@@ -100,11 +102,26 @@ alone.
 
 The implementer may report `LOCAL FIX VERIFIED` and `REGRESSION PASS`, then
 must hand off with `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`.
-The handoff must carry the current `ARTIFACT_IDENTITY`, `CURRENT_ROLE`, prior
-acceptance/material-change state, regression status, and evaluator-edit state.
-Only the independent evaluator may issue terminal acceptance.  The shared
-`p30_acceptance.py` boundary fails closed when those fields are missing,
-contradictory, stale, or not backed by an artifact-first audit.
+The handoff must carry the computed current `ARTIFACT_IDENTITY`, clean/dirty
+state, prior acceptance/material-change state, regression status, and
+evaluator-edit state. The independent evaluator owns the terminal decision by
+producing an external record outside the candidate repository. The repository
+verifier may confirm that the record matches the exact unchanged clean
+artifact, but it cannot create the decision or prove that the evaluator was
+genuinely independent.
+
+P30-A3 has two enforcement layers:
+
+- **Machine-enforceable:** computed artifact identity, clean-state requirement,
+  drift/staleness, nonterminal local/checker status, external-record schema
+  and identity match, and blocked legacy material-finalization paths.
+- **Governance/orchestrator-enforced:** fresh evaluator identity, absence of
+  hidden authorship, artifact-first ordering, first-pass freezing, and
+  independent production of the external report.
+
+The shared `p30_acceptance.py` boundary fails closed when the record is
+missing, malformed, stale, dirty, contradictory, or mismatched. It does not
+pretend that caller flags prove the governance layer.
 
 Ask: if an informed evaluator encountered only the current artifact, would its
 structure and behavior be natural, self-consistent, and appropriate for the

@@ -1,16 +1,17 @@
 """Day 7+: stable self-evolution runner.
 
-Goal: keep running rounds UNTIL harness is 100% + decision=KEPT
-for N consecutive rounds (default N=3).  Stop on success.
+Goal: keep running rounds UNTIL harness is 100% + local candidate retention
+for N consecutive rounds (default N=3).  Stop on local candidate convergence;
+this is not canonical deployment or P30 acceptance.
 
 This is the real "self-evolution convergence" test, not just
 "did 1 round work".
 
 Usage:
-  python run_stable.py           # default: 3 consecutive KEPT rounds
-  python run_stable.py 5         # 5 consecutive KEPT rounds
-  python run_stable.py 1         # 1 KEPT round (smoke test)
-  python run_stable.py 3 60      # 3 KEPT rounds, 60s gap (avoid model warmup)
+  python run_stable.py           # default: 3 consecutive retained candidates
+  python run_stable.py 5         # 5 consecutive retained candidates
+  python run_stable.py 1         # 1 retained candidate (smoke test)
+  python run_stable.py 3 60      # 3 retained candidates, 60s gap
 
 State:
   planner.py MUST be at HEAD (preflight restores it)
@@ -67,7 +68,7 @@ def preflight():
 
 
 def run_one_round(n, paper, consecutive_kept_so_far):
-    print(f"\n========== ROUND {n} (consecutive KEPT: {consecutive_kept_so_far}) ==========")
+    print(f"\n========== ROUND {n} (consecutive candidate-retained: {consecutive_kept_so_far}) ==========")
     print(f"Paper: {paper['arxiv_id']} — {paper['title'][:60]}")
     preflight()
     pre_history = sqlite3.connect("upgrades/history.db").execute(
@@ -113,7 +114,7 @@ def run_one_round(n, paper, consecutive_kept_so_far):
     audit = state.get("skill_audit") if state else None
 
     print(f"  Elapsed: {elapsed:.1f}s")
-    print(f"  done={state.get('done') if state else None} decision={decision}")
+    print(f"  run_done={state.get('done') if state else None} candidate_decision={decision}")
     if state and state.get("evaluation", {}).get("success_rate_delta") is not None:
         ev = state["evaluation"]
         print(f"  A/B: baseline={ev.get('baseline_rate', 0):.2%} "
@@ -187,7 +188,7 @@ def main():
 
     print("=" * 60)
     print(f"Day 7+ : stable self-evolution runner")
-    print(f"Target: {target} consecutive KEPT rounds")
+    print(f"Target: {target} consecutive locally retained candidates")
     print(f"Provider: {os.environ.get('LLM_BASE_URL', '?')}")
     print(f"Model: {os.environ.get('LLM_MODEL', '?')}")
     print(f"Gap: {gap}s between rounds")
@@ -198,7 +199,7 @@ def main():
     # would erase the trail we use to debug."  gc runs only after
     # a successful run completes (see "post-run gc" below).
     consecutive_kept = 0
-    consecutive_kept_with_harness = 0  # KEPT AND harness=100%
+    consecutive_kept_with_harness = 0  # candidate retained AND harness=100%
     consecutive_kept_runs = []  # list of round dicts (the consecutive kept ones)
     all_runs = []
     max_rounds = 20  # hard cap to prevent infinite loop
@@ -215,20 +216,20 @@ def main():
             if harness_pct == 1.0:
                 consecutive_kept_with_harness += 1
                 consecutive_kept_runs.append(result)
-                print(f"  >>> CONSECUTIVE KEPT WITH HARNESS 100%: {consecutive_kept_with_harness}/{target}")
+                print(f"  >>> CONSECUTIVE CANDIDATE RETENTION WITH HARNESS 100%: {consecutive_kept_with_harness}/{target}")
             else:
-                # Reset counter — KEPT but harness not 100% is a partial win
+                # Reset counter — candidate retained but harness not 100% is partial evidence
                 consecutive_kept_with_harness = 0
                 consecutive_kept_runs = []
-                print(f"  >>> KEPT but harness < 100% (counter reset)")
+                print(f"  >>> CANDIDATE RETAINED but harness < 100% (counter reset)")
         else:
             consecutive_kept = 0
             consecutive_kept_with_harness = 0
             consecutive_kept_runs = []
-            print(f"  >>> NOT KEPT (counter reset)")
+            print(f"  >>> CANDIDATE NOT RETAINED (counter reset)")
 
         if consecutive_kept_with_harness >= target:
-            print(f"\n*** REACHED TARGET: {target} consecutive KEPT rounds with harness 100% ***")
+            print(f"\n*** REACHED TARGET: {target} consecutive retained candidates with harness 100% ***")
             break
 
         if n < max_rounds:
@@ -277,10 +278,10 @@ def main():
     # Final summary
     preflight()
     print("\n" + "=" * 60)
-    print("FINAL")
+    print("RUN COMPLETE / CANDIDATE RESULTS")
     print("=" * 60)
     print(f"Total rounds: {len(all_runs)}")
-    print(f"Consecutive KEPT with harness 100%: {consecutive_kept_with_harness}/{target}")
+    print(f"Consecutive candidate retention with harness 100%: {consecutive_kept_with_harness}/{target}")
     print(f"planner.py MD5: {md5_lf(PLANNER)}")
     print(f"history.db: {sqlite3.connect('upgrades/history.db').execute('SELECT COUNT(*) FROM upgrades').fetchone()[0]} rows")
     print(f"audit_history: {sqlite3.connect('upgrades/history.db').execute('SELECT COUNT(*) FROM audit_history').fetchone()[0]} rows")
@@ -299,7 +300,7 @@ def main():
         json.dump(out, f, indent=2, default=str)
     print(f"Results saved to {out_path}")
 
-    print("DONE")
+    print("RUN COMPLETE / CANDIDATE RESULTS SAVED")
 
     if consecutive_kept_with_harness >= target:
         sys.exit(0)  # success

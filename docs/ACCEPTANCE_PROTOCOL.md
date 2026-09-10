@@ -39,6 +39,12 @@ Per **P30**, the constructor also cannot be the final acceptor. Distinguish:
 
 The IMPLEMENTER may not issue final acceptance of its own modified artifact.
 
+P30-A3 clarifies the trust boundary: repository tooling can compute the
+current artifact identity and verify an already-existing external record, but
+it cannot create independent acceptance from caller-supplied role, identity,
+audit, materiality, or evaluator-edit claims. A clean commit hash establishes
+identity/integrity; it does not prove evaluator independence.
+
 Per tua-start `AGENTS.md` "Task-done-notify reminder" (M-n 16 stage 1-2):
 - 5 primitives must apply BEFORE any commit
 - This includes Plan / Search / Lesson / Observe / Cite
@@ -100,13 +106,23 @@ Practical file naming:
 
 ## 4. Acceptance state/report structure
 
-Each terminal material-artifact workflow produces a P30 state record before
-any terminal decision.  Ordinary checkers may produce regression evidence
-without creating an acceptance record.  The shared fail-closed state boundary
-is implemented in `agent-tools/scripts/p30_acceptance.py`.
+Each material-artifact implementation produces a nonterminal P30 handoff.
+Terminal acceptance is represented by a machine-readable record produced
+outside the candidate repository by the independent evaluator. The repository
+verifier may check the external record's schema, exact artifact identity,
+decision, clean state, and drift; it must not manufacture the decision or
+claim to prove the evaluator's epistemic independence. Ordinary checkers may
+produce regression evidence without creating an acceptance record.
+
+The shared boundary is implemented in
+`agent-tools/scripts/p30_acceptance.py`. Its local `--terminal-acceptance`
+name is retained only as a compatibility alias for external-record
+verification; without `--external-record` it fails closed. The local API
+`issue_terminal_acceptance()` is a compatibility trap that always refuses
+creation.
 
 ```markdown
-# Artifact Acceptance State Record — <DATE>
+# Artifact Implementation Handoff — <DATE>
 
 ## Artifact and authority state
 - HEAD: <git SHA>
@@ -149,19 +165,23 @@ is implemented in `agent-tools/scripts/p30_acceptance.py`.
 - MINOR: can defer to next session
 - INFO: documentation only
 
-## Terminal decision
+## Terminal boundary
 - LOCAL_FIX_STATUS: <status>
 - REGRESSION_STATUS: <status>
 - INDEPENDENT_AUDIT_STATUS: <status>
-- TERMINAL_ACCEPTANCE_STATUS: NOT ISSUED / ACCEPTANCE BLOCKED / INDEPENDENT ACCEPTANCE PASS
-- ISSUER_ROLE: <explicit role>
+- TERMINAL_ACCEPTANCE_STATUS: NOT ISSUED / ACCEPTANCE BLOCKED / EXTERNAL RECORD VERIFIED
+- ISSUER_ROLE: IMPLEMENTER / UNSPECIFIED in this handoff
+- EXTERNAL_RECORD_PATH: <outside candidate repository, or NONE>
+- EXTERNAL_RECORD_IDENTITY: <identity or NONE>
+- MACHINE_INDEPENDENCE_PROOF: NOT_MACHINE_PROVEN
 
-For a material artifact, an unknown, missing, contradictory, or stale
-authority field yields `ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED`.
-Only a fresh `INDEPENDENT_EVALUATOR` with matching artifact identity,
-artifact-first first-pass evidence, no material edit, and valid authority may
-issue `INDEPENDENT ACCEPTANCE PASS`.  `EXECUTION_SUCCESS`, checker output,
-`REGRESSION PASS`, and an implementation handoff never issue it.
+For a material artifact, an unknown, missing, contradictory, stale, dirty, or
+mismatched field yields `ACCEPTANCE BLOCKED / INDEPENDENT AUDIT REQUIRED`.
+Only an already-existing external record with matching identity may be
+verified. `EXECUTION_SUCCESS`, checker output, `REGRESSION PASS`, and an
+implementation handoff never create it. The external evaluator/orchestrator
+remains responsible for ensuring that the evaluator is genuinely fresh,
+independent, artifact-first, and not the material author of the candidate.
 
 ## Next action
 If independent audit finds a material issue → Phase 4, then a new Phase 3.
@@ -170,14 +190,43 @@ If a material evaluator edit occurs → terminate that evaluator authority,
 mark the resulting state stale, and return to implementation flow.
 ```
 
+### 4a. External independent-audit record format
+
+The minimal record is JSON and must be produced outside the candidate
+repository. The repository verifier does not write this record:
+
+```json
+{
+  "schema_version": "P30-A3/v1",
+  "record_type": "P30_EXTERNAL_INDEPENDENT_AUDIT",
+  "artifact_identity": "<exact-clean-commit-sha>",
+  "accepted_artifact_identity": "<exact-clean-commit-sha>",
+  "terminal_decision": "INDEPENDENT ACCEPTANCE PASS",
+  "evaluator_role_declaration": "INDEPENDENT_EVALUATOR",
+  "artifact_first_audit_status": "COMPLETE",
+  "first_pass_freeze_status": "FROZEN",
+  "evaluator_material_edit_status": "NO",
+  "audit_timestamp": "<ISO-8601 timestamp>",
+  "audit_report_reference": "<external report location>"
+}
+```
+
+The verifier returns
+`EXTERNAL_ACCEPTANCE_RECORD_MATCHES_CURRENT_ARTIFACT` only after computing a
+clean current identity and matching it to the record. This result means that
+the external decision targets the unchanged artifact; it does not authenticate
+the evaluator or convert a self-authored JSON file into proof of independence.
+The record path is required to resolve outside the candidate repository so the
+implementer cannot accept itself by committing a record into the candidate.
+
 ## 5. Regression-evidence tools (sua-verify- prefix scripts)
 
 Currently 3 scripts in `agent-tools/scripts/`:
 - `self_health_check.py` — string pattern checks
 - `cross_repo_audit.py` — sibling pollution check
 - `hook_principles_loader.py` — Q2 closure registry
-- `p30_acceptance.py` — shared role/state/identity boundary; terminal mode is
-  fail-closed unless all P30 evidence fields are explicit
+- `p30_acceptance.py` — computes identity, prepares handoffs, and verifies
+  external records; it never creates terminal acceptance
 
 Recommended new tools (per gap analysis):
 - `validate_links.py` — markdown cross-reference integrity (22 broken refs found)
@@ -210,9 +259,10 @@ Two modes:
 - Set in `.git/hooks/pre-commit`
 
 `--gate` is a technical regression gate only.  It never authorizes artifact
-acceptance.  A request for terminal acceptance must use the P30 state record;
-missing role, identity, non-stale state, artifact-first evidence, or clean
-evaluator-authority fields is refused.
+acceptance. A request for terminal verification must provide an already
+existing external P30 record; missing identity, dirty state, stale/drifted
+artifact, malformed record, or mismatched fields is refused. The verifier
+does not infer evaluator independence from the record.
 
 ## 7. Implementation plan
 
@@ -232,14 +282,15 @@ updated under the principle-modification procedure.
 - `docs/PROJECT_STATE.md` — add acceptance protocol reference
 - `AGENTS.md` — add acceptance phase to task-done-notify
 
-### P30-A2 active-path correction
+### P30-A3 active-path correction
 
-The current active-path correction keeps M-n 29/M-n 31 execution and
-implementation completion useful, but routes their output to regression
-evidence and an independent-audit handoff.  `run_acceptance.sh`,
-`verify_after.py`, `eval_before.py`, `release_audit.py`, and the pre-commit and
-pre-push hooks call or enforce the shared P30 boundary.  A terminal request
-without a complete role/identity/audit state is refused.
+The P30-A3 active-path correction keeps M-n 29/M-n 31 execution and
+implementation completion useful, but removes self-issued terminal
+acceptance. `run_acceptance.sh`, `verify_after.py`, `eval_before.py`,
+`release_audit.py`, and the pre-commit and pre-push hooks use the shared
+computed-identity/nonterminal boundary. A terminal request without an
+already-existing external record is refused; a matching record is verified,
+not created.
 
 ### Files NOT to modify (留新 session)
 - `core-layer/AGENTS_CORE.md` — core layer change requires M-n 15

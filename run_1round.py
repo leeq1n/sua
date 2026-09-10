@@ -112,8 +112,8 @@ def run_one_round(paper):
     print("=" * 60)
     print(f"Paper: {paper['arxiv_id']} — {paper['title'][:60]}")
     print(f"Elapsed: {elapsed:.1f}s")
-    print(f"done={state.get('done') if state else None}")
-    print(f"decision={((state.get('decision') or {}).get('decision') if state else None)}")
+    print(f"run_done={state.get('done') if state else None}")
+    print(f"candidate_decision={((state.get('decision') or {}).get('decision') if state else None)}")
 
     if state and state.get("evaluation"):
         ev = state["evaluation"]
@@ -170,7 +170,7 @@ def run_one_round(paper):
         json.dump(out, f, indent=2, default=str)
     print(f"\nResults saved to {out_path}")
 
-    print("DONE")
+    print("RUN COMPLETE / CANDIDATE RESULTS SAVED")
 
 
 if __name__ == "__main__":
