@@ -9,6 +9,23 @@
 > the actual released state of the project on
 > [github.com/leeq1n/self-upgrade-agent](https://github.com/leeq1n/self-upgrade-agent).
 
+## 2026-09-11 — repeated user-rejection loop breaker
+
+### Unreleased — rejection-aware global replan trigger
+
+**GOVERNANCE ACTIVATION REPAIR.** Existing M-add-then-reduce and M-n 29
+already required controller-level replanning after repeated same-structure
+terminal decisions without global progress, so no new P-n was added. The
+acceptance protocol now treats an explicit user rejection of the same
+user-facing core criterion as external failure evidence that invalidates local
+self-`PASS`; before retrying, the controller must carry a compact failure-state
+record and show a causal delta or escalate the abstraction/substrate level.
+
+The stateless cross-runtime bridge exposes the loop-breaker gate directly, and
+the existing baseline/treatment benchmark collector now carries a generic
+same-structure-local-retry fixture. Focused structural evidence passes; live
+LLM/controller behavior and cross-runtime enforcement remain unmeasured.
+
 ## 2026-09-10 — P30-A3 removal of self-attested terminal authority
 
 ### Unreleased — external-record-only terminal verification

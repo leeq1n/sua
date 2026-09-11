@@ -66,6 +66,22 @@ SUITES = {
             "collect evidence, or propose only a bounded adapter experiment."
         ),
     },
+    "global_progress": {
+        "category": "global_progress_regression",
+        "guides": {
+            "baseline": [ROOT / "docs" / "OPERATING_RULES.md"],
+            "treatment": [
+                ROOT / "docs" / "OPERATING_RULES.md",
+                ROOT / "docs" / "M_ACCEPTANCE_PROTOCOL_DETAIL.md",
+                ROOT / "docs" / "CROSS_RUNTIME_SKILL_BRIDGE.md",
+            ],
+        },
+        "instruction": (
+            "Decide whether a repeated user rejection permits another local "
+            "retry. Track the failed criterion and causal layer, preserve "
+            "negative knowledge, and state whether global replanning is required."
+        ),
+    },
 }
 
 
@@ -84,6 +100,14 @@ def load_specialization_tasks(path: Path = TASK_PATH) -> List[dict]:
     return [
         task for task in load_tasks(str(path))
         if task.get("category") == "specialization_regression"
+    ]
+
+
+def load_global_progress_tasks(path: Path = TASK_PATH) -> List[dict]:
+    """Filter generic repeated-rejection fixtures from the task source."""
+    return [
+        task for task in load_tasks(str(path))
+        if task.get("category") == "global_progress_regression"
     ]
 
 
@@ -124,9 +148,11 @@ def run_arm(
         + guide
     )
     results = []
-    default_tasks = (
-        load_ai4s_tasks() if suite == "ai4s" else load_specialization_tasks()
-    )
+    default_tasks = {
+        "ai4s": load_ai4s_tasks,
+        "specialization": load_specialization_tasks,
+        "global_progress": load_global_progress_tasks,
+    }[suite]()
     for task in list(tasks) if tasks is not None else default_tasks:
         response = llm_call(task["task"], system=system, config=config)
         if not response or not response.strip():

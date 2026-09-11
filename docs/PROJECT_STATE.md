@@ -39,9 +39,12 @@ search-space Add, routes well-specified execution directly, batches bounded
 constructive expansion before terminal critique in open-ended work, and
 requires controller-level replanning when locally valid terminal decisions
 produce no global output-space expansion. M-n 29's helper reports structural
-coverage only; semantic acceptance still requires evidence. These contracts
-and scenarios are structurally tested; live controller behavior remains
-unmeasured.
+coverage only; semantic acceptance still requires evidence. The rejection-aware
+retry gate now invalidates local self-PASS after explicit user rejection of the
+same core criterion, requires a failure-state record and causal delta before a
+retry, and exposes the same loop breaker through the stateless bridge. These
+contracts and scenarios are structurally tested; live controller behavior
+remains unmeasured.
 
 At final promotion, the project-layer `ARTIFACT_FINALIZATION.md` adapter now
 orchestrates existing SUA primitives around evidence-safe freeze
@@ -125,4 +128,4 @@ tests. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 - Pending tasks: [../TODO.md](../TODO.md)
 - Done tasks: [../DONE.md](../DONE.md)
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-11

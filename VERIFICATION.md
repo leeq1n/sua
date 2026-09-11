@@ -4,7 +4,7 @@
 been verified + cross-refs.  Per P11 摘要+
 引用 + R6 + M-n 20 framework-agnostic.
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-11
 
 ## Artifact-finalization verification
 
@@ -68,9 +68,10 @@ twice commit once)
 
 ## Phase-aware constructive-control verification
 
-**Last constructive-control verification: 2026-09-02.** Scope: the
-phase-aware ordering, task-profile boundary, hard-stop exceptions, regression
-contract, and mechanical helper consistency introduced by commit `19a6ce2`.
+**Last constructive-control verification: 2026-09-11.** Scope: the
+phase-aware ordering, task-profile boundary, hard-stop exceptions, repeated
+user-rejection loop breaker, regression contract, and mechanical helper
+consistency introduced by commit `19a6ce2` and this follow-up.
 
 - For **open-ended discovery / design / hypothesis formation**, complete
   meaningful bounded constructive expansion and synthesis before terminal
@@ -83,13 +84,20 @@ contract, and mechanical helper consistency introduced by commit `19a6ce2`.
 - Repeated locally valid terminal decisions with no output-space progress
   trigger controller-level replanning; superficial primitive invocation does
   not satisfy constructive acceptance.
+- For user-facing acceptance, explicit rejection of the same core criterion
+  invalidates prior local `PASS`; another retry must record its causal layer and
+  `CAUSAL_DELTA`, or stop local polish and escalate up the abstraction ladder.
+- The stateless bridge exposes this gate directly, and the canonical benchmark
+  source now carries one domain-general same-structure retry fixture through
+  the existing baseline/treatment collector.
 
-Verification coverage: 7 constructive-control regressions cover premature
+Verification coverage: 11 constructive-control regressions cover premature
 rejection, repeated rejection, checkbox gaming, deterministic execution,
-hard-stop behavior, AI4S compatibility, and helper honesty; a separate
-documentation-consistency regression binds this file, `AGENTS_DETAIL.md`, and
-the commit reminder to the current phase-aware contract. These are structural
-and contract checks: **live behavioral improvement remains unmeasured**.
+hard-stop behavior, rejection-aware state/authority, bridge discoverability,
+fixture completeness, AI4S compatibility, helper honesty, and verification
+surface consistency. The existing collector additionally covers the generic
+fixture in both baseline and treatment guides. These are structural and
+contract checks: **live behavioral improvement remains unmeasured**.
 
 ## R1-R12 invariant compliance (per c173)
 

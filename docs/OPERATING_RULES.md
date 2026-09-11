@@ -1,5 +1,5 @@
 # Operating workflow rules
-Last P20-verified: 2026-09-02
+Last P20-verified: 2026-09-11
 
 |> L0: 9 operating rules (M-task-summary, M-must-read,
 |> M-context-snapshot, M-subtask-summary, M-intent-parsing,
@@ -190,6 +190,12 @@ If locally valid terminal decisions repeat while producing no surviving
 alternative or output-space expansion, STOP the local loop and schedule a
 controller-level replan. There is no fixed rejection count; use repeated
 same-structure termination plus lack of global progress as the trigger.
+
+For a user-facing criterion, when the user is the acceptance authority and
+says the same core criterion remains unmet, invalidate any prior local `PASS`.
+Before retrying, record the failure state and `CAUSAL_DELTA`; no causal delta
+means stop local polish and move up the abstraction ladder. See
+`M_ACCEPTANCE_PROTOCOL_DETAIL.md` for the compact fields and escalation path.
 
 ### M-self-audit
 

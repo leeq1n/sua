@@ -1,5 +1,5 @@
 # M-acceptance-protocol (full text)
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-11
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-
 > acceptance-protocol段 (M-n 29).  Per P11
@@ -172,6 +172,34 @@ explicit global infeasibility conclusion.
 There is **no fixed rejection count**. The trigger is evidence of repeated
 same-structure terminal decisions plus absence of global progress. A
 validation or retrieval tool must not silently become the generation policy.
+
+#### Rejection-aware retry gate
+
+For a user-facing artifact, when the user is the acceptance authority and
+explicitly says that the same core acceptance criterion remains unmet, that
+rejection invalidates any prior local `PASS` for that criterion. Treat it as an
+external failure signal, not as a request for cosmetic polish.
+
+Before another attempt, carry this compact failure-state record:
+
+- `PARENT_OBJECTIVE`
+- `FAILED_ACCEPTANCE_CRITERION`
+- `FAILURE_CLASS`
+- `REPRESENTATION_FAMILY`
+- `PRODUCTION_SUBSTRATE`
+- `CAUSAL_LAYER_CHANGED`
+- `CAUSAL_DELTA`
+
+A retry is admissible only when `CAUSAL_DELTA` changes a layer capable of
+explaining the failure. If there is **no causal delta**, stop local polish,
+preserve the failed state and negative knowledge, and trigger a
+controller-level replan. The abstraction ladder is: local parameter →
+implementation → substrate/tool → representation/problem framing → artifact
+role/placement → parent objective/acceptance criterion. Move upward when the
+same failure survives the current layer; a cosmetically different variant at
+the same layer is not a causal change. Record the rejected representation,
+substrate, and unchanged assumptions so a renamed retry cannot silently revive
+them.
 
 ### Step 4: If regression evidence fails or the evaluator materially edits → 新 任务 cycle
 

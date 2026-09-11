@@ -6,6 +6,7 @@ from benchmarks.ai4s_eval import (
     build_guide,
     compare_scored_runs,
     load_ai4s_tasks,
+    load_global_progress_tasks,
     load_specialization_tasks,
     run_arm,
     score_run,
@@ -43,6 +44,35 @@ def test_specialization_suite_reuses_collector_without_keyword_registry():
     assert baseline in treatment
     assert "Domain Specialization Bootstrap" in treatment
     assert len(treatment_files) == len(baseline_files) + 2
+
+
+def test_global_progress_fixture_reuses_canonical_collector():
+    tasks = load_global_progress_tasks()
+    assert [task["id"] for task in tasks] == [
+        "global-progress-user-rejection"
+    ]
+    baseline, baseline_files = build_guide("baseline", suite="global_progress")
+    treatment, treatment_files = build_guide(
+        "treatment", suite="global_progress"
+    )
+    assert baseline in treatment
+    assert "LOOP-BREAKER GATE" not in baseline
+    assert "LOOP-BREAKER GATE" in treatment
+    assert len(treatment_files) == len(baseline_files) + 2
+
+
+def test_global_progress_run_keeps_rubric_unscored():
+    result = run_arm(
+        "treatment",
+        suite="global_progress",
+        llm_call=lambda prompt, *, system, config: "GLOBAL_REPLAN_REQUIRED",
+    )
+    assert result["results"][0]["expected_decision"] == (
+        "GLOBAL_REPLAN_REQUIRED"
+    )
+    assert all(
+        item["rating"] is None for item in result["results"][0]["rubric"]
+    )
 
 
 def test_run_arm_keeps_rubric_unscored_and_uses_same_task_prompt():

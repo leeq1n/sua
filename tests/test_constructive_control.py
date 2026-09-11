@@ -1,5 +1,6 @@
 """Regression tests for phase-aware constructive control in SUA."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,8 @@ SCRIPT = ROOT / "agent-tools" / "scripts" / "m_n29_5step.py"
 VERIFICATION = ROOT / "VERIFICATION.md"
 AGENTS_DETAIL = ROOT / "AGENTS_DETAIL.md"
 PREPARE_COMMIT_MSG = ROOT / "hooks" / "prepare-commit-msg"
+BRIDGE = ROOT / "docs" / "CROSS_RUNTIME_SKILL_BRIDGE.md"
+TASKS = ROOT / "benchmarks" / "tasks.json"
 
 
 def read(path: Path) -> str:
@@ -68,6 +71,59 @@ def test_local_rejection_without_global_progress_triggers_replanning():
     assert "output-space expansion" in combined
 
 
+def test_rejection_aware_retry_gate_carries_causal_state_and_authority():
+    acceptance = read(ACCEPTANCE)
+    operating = read(OPERATING)
+    combined = acceptance + operating
+    for phrase in (
+        "user is the acceptance authority",
+        "invalidates any prior local `PASS`",
+        "PARENT_OBJECTIVE",
+        "FAILED_ACCEPTANCE_CRITERION",
+        "FAILURE_CLASS",
+        "REPRESENTATION_FAMILY",
+        "PRODUCTION_SUBSTRATE",
+        "CAUSAL_DELTA",
+        "abstraction ladder",
+        "no causal delta",
+    ):
+        assert phrase in combined
+
+
+def test_stateless_bridge_exposes_loop_breaker_activation():
+    bridge = read(BRIDGE)
+    assert "LOOP-BREAKER GATE" in bridge
+    assert "user is the acceptance authority" in bridge
+    assert "invalidates any prior local `PASS`" in bridge
+    assert "CAUSAL_DELTA" in bridge
+    assert "controller-level replan" in bridge
+
+
+def test_repeated_user_rejection_fixture_is_domain_general_and_complete():
+    tasks = json.loads(read(TASKS))
+    cases = [
+        task for task in tasks
+        if task.get("category") == "global_progress_regression"
+    ]
+    assert {task["case"] for task in cases} == {
+        "same-structure-local-retry"
+    }
+    case = cases[0]
+    assert "spacecraft" not in case["task"].lower()
+    assert case["expected_decision"] == "GLOBAL_REPLAN_REQUIRED"
+    assert case["baseline_expected_failure"]
+    assert {
+        "repeated_failure",
+        "user_authority",
+        "failure_record",
+        "causal_delta",
+        "abstraction_escalation",
+        "negative_knowledge",
+        "stop_local_retry",
+        "global_replan",
+    } == {item["id"] for item in case["rubric"]}
+
+
 def test_well_specified_work_skips_creativity_ceremony():
     two_track = read(TWO_TRACK)
     acceptance = read(ACCEPTANCE)
@@ -118,11 +174,11 @@ def test_verification_surfaces_match_phase_aware_constructive_control():
     hook = read(PREPARE_COMMIT_MSG)
     combined = verification + agents_detail + hook
 
-    assert "Last constructive-control verification: 2026-09-02" in verification
+    assert "Last constructive-control verification: 2026-09-11" in verification
     assert "open-ended discovery / design / hypothesis formation" in verification
     assert "deterministic / well-specified execution" in verification
     assert "live behavioral improvement remains unmeasured" in verification
-    assert "7 constructive-control regressions" in verification
+    assert "11 constructive-control regressions" in verification
     assert "critical-thinking BEFORE constructive" not in combined
     assert "4 critical-thinking primitives** FIRST" not in combined
     assert "15 design criteria" not in verification

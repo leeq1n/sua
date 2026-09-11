@@ -56,6 +56,20 @@ yourself (per P-28 self-application).
 3. **1-line lesson** — one-sentence expected learning
 4. **M-n 16 observe** — Pre-mortem Q1-Q7
 
+## LOOP-BREAKER GATE (repeated user rejection)
+
+When the user is the acceptance authority for a user-facing criterion and
+explicitly says the same core criterion remains unmet, that rejection
+invalidates any prior local `PASS`. Treat that message as an external failure
+signal. Before another retry, record `PARENT_OBJECTIVE`,
+`FAILED_ACCEPTANCE_CRITERION`, `FAILURE_CLASS`,
+`REPRESENTATION_FAMILY`, `PRODUCTION_SUBSTRATE`, `CAUSAL_LAYER_CHANGED`, and
+`CAUSAL_DELTA`. A retry with no causal delta is not allowed: stop local polish,
+preserve negative knowledge, and trigger a controller-level replan. Escalate
+from local parameter → implementation → substrate/tool → representation/problem
+framing → artifact role/placement → parent objective/acceptance criterion.
+See `docs/M_ACCEPTANCE_PROTOCOL_DETAIL.md` for the canonical detail.
+
 ## 5-STEP REGRESSION EVIDENCE (before implementation handoff)
 
 ```
@@ -153,4 +167,4 @@ content into this file.
 - `core-layer/AGENTS_CORE.md` — cache-stable core
 - Agent Skills open standard: <https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills>
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-11
