@@ -175,6 +175,10 @@ validation or retrieval tool must not silently become the generation policy.
 
 #### Rejection-aware retry gate
 
+The executable owner is `src/retry_gate.py`; controllers pass a serialized
+`RetryState` plus an explicitly classified `RetryProposal` to
+`evaluate_retry()`. This section is the protocol contract, not a second gate.
+
 For a user-facing artifact, when the user is the acceptance authority and
 explicitly says that the same core acceptance criterion remains unmet, that
 rejection invalidates any prior local `PASS` for that criterion. Treat it as an
@@ -187,8 +191,15 @@ Before another attempt, carry this compact failure-state record:
 - `FAILURE_CLASS`
 - `REPRESENTATION_FAMILY`
 - `PRODUCTION_SUBSTRATE`
+- `CAUSAL_LAYER`
 - `CAUSAL_LAYER_CHANGED`
 - `CAUSAL_DELTA`
+- `CRITERION_CLASS`
+- `ACCEPTANCE_AUTHORITY`
+- `AUTHORITY_BASIS`
+- `NEGATIVE_KNOWLEDGE`
+- `UNCHANGED_ASSUMPTIONS`
+- `PRIOR_LOCAL_PASS`
 
 A retry is admissible only when `CAUSAL_DELTA` changes a layer capable of
 explaining the failure. If there is **no causal delta**, stop local polish,
@@ -200,6 +211,11 @@ same failure survives the current layer; a cosmetically different variant at
 the same layer is not a causal change. Record the rejected representation,
 substrate, and unchanged assumptions so a renamed retry cannot silently revive
 them.
+
+`RetryState.to_json()` / `RetryState.from_json()` preserve these fields for a
+fresh controller invocation. The gate returns `RETRY_ALLOWED`,
+`GLOBAL_REPLAN_REQUIRED`, or `ACCEPTANCE_AUTHORITY_UNVERIFIED`; it does not
+infer authority or causal layers from unclassified prose.
 
 ### Step 4: If regression evidence fails or the evaluator materially edits → 新 任务 cycle
 

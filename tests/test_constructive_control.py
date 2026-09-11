@@ -86,6 +86,7 @@ def test_rejection_aware_retry_gate_carries_causal_state_and_authority():
         "CAUSAL_DELTA",
         "abstraction ladder",
         "no causal delta",
+        "src/retry_gate.py",
     ):
         assert phrase in combined
 
@@ -97,6 +98,7 @@ def test_stateless_bridge_exposes_loop_breaker_activation():
     assert "invalidates any prior local `PASS`" in bridge
     assert "CAUSAL_DELTA" in bridge
     assert "controller-level replan" in bridge
+    assert "src/retry_gate.py" in bridge
 
 
 def test_repeated_user_rejection_fixture_is_domain_general_and_complete():
@@ -163,6 +165,8 @@ def test_mn29_script_is_task_generic_and_honest_about_semantic_coverage():
     assert "STRUCTURAL BASELINE ONLY" in result.stdout
     assert "open-ended" in result.stdout
     assert "semantic acceptance still requires evidence" in result.stdout
+    assert "Loop not enforced in script" not in result.stdout
+    assert "src.retry_gate.evaluate_retry" in result.stdout
     assert result.stdout.index("[Step 2] Execute") < result.stdout.index(
         "[Step 2a] Apply"
     )

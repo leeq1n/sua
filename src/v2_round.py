@@ -26,7 +26,7 @@ import sys
 import subprocess
 import time
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Callable, Optional, List
 
 from src.v2_agent import improve, Paper, _chat
 from src.v2_apply import apply_patch, revert, cleanup_snapshot, ApplyResult
@@ -35,6 +35,7 @@ from src.failures import log_failure, replay_all, ReplayReport
 from src.v3_multipaper import read_papers, PaperSummary
 from src.v3_judge import select_best
 from src.v3_persist import save_summaries, save_decision
+from src.retry_gate import RetryDecision, RetryProposal, RetryState
 
 
 def _stage(name: str, start: float) -> None:
@@ -61,6 +62,8 @@ class RoundResult:
     tests_failed: int = 0
     error: Optional[str] = None
     snapshot_path: str = ""
+    retry_decision: Optional[RetryDecision] = None
+    retry_state: Optional[RetryState] = None
 
 
 def run_project_tests(
@@ -333,6 +336,9 @@ def run_one_round_with_harness(
     config: Optional["LLMConfig"] = None,
     max_retries: int = 2,
     test_path: str = "tests/test_v2_round.py",
+    retry_state: Optional[RetryState] = None,
+    retry_proposal: Optional[RetryProposal] = None,
+    retry_proposal_factory: Optional[Callable[[RetryState, int], RetryProposal]] = None,
 ) -> RoundResult:
     """Run run_one_round_multi inside a v3.0.2 harness loop.
 
@@ -374,7 +380,13 @@ def run_one_round_with_harness(
     thinker = MockThinker(fixed_plan=[Step("round", args={"target": target_module})])
     executor = FunctionExecutor({"round": round_handler})
     harness = Loop(thinker, executor)
-    loop_result = harness.run(f"improve {target_module}", max_retries=max_retries)
+    loop_result = harness.run(
+        f"improve {target_module}",
+        max_retries=max_retries,
+        retry_state=retry_state,
+        retry_proposal=retry_proposal,
+        retry_proposal_factory=retry_proposal_factory,
+    )
 
     # Find the last round result (the one we'll return)
     last_round: Optional[RoundResult] = None
@@ -397,6 +409,8 @@ def run_one_round_with_harness(
 
     # Annotate with harness metadata
     last_round.elapsed_s = time.time() - t0
+    last_round.retry_decision = loop_result.retry_decision
+    last_round.retry_state = loop_result.retry_state
     _stage(f"Harness done: {last_round.decision} after {loop_result.attempts} attempt(s)", t0)
     return last_round
 

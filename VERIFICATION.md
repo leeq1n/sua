@@ -87,17 +87,24 @@ consistency introduced by commit `19a6ce2` and this follow-up.
 - For user-facing acceptance, explicit rejection of the same core criterion
   invalidates prior local `PASS`; another retry must record its causal layer and
   `CAUSAL_DELTA`, or stop local polish and escalate up the abstraction ladder.
+- The executable `src/retry_gate.py` carrier/gate covers resolved user-facing
+  authority, objective-evidence disagreement, structural-delta validation,
+  serialization/reload, and controller stop/allow decisions without a fixed
+  rejection count.
 - The stateless bridge exposes this gate directly, and the canonical benchmark
   source now carries one domain-general same-structure retry fixture through
-  the existing baseline/treatment collector.
+  the existing baseline/treatment collector; its baseline is pinned to the
+  immutable pre-patch parent revision.
 
 Verification coverage: 11 constructive-control regressions cover premature
 rejection, repeated rejection, checkbox gaming, deterministic execution,
 hard-stop behavior, rejection-aware state/authority, bridge discoverability,
 fixture completeness, AI4S compatibility, helper honesty, and verification
-surface consistency. The existing collector additionally covers the generic
-fixture in both baseline and treatment guides. These are structural and
-contract checks: **live behavioral improvement remains unmeasured**.
+surface consistency. Runtime gate behavior, state persistence, and controller
+wiring are covered by dedicated executable tests; the existing collector
+additionally covers the generic fixture in both baseline and treatment guides.
+These are structural and contract checks: **live behavioral improvement
+remains unmeasured** for LLM response quality and cross-runtime deployment.
 
 ## R1-R12 invariant compliance (per c173)
 

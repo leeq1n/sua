@@ -61,6 +61,17 @@ def test_global_progress_fixture_reuses_canonical_collector():
     assert len(treatment_files) == len(baseline_files) + 2
 
 
+def test_global_progress_baseline_is_immutable_pre_patch_context():
+    baseline, baseline_files = build_guide("baseline", suite="global_progress")
+    treatment, _ = build_guide("treatment", suite="global_progress")
+
+    assert baseline_files == [
+        "c58f1a332456f42b5d7056bcefa778b7f1a26b88:docs/OPERATING_RULES.md"
+    ]
+    assert "CAUSAL_DELTA" not in baseline
+    assert "CAUSAL_DELTA" in treatment
+
+
 def test_global_progress_run_keeps_rubric_unscored():
     result = run_arm(
         "treatment",

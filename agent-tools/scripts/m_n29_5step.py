@@ -163,8 +163,9 @@ def main() -> int:
 
     # Step 4 (reconciliation)
     print("\n[Step 4] Cycle loop check")
-    print("  If FAIL items: re-verify (loop).  Else proceed to Step 5.")
-    print("  (Loop not enforced in script — human/agent decision.)")
+    print("  If FAIL items: the canonical controller evaluates the retry gate before looping.")
+    print("  Retry owner: src.v4_loop.Loop -> src.retry_gate.evaluate_retry().")
+    print("  The gate returns RETRY_ALLOWED, GLOBAL_REPLAN_REQUIRED, or ACCEPTANCE_AUTHORITY_UNVERIFIED.")
 
     # Step 5
     print("\n[Step 5] Notify")

@@ -23,8 +23,9 @@ record and show a causal delta or escalate the abstraction/substrate level.
 
 The stateless cross-runtime bridge exposes the loop-breaker gate directly, and
 the existing baseline/treatment benchmark collector now carries a generic
-same-structure-local-retry fixture. Focused structural evidence passes; live
-LLM/controller behavior and cross-runtime enforcement remain unmeasured.
+same-structure-local-retry fixture with its baseline pinned to the immutable
+pre-patch parent revision. Focused unit/integration evidence passes; live LLM
+response quality and cross-runtime deployment remain unmeasured.
 
 ## 2026-09-10 — P30-A3 removal of self-attested terminal authority
 

@@ -12,6 +12,7 @@ import argparse
 import copy
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Mapping, Optional
@@ -26,6 +27,9 @@ from src.llm import LLMConfig, chat_simple  # noqa: E402
 
 
 TASK_PATH = ROOT / "benchmarks" / "tasks.json"
+# Immutable parent of the loop-breaker treatment.  Baseline guides must not
+# read the live working tree after a governance patch changes OPERATING_RULES.
+PRE_PATCH_COMMIT = "c58f1a332456f42b5d7056bcefa778b7f1a26b88"
 ARMS = ("baseline", "treatment")
 SUITES = {
     "ai4s": {
@@ -111,15 +115,38 @@ def load_global_progress_tasks(path: Path = TASK_PATH) -> List[dict]:
     ]
 
 
+def _read_guide_source(path: Path, *, suite: str) -> tuple[str, str]:
+    """Read a guide source with an immutable parent context where required."""
+    relative = path.relative_to(ROOT).as_posix()
+    if suite in {"specialization", "global_progress"} and relative == "docs/OPERATING_RULES.md":
+        source = f"{PRE_PATCH_COMMIT}:{relative}"
+        result = subprocess.run(
+            ["git", "show", source],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"cannot materialize immutable benchmark baseline {source}: "
+                f"{result.stderr.strip()}"
+            )
+        return result.stdout, source
+    return path.read_text(encoding="utf-8"), relative
+
+
 def build_guide(arm: str, *, suite: str = "ai4s") -> tuple[str, List[str]]:
-    """Return the controlled guide text and repository-relative sources."""
+    """Return controlled guide text and revision-qualified source labels."""
     if suite not in SUITES:
         raise ValueError(f"unknown suite: {suite}")
     if arm not in ARMS:
         raise ValueError(f"unknown arm: {arm}")
     paths = SUITES[suite]["guides"][arm]
-    text = "\n\n".join(path.read_text(encoding="utf-8") for path in paths)
-    files = [path.relative_to(ROOT).as_posix() for path in paths]
+    sources = [_read_guide_source(path, suite=suite) for path in paths]
+    text = "\n\n".join(content for content, _ in sources)
+    files = [label for _, label in sources]
     return text, files
 
 

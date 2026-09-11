@@ -23,10 +23,11 @@ Public API:
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from src.v4_thinker import Thinker, Plan
 from src.v4_executor import Executor, Result
+from src.retry_gate import RetryDecision, RetryGateResult, RetryProposal, RetryState, evaluate_retry
 
 
 class LoopStatus(Enum):
@@ -44,6 +45,8 @@ class LoopResult:
     results: List[Result] = field(default_factory=list)
     attempts: int = 1
     elapsed_s: float = 0.0
+    retry_decision: Optional[RetryDecision] = None
+    retry_state: Optional[RetryState] = None
 
     def to_dict(self) -> dict:
         return {
@@ -52,6 +55,10 @@ class LoopResult:
             "elapsed_s": self.elapsed_s,
             "plan": [s.to_dict() for s in self.plan],
             "results": [r.to_dict() for r in self.results],
+            "retry_decision": (
+                self.retry_decision.value if self.retry_decision else None
+            ),
+            "retry_state": self.retry_state.to_dict() if self.retry_state else None,
         }
 
 
@@ -71,7 +78,17 @@ class Loop:
         # Per P19: log every loop run for observability
         self.history: List[LoopResult] = []
 
-    def run(self, prompt: str, max_retries: int = 0) -> LoopResult:
+    def run(
+        self,
+        prompt: str,
+        max_retries: int = 0,
+        *,
+        retry_state: Optional[RetryState] = None,
+        retry_proposal: Optional[RetryProposal] = None,
+        retry_proposal_factory: Optional[
+            Callable[[RetryState, int], RetryProposal]
+        ] = None,
+    ) -> LoopResult:
         """Run the loop.  Returns LoopResult.
 
         Args:
@@ -85,6 +102,7 @@ class Loop:
         attempt = 0
         last_plan: Plan = []
         last_results: List[Result] = []
+        last_gate_result: Optional[RetryGateResult] = None
 
         while attempt <= max_retries:
             attempt += 1
@@ -101,6 +119,23 @@ class Loop:
             # If all succeeded, we're done
             if all(r.success for r in results) and len(results) == len(plan):
                 break
+
+            if attempt > max_retries:
+                break
+
+            # The legacy count-based retry remains available for callers that
+            # have no acceptance state.  Once a state is supplied, every
+            # retry must pass the one canonical decision gate.
+            if retry_state is not None:
+                proposed = (
+                    retry_proposal_factory(retry_state, attempt)
+                    if retry_proposal_factory
+                    else retry_proposal
+                )
+                last_gate_result = evaluate_retry(retry_state, proposed)
+                retry_state = last_gate_result.state
+                if last_gate_result.decision is not RetryDecision.RETRY_ALLOWED:
+                    break
 
         # Decide status
         # Per P9 + fail-fast: strict.  Fail-fast means we stopped early,
@@ -120,6 +155,10 @@ class Loop:
             results=last_results,
             attempts=attempt,
             elapsed_s=time.time() - t0,
+            retry_decision=(
+                last_gate_result.decision if last_gate_result else None
+            ),
+            retry_state=(last_gate_result.state if last_gate_result else retry_state),
         )
         self.history.append(result)
         return result

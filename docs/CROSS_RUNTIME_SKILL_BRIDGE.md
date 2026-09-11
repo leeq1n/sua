@@ -69,6 +69,8 @@ preserve negative knowledge, and trigger a controller-level replan. Escalate
 from local parameter → implementation → substrate/tool → representation/problem
 framing → artifact role/placement → parent objective/acceptance criterion.
 See `docs/M_ACCEPTANCE_PROTOCOL_DETAIL.md` for the canonical detail.
+The executable state carrier and decision gate are `src/retry_gate.py`, and
+the existing `src/v4_loop.Loop` controller is the retry execution owner.
 
 ## 5-STEP REGRESSION EVIDENCE (before implementation handoff)
 
