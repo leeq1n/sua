@@ -95,7 +95,7 @@ class TestEndToEndMock:
         assert len(d["results"]) == 2
 
     def test_harness_with_max_retries_recovers(self):
-        """Self-Harness style: re-plan on failure until success."""
+        """Self-Harness cannot re-plan without canonical retry context."""
         plan_calls = [0]
 
         class AdaptiveThinker(MockThinker):
@@ -110,9 +110,9 @@ class TestEndToEndMock:
         executor = MockExecutor(fail_on=["flaky"])
         harness = make_harness(AdaptiveThinker(), executor)
         result = harness.run("recover from failure", max_retries=5)
-        # 3 attempts: 2 failed, 1 succeeded
-        assert result.attempts == 3
-        assert result.status == LoopStatus.SUCCEEDED
+        assert result.attempts == 1
+        assert result.status == LoopStatus.FAILED
+        assert result.retry_decision.value == "RETRY_CONTEXT_REQUIRED"
 
 
 # ── Failure modes ──────────────────────────────────────────────

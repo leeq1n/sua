@@ -165,7 +165,7 @@ def main() -> int:
     print("\n[Step 4] Cycle loop check")
     print("  If FAIL items: the canonical controller evaluates the retry gate before looping.")
     print("  Retry owner: src.v4_loop.Loop -> src.retry_gate.evaluate_retry().")
-    print("  The gate returns RETRY_ALLOWED, GLOBAL_REPLAN_REQUIRED, or ACCEPTANCE_AUTHORITY_UNVERIFIED.")
+    print("  The gate returns RETRY_ALLOWED, GLOBAL_REPLAN_REQUIRED, ACCEPTANCE_AUTHORITY_UNVERIFIED, or RETRY_CONTEXT_REQUIRED.")
 
     # Step 5
     print("\n[Step 5] Notify")

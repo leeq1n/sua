@@ -194,6 +194,8 @@ Before another attempt, carry this compact failure-state record:
 - `CAUSAL_LAYER`
 - `CAUSAL_LAYER_CHANGED`
 - `CAUSAL_DELTA`
+- `ARTIFACT_ROLE_PLACEMENT`
+- `REPRESENTATION_VARIANT` (optional; never a family identity)
 - `CRITERION_CLASS`
 - `ACCEPTANCE_AUTHORITY`
 - `AUTHORITY_BASIS`
@@ -210,12 +212,22 @@ role/placement → parent objective/acceptance criterion. Move upward when the
 same failure survives the current layer; a cosmetically different variant at
 the same layer is not a causal change. Record the rejected representation,
 substrate, and unchanged assumptions so a renamed retry cannot silently revive
-them.
+them. `REPRESENTATION_FAMILY` is the canonical representation identity;
+`REPRESENTATION_VARIANT` is optional descriptive metadata and changing it alone
+does not create a structural delta. Omitted optional fields, including
+`ARTIFACT_ROLE_PLACEMENT`, do not count as changed fields.
+
+The controller must not use `max_retries` as retry authorization. It is only a
+hard quantity ceiling. After a failed attempt, a canonical retry requires both
+the prior `RetryState` and an explicitly classified `RetryProposal`; if either
+is missing, the controller stops before a second attempt with
+`RETRY_CONTEXT_REQUIRED`.
 
 `RetryState.to_json()` / `RetryState.from_json()` preserve these fields for a
 fresh controller invocation. The gate returns `RETRY_ALLOWED`,
-`GLOBAL_REPLAN_REQUIRED`, or `ACCEPTANCE_AUTHORITY_UNVERIFIED`; it does not
-infer authority or causal layers from unclassified prose.
+`GLOBAL_REPLAN_REQUIRED`, `ACCEPTANCE_AUTHORITY_UNVERIFIED`, or
+`RETRY_CONTEXT_REQUIRED`; it does not infer authority or causal layers from
+unclassified prose.
 
 ### Step 4: If regression evidence fails or the evaluator materially edits → 新 任务 cycle
 

@@ -62,6 +62,7 @@ class RetryDecision(_ValueEnum):
     RETRY_ALLOWED = "RETRY_ALLOWED"
     GLOBAL_REPLAN_REQUIRED = "GLOBAL_REPLAN_REQUIRED"
     ACCEPTANCE_AUTHORITY_UNVERIFIED = "ACCEPTANCE_AUTHORITY_UNVERIFIED"
+    RETRY_CONTEXT_REQUIRED = "RETRY_CONTEXT_REQUIRED"
 
 
 E = TypeVar("E", bound=_ValueEnum)
@@ -92,6 +93,13 @@ def _text_tuple(value: Optional[Sequence[Any] | str]) -> tuple[str, ...]:
     return tuple(str(item).strip() for item in value if str(item).strip())
 
 
+def _optional_text(value: Any, field_name: str) -> Optional[str]:
+    if value is None:
+        return None
+    result = _text(value, field_name)
+    return result or None
+
+
 def _normalized(value: str) -> str:
     return " ".join(value.casefold().split())
 
@@ -114,6 +122,7 @@ class RetryState:
     unchanged_assumptions: tuple[str, ...] | Sequence[str] = ()
     prior_local_pass: bool = False
     artifact_role_placement: Optional[str] = None
+    representation_variant: Optional[str] = None
     causal_layer_changed: bool = False
 
     def __post_init__(self) -> None:
@@ -151,11 +160,14 @@ class RetryState:
         object.__setattr__(self, "negative_knowledge", _text_tuple(self.negative_knowledge))
         object.__setattr__(self, "unchanged_assumptions", _text_tuple(self.unchanged_assumptions))
         object.__setattr__(self, "prior_local_pass", bool(self.prior_local_pass))
-        if self.artifact_role_placement is not None:
-            object.__setattr__(
-                self, "artifact_role_placement",
-                _text(self.artifact_role_placement, "artifact_role_placement"),
-            )
+        object.__setattr__(
+            self, "artifact_role_placement",
+            _optional_text(self.artifact_role_placement, "artifact_role_placement"),
+        )
+        object.__setattr__(
+            self, "representation_variant",
+            _optional_text(self.representation_variant, "representation_variant"),
+        )
         object.__setattr__(self, "causal_layer_changed", bool(self.causal_layer_changed))
 
     def to_dict(self) -> dict[str, Any]:
@@ -175,6 +187,7 @@ class RetryState:
             "UNCHANGED_ASSUMPTIONS": list(self.unchanged_assumptions),
             "PRIOR_LOCAL_PASS": self.prior_local_pass,
             "ARTIFACT_ROLE_PLACEMENT": self.artifact_role_placement,
+            "REPRESENTATION_VARIANT": self.representation_variant,
             "CAUSAL_LAYER_CHANGED": self.causal_layer_changed,
         }
 
@@ -201,7 +214,8 @@ class RetryState:
             negative_knowledge=get("NEGATIVE_KNOWLEDGE", ()),
             unchanged_assumptions=get("UNCHANGED_ASSUMPTIONS", ()),
             prior_local_pass=get("PRIOR_LOCAL_PASS", False),
-            artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", ""),
+            artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", None),
+            representation_variant=get("REPRESENTATION_VARIANT", None),
             causal_layer_changed=get("CAUSAL_LAYER_CHANGED", False),
         )
 
@@ -225,6 +239,7 @@ class RetryState:
     UNCHANGED_ASSUMPTIONS = property(lambda self: self.unchanged_assumptions)
     PRIOR_LOCAL_PASS = property(lambda self: self.prior_local_pass)
     ARTIFACT_ROLE_PLACEMENT = property(lambda self: self.artifact_role_placement)
+    REPRESENTATION_VARIANT = property(lambda self: self.representation_variant)
     CAUSAL_LAYER_CHANGED = property(lambda self: self.causal_layer_changed)
 
 
@@ -243,7 +258,8 @@ class RetryProposal:
     causal_layer: CausalLayer | str
     causal_delta: str
     unchanged_assumptions: tuple[str, ...] | Sequence[str] = ()
-    artifact_role_placement: str = ""
+    artifact_role_placement: Optional[str] = None
+    representation_variant: Optional[str] = None
     causal_layer_changed: Optional[bool] = None
 
     def __post_init__(self) -> None:
@@ -281,7 +297,11 @@ class RetryProposal:
         object.__setattr__(self, "unchanged_assumptions", _text_tuple(self.unchanged_assumptions))
         object.__setattr__(
             self, "artifact_role_placement",
-            _text(self.artifact_role_placement, "artifact_role_placement"),
+            _optional_text(self.artifact_role_placement, "artifact_role_placement"),
+        )
+        object.__setattr__(
+            self, "representation_variant",
+            _optional_text(self.representation_variant, "representation_variant"),
         )
         if self.causal_layer_changed is not None:
             object.__setattr__(self, "causal_layer_changed", bool(self.causal_layer_changed))
@@ -300,6 +320,7 @@ class RetryProposal:
             "CAUSAL_DELTA": self.causal_delta,
             "UNCHANGED_ASSUMPTIONS": list(self.unchanged_assumptions),
             "ARTIFACT_ROLE_PLACEMENT": self.artifact_role_placement,
+            "REPRESENTATION_VARIANT": self.representation_variant,
             "CAUSAL_LAYER_CHANGED": self.causal_layer_changed,
         }
 
@@ -320,7 +341,8 @@ class RetryProposal:
             causal_layer=get("CAUSAL_LAYER"),
             causal_delta=get("CAUSAL_DELTA", ""),
             unchanged_assumptions=get("UNCHANGED_ASSUMPTIONS", ()),
-            artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", ""),
+            artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", None),
+            representation_variant=get("REPRESENTATION_VARIANT", None),
             causal_layer_changed=get("CAUSAL_LAYER_CHANGED"),
         )
 
@@ -438,6 +460,11 @@ def _carry_failure_forward(
             if proposal.artifact_role_placement is not None
             else prior.artifact_role_placement
         ),
+        representation_variant=(
+            proposal.representation_variant
+            if proposal.representation_variant is not None
+            else prior.representation_variant
+        ),
         causal_layer_changed=(prior.causal_layer is not proposal.causal_layer),
     )
 
@@ -520,6 +547,7 @@ def evaluate_retry(
 RETRY_ALLOWED = RetryDecision.RETRY_ALLOWED
 GLOBAL_REPLAN_REQUIRED = RetryDecision.GLOBAL_REPLAN_REQUIRED
 ACCEPTANCE_AUTHORITY_UNVERIFIED = RetryDecision.ACCEPTANCE_AUTHORITY_UNVERIFIED
+RETRY_CONTEXT_REQUIRED = RetryDecision.RETRY_CONTEXT_REQUIRED
 
 
 __all__ = [
@@ -530,6 +558,7 @@ __all__ = [
     "FailureClass",
     "GLOBAL_REPLAN_REQUIRED",
     "ACCEPTANCE_AUTHORITY_UNVERIFIED",
+    "RETRY_CONTEXT_REQUIRED",
     "RETRY_ALLOWED",
     "RetryAttempt",
     "RetryDecision",

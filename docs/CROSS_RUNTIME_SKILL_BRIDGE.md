@@ -68,6 +68,12 @@ signal. Before another retry, record `PARENT_OBJECTIVE`,
 preserve negative knowledge, and trigger a controller-level replan. Escalate
 from local parameter → implementation → substrate/tool → representation/problem
 framing → artifact role/placement → parent objective/acceptance criterion.
+`REPRESENTATION_FAMILY` is the canonical representation identity;
+`REPRESENTATION_VARIANT` is optional metadata and a variant rename alone does
+not create a structural delta. Omitted optional fields do not count as changed.
+`max_retries` is only a quantity ceiling: after a failed attempt, missing
+`RetryState` or `RetryProposal` stops the controller before a second attempt
+with `RETRY_CONTEXT_REQUIRED`.
 See `docs/M_ACCEPTANCE_PROTOCOL_DETAIL.md` for the canonical detail.
 The executable state carrier and decision gate are `src/retry_gate.py`, and
 the existing `src/v4_loop.Loop` controller is the retry execution owner.

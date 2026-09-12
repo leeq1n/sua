@@ -113,7 +113,7 @@ class TestRetry:
         assert r.attempts == 1
 
     def test_retry_max_2(self):
-        """max_retries=2 means up to 3 attempts total."""
+        """max_retries alone cannot authorize a second attempt."""
         # Use a counter to simulate 'fix' on retry
         plan_calls = [0]
 
@@ -127,12 +127,12 @@ class TestRetry:
         executor = MockExecutor(fail_on=["bad"])
         loop = Loop(FlakyThinker(), executor)
         r = loop.run("anything", max_retries=2)
-        # First attempt failed, second attempt succeeded
-        assert r.attempts == 2
-        assert r.status == LoopStatus.SUCCEEDED
+        assert r.attempts == 1
+        assert r.status == LoopStatus.FAILED
+        assert r.retry_decision.value == "RETRY_CONTEXT_REQUIRED"
 
     def test_retry_exhausted(self):
-        """max_retries=2 with persistent failure -> 3 attempts, FAILED."""
+        """A missing retry context fails closed before retry exhaustion."""
         class AlwaysBad(Thinker):
             def plan(self, prompt):
                 return [Step("bad")]
@@ -140,8 +140,9 @@ class TestRetry:
         executor = MockExecutor(fail_on=["bad"])
         loop = Loop(AlwaysBad(), executor)
         r = loop.run("anything", max_retries=2)
-        assert r.attempts == 3  # 1 + 2 retries
+        assert r.attempts == 1
         assert r.status == LoopStatus.FAILED
+        assert r.retry_decision.value == "RETRY_CONTEXT_REQUIRED"
 
 
 # ── History + observability ─────────────────────────────────────

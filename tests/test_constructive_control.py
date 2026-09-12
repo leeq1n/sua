@@ -178,7 +178,7 @@ def test_verification_surfaces_match_phase_aware_constructive_control():
     hook = read(PREPARE_COMMIT_MSG)
     combined = verification + agents_detail + hook
 
-    assert "Last constructive-control verification: 2026-09-11" in verification
+    assert "Last constructive-control verification: 2026-09-12" in verification
     assert "open-ended discovery / design / hypothesis formation" in verification
     assert "deterministic / well-specified execution" in verification
     assert "live behavioral improvement remains unmeasured" in verification

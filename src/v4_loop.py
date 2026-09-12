@@ -12,7 +12,8 @@ Executor (2.2) runs each Step.  Loop (2.3) drives them together:
   2. for each Step: Executor.execute(Step) -> Result
   3. Observe: collect all Results into LoopResult
   4. Decision: all success -> SUCCEEDED, any fail -> FAILED
-  5. Optional: re-plan on failure (max_retries > 0)
+  5. Optional: gate-authorized re-plan on failure; max_retries is only a
+     quantity ceiling
 
 Public API:
   LoopStatus(Enum)         : SUCCEEDED | FAILED | PARTIAL
@@ -47,6 +48,7 @@ class LoopResult:
     elapsed_s: float = 0.0
     retry_decision: Optional[RetryDecision] = None
     retry_state: Optional[RetryState] = None
+    retry_reason: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -59,6 +61,7 @@ class LoopResult:
                 self.retry_decision.value if self.retry_decision else None
             ),
             "retry_state": self.retry_state.to_dict() if self.retry_state else None,
+            "retry_reason": self.retry_reason,
         }
 
 
@@ -93,16 +96,19 @@ class Loop:
 
         Args:
           prompt: input to Thinker
-          max_retries: re-plan up to N times if any step fails (default 0)
+          max_retries: hard quantity ceiling for re-plans (default 0); it does
+            not authorize a retry without retry_state plus retry_proposal
 
-        Per P7 奥卡姆: default no retry.  Pass max_retries>0 for
-        Self-Harness-style iterative re-planning.
+        Per P7 奥卡姆: default no retry.  A positive ceiling still requires
+        explicit retry context for every gate-authorized re-plan.
         """
         t0 = time.time()
         attempt = 0
         last_plan: Plan = []
         last_results: List[Result] = []
         last_gate_result: Optional[RetryGateResult] = None
+        last_retry_decision: Optional[RetryDecision] = None
+        last_retry_reason: Optional[str] = None
 
         while attempt <= max_retries:
             attempt += 1
@@ -123,19 +129,39 @@ class Loop:
             if attempt > max_retries:
                 break
 
-            # The legacy count-based retry remains available for callers that
-            # have no acceptance state.  Once a state is supplied, every
-            # retry must pass the one canonical decision gate.
-            if retry_state is not None:
-                proposed = (
-                    retry_proposal_factory(retry_state, attempt)
-                    if retry_proposal_factory
-                    else retry_proposal
+            # A canonical retry is never authorized by max_retries alone.
+            # max_retries is only the quantity ceiling; admissibility must
+            # have an explicit prior state and proposal for the one gate.
+            if retry_state is None:
+                last_retry_decision = RetryDecision.RETRY_CONTEXT_REQUIRED
+                last_retry_reason = (
+                    "retry context is required before a canonical retry; "
+                    "max_retries is only a quantity ceiling"
                 )
-                last_gate_result = evaluate_retry(retry_state, proposed)
-                retry_state = last_gate_result.state
-                if last_gate_result.decision is not RetryDecision.RETRY_ALLOWED:
-                    break
+                break
+            if retry_proposal is None and retry_proposal_factory is None:
+                last_retry_decision = RetryDecision.RETRY_CONTEXT_REQUIRED
+                last_retry_reason = (
+                    "retry proposal is required before a canonical retry; "
+                    "max_retries is only a quantity ceiling"
+                )
+                break
+
+            proposed = (
+                retry_proposal_factory(retry_state, attempt)
+                if retry_proposal_factory
+                else retry_proposal
+            )
+            if proposed is None:
+                last_retry_decision = RetryDecision.RETRY_CONTEXT_REQUIRED
+                last_retry_reason = "retry proposal factory returned no retry context"
+                break
+            last_gate_result = evaluate_retry(retry_state, proposed)
+            retry_state = last_gate_result.state
+            last_retry_decision = last_gate_result.decision
+            last_retry_reason = last_gate_result.reason
+            if last_gate_result.decision is not RetryDecision.RETRY_ALLOWED:
+                break
 
         # Decide status
         # Per P9 + fail-fast: strict.  Fail-fast means we stopped early,
@@ -156,9 +182,14 @@ class Loop:
             attempts=attempt,
             elapsed_s=time.time() - t0,
             retry_decision=(
-                last_gate_result.decision if last_gate_result else None
+                last_gate_result.decision
+                if last_gate_result
+                else last_retry_decision
             ),
             retry_state=(last_gate_result.state if last_gate_result else retry_state),
+            retry_reason=(
+                last_gate_result.reason if last_gate_result else last_retry_reason
+            ),
         )
         self.history.append(result)
         return result

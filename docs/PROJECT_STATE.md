@@ -42,10 +42,13 @@ produce no global output-space expansion. M-n 29's helper reports structural
 coverage only; semantic acceptance still requires evidence. The rejection-aware
 retry gate now invalidates local self-PASS after explicit user rejection of the
 same core criterion, requires a failure-state record and causal delta before a
-retry, and exposes the same loop breaker through the stateless bridge. The
-canonical `src/retry_gate.py` state carrier and `src/v4_loop.Loop` wiring now
-have executable unit/integration coverage; live LLM quality remains
-unmeasured.
+retry, and exposes the same loop breaker through the stateless bridge. R3 also
+closes the default controller/harness bypass: `max_retries` is only a quantity
+ceiling, and missing retry context returns `RETRY_CONTEXT_REQUIRED` before a
+second attempt. The canonical `src/retry_gate.py` state carrier now separates
+canonical representation family from optional variant metadata, and the
+`src/v4_loop.Loop` wiring has executable unit/integration coverage; live LLM
+quality remains unmeasured.
 
 At final promotion, the project-layer `ARTIFACT_FINALIZATION.md` adapter now
 orchestrates existing SUA primitives around evidence-safe freeze

@@ -4,7 +4,7 @@
 been verified + cross-refs.  Per P11 摘要+
 引用 + R6 + M-n 20 framework-agnostic.
 
-Last P20-verified: 2026-09-11
+Last P20-verified: 2026-09-12
 
 ## Artifact-finalization verification
 
@@ -68,10 +68,10 @@ twice commit once)
 
 ## Phase-aware constructive-control verification
 
-**Last constructive-control verification: 2026-09-11.** Scope: the
+**Last constructive-control verification: 2026-09-12.** Scope: the
 phase-aware ordering, task-profile boundary, hard-stop exceptions, repeated
 user-rejection loop breaker, regression contract, and mechanical helper
-consistency introduced by commit `19a6ce2` and this follow-up.
+consistency introduced by commit `19a6ce2` and the R2/R3 follow-ups.
 
 - For **open-ended discovery / design / hypothesis formation**, complete
   meaningful bounded constructive expansion and synthesis before terminal
@@ -90,7 +90,10 @@ consistency introduced by commit `19a6ce2` and this follow-up.
 - The executable `src/retry_gate.py` carrier/gate covers resolved user-facing
   authority, objective-evidence disagreement, structural-delta validation,
   serialization/reload, and controller stop/allow decisions without a fixed
-  rejection count.
+  rejection count. The canonical controller fails closed with
+  `RETRY_CONTEXT_REQUIRED` when a failed attempt lacks retry state or proposal;
+  `max_retries` cannot authorize that retry. Representation variants and
+  omitted optional fields do not masquerade as causal structural changes.
 - The stateless bridge exposes this gate directly, and the canonical benchmark
   source now carries one domain-general same-structure retry fixture through
   the existing baseline/treatment collector; its baseline is pinned to the

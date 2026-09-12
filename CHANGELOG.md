@@ -27,6 +27,19 @@ same-structure-local-retry fixture with its baseline pinned to the immutable
 pre-patch parent revision. Focused unit/integration evidence passes; live LLM
 response quality and cross-runtime deployment remain unmeasured.
 
+## 2026-09-12 — canonical retry bypass closure
+
+### Unreleased — fail-closed retry context and canonical representation identity
+
+**TARGETED R2 CORRECTION.** The canonical controller and default harness no
+longer fall back to count-based retries when a failed attempt has no
+`RetryState` and `RetryProposal`. They stop before a second attempt with
+`RETRY_CONTEXT_REQUIRED`; `max_retries` remains only a hard quantity ceiling.
+The retry schema now represents `REPRESENTATION_FAMILY` separately from
+optional `REPRESENTATION_VARIANT`, and omitted optional fields cannot create a
+structural delta. Focused R3 regression evidence passes; broader historical
+planner/harness failures and live LLM quality remain outside this correction.
+
 ## 2026-09-10 — P30-A3 removal of self-attested terminal authority
 
 ### Unreleased — external-record-only terminal verification

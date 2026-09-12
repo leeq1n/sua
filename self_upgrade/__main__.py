@@ -84,7 +84,7 @@ def cli(mock):
 @click.option("--multi/--single", default=True,
               help="Multi-paper (LLM judge, default) or single paper (--paper).")
 @click.option("--max-retries", default=2, type=int,
-              help="Harness retries on NO_PATCH/REVERTED (default: 2).")
+              help="Retry quantity ceiling; canonical context still required (default: 2).")
 @click.option("--count", default=1, type=int,
               help="Run N consecutive rounds (default: 1).")
 @click.option("--auto-commit/--no-auto-commit", default=False,
@@ -98,7 +98,8 @@ def improve(obj, target, paper, test_path, multi, max_retries, count,
             auto_commit, interval, mock):
     """Run one round of self-improvement (with flags).
 
-    Default: multi-paper mode, harness with 2 retries.  Use --single
+    Default: multi-paper mode, harness with a retry ceiling of 2; each retry
+    still requires canonical context.  Use --single
     for a specific paper (with --paper), or --mock for offline tests.
 
     Examples:

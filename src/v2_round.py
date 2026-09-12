@@ -64,6 +64,7 @@ class RoundResult:
     snapshot_path: str = ""
     retry_decision: Optional[RetryDecision] = None
     retry_state: Optional[RetryState] = None
+    retry_reason: Optional[str] = None
 
 
 def run_project_tests(
@@ -340,15 +341,16 @@ def run_one_round_with_harness(
     retry_proposal: Optional[RetryProposal] = None,
     retry_proposal_factory: Optional[Callable[[RetryState, int], RetryProposal]] = None,
 ) -> RoundResult:
-    """Run run_one_round_multi inside a v3.0.2 harness loop.
+    """Run run_one_round_multi inside a v3.0.2 gate-controlled harness loop.
 
     Per LITERATURE (Self-Harness 40->62%): iterative re-plan on
     failure.  Per P7 奥卡姆: simple retry wrapper, no new handler
-    dispatch.  Returns the result of the last attempt.
+    dispatch.  A retry requires explicit retry state and proposal; the
+    returned result includes a fail-closed decision when context is absent.
 
     Args:
       target_module: the module to improve
-      max_retries:    0 = no retry (default 2)
+      max_retries:    hard quantity ceiling; context still gates retries
       test_path:      which tests to run after apply
     """
     from src.v4_thinker import MockThinker, Step
@@ -411,7 +413,12 @@ def run_one_round_with_harness(
     last_round.elapsed_s = time.time() - t0
     last_round.retry_decision = loop_result.retry_decision
     last_round.retry_state = loop_result.retry_state
-    _stage(f"Harness done: {last_round.decision} after {loop_result.attempts} attempt(s)", t0)
+    last_round.retry_reason = loop_result.retry_reason
+    _stage(
+        f"Harness done: {last_round.decision} after {loop_result.attempts} attempt(s); "
+        f"retry_decision={loop_result.retry_decision.value if loop_result.retry_decision else 'NONE'}",
+        t0,
+    )
     return last_round
 
 

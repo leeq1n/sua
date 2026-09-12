@@ -235,6 +235,79 @@ def test_existing_loop_controller_stops_when_gate_requires_replan():
     assert result.retry_decision is RetryDecision.GLOBAL_REPLAN_REQUIRED
 
 
+def test_default_canonical_retry_requires_context_and_stops_before_second_attempt():
+    calls = []
+
+    class AlwaysBad(Thinker):
+        def plan(self, prompt):
+            calls.append(prompt)
+            return [Step("bad")]
+
+    loop = Loop(AlwaysBad(), MockExecutor(fail_on=["bad"]))
+    result = loop.run(
+        "default canonical retry path",
+        max_retries=2,
+        retry_state=None,
+        retry_proposal=None,
+    )
+
+    assert result.attempts == 1
+    assert len(calls) == 1
+    assert result.retry_decision is RetryDecision.RETRY_CONTEXT_REQUIRED
+
+
+def test_omitted_artifact_role_does_not_create_structural_delta():
+    result = evaluate_retry(
+        user_state(),
+        proposal(
+            artifact_role_placement=None,
+            causal_delta="a claimed redesign without a changed structural identity",
+        ),
+    )
+
+    assert result.decision is RetryDecision.GLOBAL_REPLAN_REQUIRED
+    assert result.structural_delta_valid is False
+
+
+def test_representation_variant_rename_is_not_a_family_change():
+    prior = user_state(
+        representation_family="two-column-layout",
+        representation_variant="A",
+        causal_layer=CausalLayer.REPRESENTATION_FRAMING,
+    )
+    result = evaluate_retry(
+        prior,
+        proposal(
+            representation_family="two-column-layout",
+            representation_variant="B",
+            causal_layer=CausalLayer.REPRESENTATION_FRAMING,
+            causal_delta="rename the display variant only",
+        ),
+    )
+
+    assert result.decision is RetryDecision.GLOBAL_REPLAN_REQUIRED
+    assert result.structural_delta_valid is False
+
+
+def test_representation_family_change_is_a_valid_structural_delta():
+    prior = user_state(
+        representation_family="two-column-layout",
+        representation_variant="A",
+    )
+    result = evaluate_retry(
+        prior,
+        proposal(
+            representation_family="matrix-centered-evidence-architecture",
+            representation_variant="A",
+            causal_layer=CausalLayer.REPRESENTATION_FRAMING,
+            causal_delta="replace the canonical representation family",
+        ),
+    )
+
+    assert result.decision is RetryDecision.RETRY_ALLOWED
+    assert result.structural_delta_valid is True
+
+
 def test_existing_round_harness_forwards_gate_to_controller():
     def round_result(decision):
         return RoundResult(
@@ -261,3 +334,22 @@ def test_existing_round_harness_forwards_gate_to_controller():
     assert run_round.call_count == 2
     assert result.decision == "KEPT"
     assert result.retry_decision is RetryDecision.RETRY_ALLOWED
+
+
+def test_default_round_harness_cannot_retry_without_context():
+    no_patch = RoundResult(
+        decision="NO_PATCH",
+        paper=Paper(arxiv_id="x", title="x", abstract="x"),
+        target_module="core/planner.py",
+    )
+
+    with patch("src.v2_round.run_one_round_multi", return_value=no_patch) as run_round:
+        result = run_one_round_with_harness(
+            target_module="core/planner.py",
+            max_retries=2,
+            retry_state=None,
+            retry_proposal=None,
+        )
+
+    assert run_round.call_count == 1
+    assert result.retry_decision is RetryDecision.RETRY_CONTEXT_REQUIRED
