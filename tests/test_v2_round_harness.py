@@ -107,6 +107,24 @@ class TestBehavior:
         assert result.decision == "REVERTED"
         assert result.retry_decision is RetryDecision.RETRY_CONTEXT_REQUIRED
 
+    def test_exception_fallback_preserves_retry_context_required(self):
+        """Exception fallback keeps the controller's fail-closed decision."""
+        with patch(
+            "src.v2_round.run_one_round_multi",
+            side_effect=RuntimeError("round failed before result"),
+        ) as m:
+            result = run_one_round_with_harness(
+                target_module="core/planner.py",
+                max_retries=2,
+                retry_state=None,
+                retry_proposal=None,
+            )
+
+        assert m.call_count == 1
+        assert result.retry_decision is RetryDecision.RETRY_CONTEXT_REQUIRED
+        assert result.retry_reason
+        assert "retry context" in result.retry_reason
+
 
 # ── C. Metadata ──────────────────────────────────────────────
 

@@ -407,6 +407,9 @@ def run_one_round_with_harness(
                 target_module=target_module,
                 elapsed_s=time.time() - t0,
                 error="harness produced no result",
+                retry_decision=loop_result.retry_decision,
+                retry_state=loop_result.retry_state,
+                retry_reason=loop_result.retry_reason,
             )
 
     # Annotate with harness metadata
