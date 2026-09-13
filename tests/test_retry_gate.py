@@ -9,10 +9,15 @@ from src.retry_gate import (
     AuthorityBasis,
     CausalLayer,
     CriterionClass,
+    EndUseStatus,
     FailureClass,
+    LifecycleAction,
+    LifecycleEvidence,
+    ParentTaskState,
     RetryDecision,
     RetryProposal,
     RetryState,
+    evaluate_lifecycle,
     evaluate_retry,
 )
 from src.v4_executor import MockExecutor
@@ -353,3 +358,123 @@ def test_default_round_harness_cannot_retry_without_context():
 
     assert run_round.call_count == 1
     assert result.retry_decision is RetryDecision.RETRY_CONTEXT_REQUIRED
+
+
+def test_direct_parent_completion_can_stop_without_forced_continuation():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-complete",
+            parent_objective_complete=True,
+            end_use_status=EndUseStatus.SATISFIED,
+        )
+    )
+
+    assert result.parent_task_state is ParentTaskState.COMPLETE
+    assert result.next_action is LifecycleAction.STOP
+    assert result.last_known_valid_candidate == "candidate-complete"
+
+
+def test_local_success_keeps_parent_open_and_checkpoints_valid_candidate():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-local",
+            local_success=True,
+            end_use_status=EndUseStatus.UNRESOLVED,
+            unresolved_condition="deployment integration is pending",
+            unresolved_reason="the local regression passed but the consumer path is unverified",
+        )
+    )
+
+    assert result.local_candidate_success is True
+    assert result.parent_task_state is ParentTaskState.OPEN
+    assert result.last_known_valid_candidate == "candidate-local"
+    assert result.end_use_status is EndUseStatus.UNRESOLVED
+    assert result.next_action is LifecycleAction.CHECKPOINT
+    assert result.unresolved_condition == "deployment integration is pending"
+
+
+def test_last_known_valid_candidate_survives_unresolved_parent_continuation():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-failed",
+            last_known_valid_candidate="candidate-prior",
+            end_use_status=EndUseStatus.UNRESOLVED,
+            unresolved_condition="dependency evidence is missing",
+            unresolved_reason="the next parent-level check has not run",
+        )
+    )
+
+    assert result.parent_task_state is ParentTaskState.OPEN
+    assert result.last_known_valid_candidate == "candidate-prior"
+    assert result.next_action is LifecycleAction.CONTINUE_PARENT
+
+
+def test_concrete_local_defect_uses_bounded_local_continuation():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-local",
+            last_known_valid_candidate="candidate-local",
+            local_defect_identified=True,
+            representation_causally_viable=True,
+            unresolved_condition="one bounded defect remains",
+            unresolved_reason="the defect is isolated to the current local representation",
+        )
+    )
+
+    assert result.parent_task_state is ParentTaskState.OPEN
+    assert result.last_known_valid_candidate == "candidate-local"
+    assert result.next_action is LifecycleAction.CONTINUE_LOCAL
+
+
+def test_same_core_without_causal_delta_selects_broader_replan():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            last_known_valid_candidate="candidate-prior",
+            same_core_no_causal_delta=True,
+            unresolved_condition="the same representation failed again",
+            unresolved_reason="the proposed attempt changes no causal layer",
+        )
+    )
+
+    assert result.parent_task_state is ParentTaskState.OPEN
+    assert result.last_known_valid_candidate == "candidate-prior"
+    assert result.next_action is LifecycleAction.GLOBAL_REPLAN
+
+
+def test_local_construction_success_does_not_infer_parent_acceptance():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-local",
+            local_success=True,
+            end_use_status=EndUseStatus.SATISFIED,
+            parent_objective_complete=False,
+        )
+    )
+
+    assert result.local_candidate_success is True
+    assert result.parent_task_state is ParentTaskState.OPEN
+    assert result.parent_objective_complete is False
+    assert result.next_action is LifecycleAction.CONTINUE_PARENT
+
+
+def test_lifecycle_state_round_trip_preserves_explicit_next_action():
+    result = evaluate_lifecycle(
+        LifecycleEvidence(
+            parent_objective="deliver a usable artifact",
+            current_candidate_identity="candidate-local",
+            local_success=True,
+            unresolved_condition="acceptance remains open",
+            unresolved_reason="independent end-use evidence is pending",
+        )
+    )
+
+    reloaded = result.from_dict(result.to_dict())
+
+    assert reloaded == result
+    assert reloaded.next_action is LifecycleAction.CHECKPOINT

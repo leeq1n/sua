@@ -4,6 +4,13 @@ import pytest
 from src.v4_loop import Loop, LoopResult, LoopStatus
 from src.v4_thinker import MockThinker, Step, Thinker
 from src.v4_executor import MockExecutor, FunctionExecutor, Result
+from src.retry_gate import (
+    EndUseStatus,
+    LifecycleAction,
+    LifecycleEvidence,
+    ParentTaskState,
+    evaluate_lifecycle,
+)
 
 
 # ── LoopStatus + LoopResult ────────────────────────────────────
@@ -38,6 +45,18 @@ class TestLoopResult:
         assert d["elapsed_s"] == 0.5
         assert len(d["plan"]) == 2
         assert len(d["results"]) == 2
+
+    def test_to_dict_includes_lifecycle_state(self):
+        r = LoopResult(
+            status=LoopStatus.SUCCEEDED,
+            plan=[],
+            lifecycle_state=evaluate_lifecycle(
+                LifecycleEvidence(parent_objective="deliver a usable artifact")
+            ),
+        )
+
+        assert r.to_dict()["lifecycle_state"]["PARENT_TASK_STATE"] == "OPEN"
+        assert r.to_dict()["lifecycle_state"]["NEXT_ACTION"] == "CONTINUE_PARENT"
 
 
 # ── Basic Loop.run ──────────────────────────────────────────────
@@ -143,6 +162,45 @@ class TestRetry:
         assert r.attempts == 1
         assert r.status == LoopStatus.FAILED
         assert r.retry_decision.value == "RETRY_CONTEXT_REQUIRED"
+
+    def test_successful_local_refinement_is_observable_as_open_parent(self):
+        thinker = MockThinker(fixed_plan=[Step("local-fix")])
+        loop = Loop(thinker, MockExecutor())
+        r = loop.run(
+            "perform a bounded local refinement",
+            lifecycle_evidence=LifecycleEvidence(
+                parent_objective="deliver a usable artifact",
+                current_candidate_identity="candidate-local",
+                end_use_status=EndUseStatus.UNRESOLVED,
+                unresolved_condition="parent integration is pending",
+                unresolved_reason="local execution did not establish end-use completion",
+            ),
+        )
+
+        assert r.status is LoopStatus.SUCCEEDED
+        assert r.lifecycle_state is not None
+        assert r.lifecycle_state.parent_task_state is ParentTaskState.OPEN
+        assert r.lifecycle_state.next_action is LifecycleAction.CHECKPOINT
+        assert r.lifecycle_state.last_known_valid_candidate == "candidate-local"
+
+    def test_explicit_parent_completion_stops_without_forced_retry(self):
+        thinker = MockThinker(fixed_plan=[Step("complete")])
+        loop = Loop(thinker, MockExecutor())
+        r = loop.run(
+            "complete the parent objective",
+            max_retries=2,
+            lifecycle_evidence=LifecycleEvidence(
+                parent_objective="deliver a usable artifact",
+                current_candidate_identity="candidate-complete",
+                parent_objective_complete=True,
+                end_use_status=EndUseStatus.SATISFIED,
+            ),
+        )
+
+        assert r.attempts == 1
+        assert r.lifecycle_state is not None
+        assert r.lifecycle_state.parent_task_state is ParentTaskState.COMPLETE
+        assert r.lifecycle_state.next_action is LifecycleAction.STOP
 
 
 # ── History + observability ─────────────────────────────────────

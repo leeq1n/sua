@@ -17,9 +17,9 @@ Executor (2.2) runs each Step.  Loop (2.3) drives them together:
 
 Public API:
   LoopStatus(Enum)         : SUCCEEDED | FAILED | PARTIAL
-  LoopResult               : status + plan + per-step results
+  LoopResult               : status + plan + per-step results + lifecycle state
   Loop(thinker, executor)  : orchestrate Think -> Execute -> Observe
-    .run(prompt, max_retries=0) -> LoopResult
+    .run(prompt, max_retries=0, lifecycle_evidence=None) -> LoopResult
 """
 import time
 from dataclasses import dataclass, field
@@ -28,7 +28,16 @@ from typing import Callable, List, Optional
 
 from src.v4_thinker import Thinker, Plan
 from src.v4_executor import Executor, Result
-from src.retry_gate import RetryDecision, RetryGateResult, RetryProposal, RetryState, evaluate_retry
+from src.retry_gate import (
+    LifecycleEvidence,
+    LifecycleState,
+    RetryDecision,
+    RetryGateResult,
+    RetryProposal,
+    RetryState,
+    evaluate_lifecycle,
+    evaluate_retry,
+)
 
 
 class LoopStatus(Enum):
@@ -49,6 +58,7 @@ class LoopResult:
     retry_decision: Optional[RetryDecision] = None
     retry_state: Optional[RetryState] = None
     retry_reason: Optional[str] = None
+    lifecycle_state: Optional[LifecycleState] = None
 
     def to_dict(self) -> dict:
         return {
@@ -62,6 +72,9 @@ class LoopResult:
             ),
             "retry_state": self.retry_state.to_dict() if self.retry_state else None,
             "retry_reason": self.retry_reason,
+            "lifecycle_state": (
+                self.lifecycle_state.to_dict() if self.lifecycle_state else None
+            ),
         }
 
 
@@ -91,6 +104,7 @@ class Loop:
         retry_proposal_factory: Optional[
             Callable[[RetryState, int], RetryProposal]
         ] = None,
+        lifecycle_evidence: Optional[LifecycleEvidence] = None,
     ) -> LoopResult:
         """Run the loop.  Returns LoopResult.
 
@@ -98,6 +112,9 @@ class Loop:
           prompt: input to Thinker
           max_retries: hard quantity ceiling for re-plans (default 0); it does
             not authorize a retry without retry_state plus retry_proposal
+          lifecycle_evidence: optional parent/local evidence.  When supplied,
+            the executed result supplies local construction success while
+            parent completion remains explicit evidence.
 
         Per P7 奥卡姆: default no retry.  A positive ceiling still requires
         explicit retry context for every gate-authorized re-plan.
@@ -175,6 +192,15 @@ class Loop:
             # Any failure (whether fail-fast or all-then-decide) is FAILED.
             status = LoopStatus.FAILED
 
+        lifecycle_state = (
+            evaluate_lifecycle(
+                lifecycle_evidence,
+                local_success=(status is LoopStatus.SUCCEEDED),
+            )
+            if lifecycle_evidence is not None
+            else None
+        )
+
         result = LoopResult(
             status=status,
             plan=last_plan,
@@ -190,6 +216,7 @@ class Loop:
             retry_reason=(
                 last_gate_result.reason if last_gate_result else last_retry_reason
             ),
+            lifecycle_state=lifecycle_state,
         )
         self.history.append(result)
         return result

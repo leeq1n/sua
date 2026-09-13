@@ -65,6 +65,25 @@ class RetryDecision(_ValueEnum):
     RETRY_CONTEXT_REQUIRED = "RETRY_CONTEXT_REQUIRED"
 
 
+class ParentTaskState(_ValueEnum):
+    OPEN = "OPEN"
+    COMPLETE = "COMPLETE"
+
+
+class EndUseStatus(_ValueEnum):
+    SATISFIED = "SATISFIED"
+    UNRESOLVED = "UNRESOLVED"
+    FAILED = "FAILED"
+
+
+class LifecycleAction(_ValueEnum):
+    STOP = "STOP"
+    CONTINUE_PARENT = "CONTINUE_PARENT"
+    CHECKPOINT = "CHECKPOINT"
+    CONTINUE_LOCAL = "CONTINUE_LOCAL"
+    GLOBAL_REPLAN = "GLOBAL_REPLAN"
+
+
 E = TypeVar("E", bound=_ValueEnum)
 
 
@@ -102,6 +121,247 @@ def _optional_text(value: Any, field_name: str) -> Optional[str]:
 
 def _normalized(value: str) -> str:
     return " ".join(value.casefold().split())
+
+
+@dataclass(frozen=True)
+class LifecycleEvidence:
+    """Evidence used to separate local progress from parent completion."""
+
+    parent_objective: str
+    current_candidate_identity: Optional[str] = None
+    last_known_valid_candidate: Optional[str] = None
+    local_success: bool = False
+    parent_objective_complete: bool = False
+    end_use_status: EndUseStatus | str = EndUseStatus.UNRESOLVED
+    unresolved_condition: Optional[str] = None
+    unresolved_reason: Optional[str] = None
+    local_defect_identified: bool = False
+    representation_causally_viable: bool = False
+    same_core_no_causal_delta: bool = False
+    representation_falsified: bool = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "parent_objective",
+            _text(self.parent_objective, "parent_objective", required=True),
+        )
+        object.__setattr__(
+            self,
+            "current_candidate_identity",
+            _optional_text(self.current_candidate_identity, "current_candidate_identity"),
+        )
+        object.__setattr__(
+            self,
+            "last_known_valid_candidate",
+            _optional_text(self.last_known_valid_candidate, "last_known_valid_candidate"),
+        )
+        object.__setattr__(
+            self, "local_success", bool(self.local_success)
+        )
+        object.__setattr__(
+            self, "parent_objective_complete", bool(self.parent_objective_complete)
+        )
+        object.__setattr__(
+            self, "end_use_status", _enum_value(self.end_use_status, EndUseStatus)
+        )
+        object.__setattr__(
+            self,
+            "unresolved_condition",
+            _optional_text(self.unresolved_condition, "unresolved_condition"),
+        )
+        object.__setattr__(
+            self,
+            "unresolved_reason",
+            _optional_text(self.unresolved_reason, "unresolved_reason"),
+        )
+        object.__setattr__(
+            self, "local_defect_identified", bool(self.local_defect_identified)
+        )
+        object.__setattr__(
+            self,
+            "representation_causally_viable",
+            bool(self.representation_causally_viable),
+        )
+        object.__setattr__(
+            self, "same_core_no_causal_delta", bool(self.same_core_no_causal_delta)
+        )
+        object.__setattr__(
+            self, "representation_falsified", bool(self.representation_falsified)
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "PARENT_OBJECTIVE": self.parent_objective,
+            "CURRENT_CANDIDATE_IDENTITY": self.current_candidate_identity,
+            "LAST_KNOWN_VALID_CANDIDATE": self.last_known_valid_candidate,
+            "LOCAL_SUCCESS": self.local_success,
+            "PARENT_OBJECTIVE_COMPLETE": self.parent_objective_complete,
+            "END_USE_STATUS": self.end_use_status.value,
+            "UNRESOLVED_CONDITION": self.unresolved_condition,
+            "UNRESOLVED_REASON": self.unresolved_reason,
+            "LOCAL_DEFECT_IDENTIFIED": self.local_defect_identified,
+            "REPRESENTATION_CAUSALLY_VIABLE": self.representation_causally_viable,
+            "SAME_CORE_NO_CAUSAL_DELTA": self.same_core_no_causal_delta,
+            "REPRESENTATION_FALSIFIED": self.representation_falsified,
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), sort_keys=True)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "LifecycleEvidence":
+        def get(name: str, default: Any = None) -> Any:
+            return data[name] if name in data else data.get(name.lower(), default)
+
+        return cls(
+            parent_objective=get("PARENT_OBJECTIVE"),
+            current_candidate_identity=get("CURRENT_CANDIDATE_IDENTITY"),
+            last_known_valid_candidate=get("LAST_KNOWN_VALID_CANDIDATE"),
+            local_success=get("LOCAL_SUCCESS", False),
+            parent_objective_complete=get("PARENT_OBJECTIVE_COMPLETE", False),
+            end_use_status=get("END_USE_STATUS", EndUseStatus.UNRESOLVED),
+            unresolved_condition=get("UNRESOLVED_CONDITION"),
+            unresolved_reason=get("UNRESOLVED_REASON"),
+            local_defect_identified=get("LOCAL_DEFECT_IDENTIFIED", False),
+            representation_causally_viable=get("REPRESENTATION_CAUSALLY_VIABLE", False),
+            same_core_no_causal_delta=get("SAME_CORE_NO_CAUSAL_DELTA", False),
+            representation_falsified=get("REPRESENTATION_FALSIFIED", False),
+        )
+
+    @classmethod
+    def from_json(cls, value: str) -> "LifecycleEvidence":
+        return cls.from_dict(json.loads(value))
+
+
+@dataclass(frozen=True)
+class LifecycleState:
+    """Serializable lifecycle state returned by the canonical controller."""
+
+    parent_objective: str
+    current_candidate_identity: Optional[str]
+    last_known_valid_candidate: Optional[str]
+    local_candidate_success: bool
+    parent_objective_complete: bool
+    parent_task_state: ParentTaskState
+    end_use_status: EndUseStatus
+    unresolved_condition: Optional[str]
+    unresolved_reason: Optional[str]
+    next_action: LifecycleAction
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "PARENT_OBJECTIVE": self.parent_objective,
+            "CURRENT_CANDIDATE_IDENTITY": self.current_candidate_identity,
+            "LAST_KNOWN_VALID_CANDIDATE": self.last_known_valid_candidate,
+            "LOCAL_CANDIDATE_SUCCESS": self.local_candidate_success,
+            "PARENT_OBJECTIVE_COMPLETE": self.parent_objective_complete,
+            "PARENT_TASK_STATE": self.parent_task_state.value,
+            "END_USE_STATUS": self.end_use_status.value,
+            "UNRESOLVED_CONDITION": self.unresolved_condition,
+            "UNRESOLVED_REASON": self.unresolved_reason,
+            "NEXT_ACTION": self.next_action.value,
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), sort_keys=True)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "LifecycleState":
+        def get(name: str, default: Any = None) -> Any:
+            return data[name] if name in data else data.get(name.lower(), default)
+
+        return cls(
+            parent_objective=_text(get("PARENT_OBJECTIVE"), "parent_objective", required=True),
+            current_candidate_identity=_optional_text(
+                get("CURRENT_CANDIDATE_IDENTITY"), "current_candidate_identity"
+            ),
+            last_known_valid_candidate=_optional_text(
+                get("LAST_KNOWN_VALID_CANDIDATE"), "last_known_valid_candidate"
+            ),
+            local_candidate_success=bool(get("LOCAL_CANDIDATE_SUCCESS", False)),
+            parent_objective_complete=bool(get("PARENT_OBJECTIVE_COMPLETE", False)),
+            parent_task_state=_enum_value(
+                get("PARENT_TASK_STATE", ParentTaskState.OPEN), ParentTaskState
+            ),
+            end_use_status=_enum_value(
+                get("END_USE_STATUS", EndUseStatus.UNRESOLVED), EndUseStatus
+            ),
+            unresolved_condition=_optional_text(
+                get("UNRESOLVED_CONDITION"), "unresolved_condition"
+            ),
+            unresolved_reason=_optional_text(
+                get("UNRESOLVED_REASON"), "unresolved_reason"
+            ),
+            next_action=_enum_value(
+                get("NEXT_ACTION", LifecycleAction.CONTINUE_PARENT), LifecycleAction
+            ),
+        )
+
+    @classmethod
+    def from_json(cls, value: str) -> "LifecycleState":
+        return cls.from_dict(json.loads(value))
+
+
+def _coerce_lifecycle_evidence(
+    value: LifecycleEvidence | Mapping[str, Any],
+) -> LifecycleEvidence:
+    return value if isinstance(value, LifecycleEvidence) else LifecycleEvidence.from_dict(value)
+
+
+def evaluate_lifecycle(
+    evidence: LifecycleEvidence | Mapping[str, Any],
+    *,
+    local_success: Optional[bool] = None,
+) -> LifecycleState:
+    """Classify local progress without treating it as parent acceptance.
+
+    ``local_success`` is an optional controller override used when the
+    executor, rather than the caller, is the source of local construction
+    evidence.  Parent completion remains an explicit evidence field.
+    """
+    observed = _coerce_lifecycle_evidence(evidence)
+    local_pass = observed.local_success if local_success is None else bool(local_success)
+    last_valid = (
+        observed.current_candidate_identity
+        if (local_pass or observed.parent_objective_complete)
+        and observed.current_candidate_identity
+        else observed.last_known_valid_candidate
+    )
+    has_unresolved_end_use = (
+        observed.end_use_status is not EndUseStatus.SATISFIED
+        or observed.unresolved_condition is not None
+        or observed.unresolved_reason is not None
+    )
+
+    if observed.parent_objective_complete and not has_unresolved_end_use:
+        parent_state = ParentTaskState.COMPLETE
+        next_action = LifecycleAction.STOP
+    elif observed.same_core_no_causal_delta or observed.representation_falsified:
+        parent_state = ParentTaskState.OPEN
+        next_action = LifecycleAction.GLOBAL_REPLAN
+    elif observed.local_defect_identified and observed.representation_causally_viable:
+        parent_state = ParentTaskState.OPEN
+        next_action = LifecycleAction.CONTINUE_LOCAL
+    elif local_pass and has_unresolved_end_use:
+        parent_state = ParentTaskState.OPEN
+        next_action = LifecycleAction.CHECKPOINT
+    else:
+        parent_state = ParentTaskState.OPEN
+        next_action = LifecycleAction.CONTINUE_PARENT
+
+    return LifecycleState(
+        parent_objective=observed.parent_objective,
+        current_candidate_identity=observed.current_candidate_identity,
+        last_known_valid_candidate=last_valid,
+        local_candidate_success=local_pass,
+        parent_objective_complete=observed.parent_objective_complete,
+        parent_task_state=parent_state,
+        end_use_status=observed.end_use_status,
+        unresolved_condition=observed.unresolved_condition,
+        unresolved_reason=observed.unresolved_reason,
+        next_action=next_action,
+    )
 
 
 @dataclass(frozen=True)
@@ -555,9 +815,14 @@ __all__ = [
     "AuthorityBasis",
     "CausalLayer",
     "CriterionClass",
+    "EndUseStatus",
     "FailureClass",
     "GLOBAL_REPLAN_REQUIRED",
     "ACCEPTANCE_AUTHORITY_UNVERIFIED",
+    "LifecycleAction",
+    "LifecycleEvidence",
+    "LifecycleState",
+    "ParentTaskState",
     "RETRY_CONTEXT_REQUIRED",
     "RETRY_ALLOWED",
     "RetryAttempt",
@@ -565,5 +830,6 @@ __all__ = [
     "RetryGateResult",
     "RetryProposal",
     "RetryState",
+    "evaluate_lifecycle",
     "evaluate_retry",
 ]

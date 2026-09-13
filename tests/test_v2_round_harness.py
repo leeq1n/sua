@@ -13,7 +13,13 @@ from unittest.mock import patch
 from src.v2_round import (
     RoundResult, run_one_round_with_harness, run_one_round_multi,
 )
-from src.retry_gate import RetryDecision
+from src.retry_gate import (
+    EndUseStatus,
+    LifecycleAction,
+    LifecycleEvidence,
+    ParentTaskState,
+    RetryDecision,
+)
 
 
 # ── Helper ─────────────────────────────────────────────────────
@@ -148,3 +154,23 @@ class TestMetadata:
             )
         assert result.target_module == "core/planner.py"  # from mock, not harness
         # Harness doesn't change target_module
+
+    def test_harness_preserves_local_success_with_open_parent_state(self):
+        rr_kept = make_round_result(decision="KEPT")
+        with patch("src.v2_round.run_one_round_multi", return_value=rr_kept):
+            result = run_one_round_with_harness(
+                target_module="core/planner.py",
+                max_retries=0,
+                lifecycle_evidence=LifecycleEvidence(
+                    parent_objective="deliver a usable artifact",
+                    current_candidate_identity="candidate-local",
+                    end_use_status=EndUseStatus.UNRESOLVED,
+                    unresolved_condition="parent integration is pending",
+                    unresolved_reason="the consumer path is not verified",
+                ),
+            )
+
+        assert result.lifecycle_state is not None
+        assert result.lifecycle_state.parent_task_state is ParentTaskState.OPEN
+        assert result.lifecycle_state.next_action is LifecycleAction.CHECKPOINT
+        assert result.lifecycle_state.last_known_valid_candidate == "candidate-local"

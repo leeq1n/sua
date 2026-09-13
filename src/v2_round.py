@@ -35,7 +35,13 @@ from src.failures import log_failure, replay_all, ReplayReport
 from src.v3_multipaper import read_papers, PaperSummary
 from src.v3_judge import select_best
 from src.v3_persist import save_summaries, save_decision
-from src.retry_gate import RetryDecision, RetryProposal, RetryState
+from src.retry_gate import (
+    LifecycleEvidence,
+    LifecycleState,
+    RetryDecision,
+    RetryProposal,
+    RetryState,
+)
 
 
 def _stage(name: str, start: float) -> None:
@@ -65,6 +71,7 @@ class RoundResult:
     retry_decision: Optional[RetryDecision] = None
     retry_state: Optional[RetryState] = None
     retry_reason: Optional[str] = None
+    lifecycle_state: Optional[LifecycleState] = None
 
 
 def run_project_tests(
@@ -340,6 +347,7 @@ def run_one_round_with_harness(
     retry_state: Optional[RetryState] = None,
     retry_proposal: Optional[RetryProposal] = None,
     retry_proposal_factory: Optional[Callable[[RetryState, int], RetryProposal]] = None,
+    lifecycle_evidence: Optional[LifecycleEvidence] = None,
 ) -> RoundResult:
     """Run run_one_round_multi inside a v3.0.2 gate-controlled harness loop.
 
@@ -347,6 +355,8 @@ def run_one_round_with_harness(
     failure.  Per P7 奥卡姆: simple retry wrapper, no new handler
     dispatch.  A retry requires explicit retry state and proposal; the
     returned result includes a fail-closed decision when context is absent.
+    When lifecycle evidence is supplied, the returned result also exposes the
+    controller's local-versus-parent lifecycle state.
 
     Args:
       target_module: the module to improve
@@ -388,6 +398,7 @@ def run_one_round_with_harness(
         retry_state=retry_state,
         retry_proposal=retry_proposal,
         retry_proposal_factory=retry_proposal_factory,
+        lifecycle_evidence=lifecycle_evidence,
     )
 
     # Find the last round result (the one we'll return)
@@ -410,6 +421,7 @@ def run_one_round_with_harness(
                 retry_decision=loop_result.retry_decision,
                 retry_state=loop_result.retry_state,
                 retry_reason=loop_result.retry_reason,
+                lifecycle_state=loop_result.lifecycle_state,
             )
 
     # Annotate with harness metadata
@@ -417,6 +429,7 @@ def run_one_round_with_harness(
     last_round.retry_decision = loop_result.retry_decision
     last_round.retry_state = loop_result.retry_state
     last_round.retry_reason = loop_result.retry_reason
+    last_round.lifecycle_state = loop_result.lifecycle_state
     _stage(
         f"Harness done: {last_round.decision} after {loop_result.attempts} attempt(s); "
         f"retry_decision={loop_result.retry_decision.value if loop_result.retry_decision else 'NONE'}",
