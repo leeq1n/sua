@@ -201,7 +201,7 @@ def run_one_round(
     _stage(f"Running tests ({test_path})...", t0)
     passed, failed, rc, stderr = run_project_tests(project_root, test_path=test_path)
     _stage(f"  tests: {passed} passed, {failed} failed (rc={rc})", t0)
-    tests_ok = (rc == 0) and (failed == 0)
+    tests_ok = (rc == 0) and (failed == 0) and (passed > 0)
 
     # 4. Decide
     decision = "KEPT" if tests_ok else "REVERTED"
