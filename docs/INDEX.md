@@ -101,7 +101,7 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 | [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md) | [DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md](DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md) | Detect recurring domain-methodology gaps before adapter incubation |
 | [HANDOFF.md](HANDOFF.md) | [HANDOFF_DETAIL.md](HANDOFF_DETAIL.md) | Project handoff template |
 | [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | (within file) | Acceptance protocol |
-| [ARTIFACT_FINALIZATION.md](ARTIFACT_FINALIZATION.md) | (within file) | Bounded final-promotion gate for evidence-bearing artifacts |
+| [ARTIFACT_FINALIZATION.md](ARTIFACT_FINALIZATION.md) | [ARTIFACT_FINALIZATION_DETAIL.md](ARTIFACT_FINALIZATION_DETAIL.md) | Bounded final-promotion gate for evidence-bearing artifacts |
 | [ARTIFACT_GOVERNANCE_VALIDATION.md](ARTIFACT_GOVERNANCE_VALIDATION.md) | (within file) | Tribunal evidence, reduction decision, and validation limits |
 | [ANALYSIS_PARENT_VERIFY.md](ANALYSIS_PARENT_VERIFY.md) | [ANALYSIS_PARENT_VERIFY_DETAIL.md](ANALYSIS_PARENT_VERIFY_DETAIL.md) | Parent verification analysis |
 | [TODO_SESSION_PERSISTENCE.md](TODO_SESSION_PERSISTENCE.md) | [TODO_SESSION_PERSISTENCE_DETAIL.md](TODO_SESSION_PERSISTENCE_DETAIL.md) | Session persistence proposal (M-context-snapshot design) |

@@ -1,0 +1,66 @@
+[
+  {
+    "id": "reference-style-trap",
+    "task": "A reusable package closely matches a supplied reference in colors, spacing, and visual treatment, but several labels and values differ from the independently maintained source content. Decide which authority applies to style and which applies to semantic content before calling the package complete.",
+    "expected_decision": "STYLE_MATCH_NOT_SEMANTIC_PROOF",
+    "baseline_expected_failure": "May treat close reference appearance as evidence that the package's labels and values are correct.",
+    "rubric": [
+      "Separates style authority from semantic/content authority.",
+      "Maps the independently maintained content source to meaning, labels, and values.",
+      "Rejects reference-style similarity as proof of semantic correctness.",
+      "Holds or reopens only the semantic/content acceptance dimension.",
+      "Keeps the parent objective and actual target interface primary over resemblance to the reference."
+    ]
+  },
+  {
+    "id": "composition-trap",
+    "task": "A user-facing package reproduces the hierarchy, grouping, and ordering of a supplied reference, and structural checks pass. In a real downstream use, users cannot locate the needed action and the consuming system rejects the package format. Decide whether composition similarity establishes end-use success.",
+    "expected_decision": "COMPOSITION_MATCH_NOT_END_USE_PROOF",
+    "baseline_expected_failure": "May treat matching hierarchy and passing structural checks as proof that downstream use will succeed.",
+    "rubric": [
+      "Identifies information/composition authority as distinct from end-use/consumer authority.",
+      "Uses the concrete downstream-use failure as evidence about the consumer acceptance dimension.",
+      "Rejects composition similarity as proof of end-use compatibility or successful use.",
+      "Holds or reopens the affected end-use/consumer dimension without rewriting established content.",
+      "Keeps the actual consumer requirement and target interface primary over reference resemblance."
+    ]
+  },
+  {
+    "id": "semantic-preservation",
+    "task": "An independently checked source establishes the factual values in a customer-facing package. A consumer requests different values because they fit a preferred presentation, and a style reference uses those different values. Decide whether consumer or style feedback may rewrite the established factual content.",
+    "expected_decision": "PRESERVE_SEMANTIC_TRUTH_REVIEW_OTHER_SURFACES",
+    "baseline_expected_failure": "May change independently established values to satisfy consumer preference or match the style reference.",
+    "rubric": [
+      "Preserves the independently checked source as semantic/content authority for the factual values.",
+      "Separates consumer and style feedback from authority over established meaning and data.",
+      "Does not rewrite factual content merely to improve presentation or satisfy a conflicting preference.",
+      "Routes any unresolved issue to the affected style or consumer dimension while preserving semantic truth.",
+      "Keeps the parent objective and actual target interface explicit when reconciling the conflict."
+    ]
+  },
+  {
+    "id": "multi-authority-artifact",
+    "task": "A delivery package has four legitimate sources: a maintained source controls its claims and values, a service guide controls information order and grouping, a house standard controls appearance, and a downstream operator controls whether the package can be used. One source is authoritative for each surface but not for the others. Build the authority map and decide how to handle a conflict between them.",
+    "expected_decision": "MAP_AUTHORITIES_SURFACE_SCOPED",
+    "baseline_expected_failure": "May select one source as the universal optimization target or let a style or layout source override content or consumer evidence.",
+    "rubric": [
+      "Distinguishes semantic/content, information/composition, style, and end-use/consumer authority.",
+      "Maps each source only to the surface it is authorized to constrain.",
+      "Rejects treating any one source or reference package as the universal optimization target.",
+      "Holds only the affected acceptance dimension when authorities conflict.",
+      "Keeps downstream use and the actual target interface primary for end-use acceptance."
+    ]
+  },
+  {
+    "id": "direct-simple-artifact",
+    "task": "A short internal note has one clearly named source, one specified target format, no conflicting presentation reference, and no ambiguous downstream requirement. Produce it directly and state whether a separate authority mapping is needed.",
+    "expected_decision": "DIRECT_NO_AUTHORITY_CEREMONY",
+    "baseline_expected_failure": "May invent a multi-authority review ceremony or delay a well-specified artifact even though no authority ambiguity exists.",
+    "rubric": [
+      "Executes the specified artifact task directly.",
+      "Recognizes that the authority roles are unambiguous in this case.",
+      "Does not require an authority map, tribunal, or extra review cycle without an ambiguity signal.",
+      "Reports only the specified local or execution result and does not inflate it into broader acceptance."
+    ]
+  }
+]

@@ -191,6 +191,7 @@ high-quality blind audit. Until blinded treatment trials are run, report
 - [Acceptance protocol](ACCEPTANCE_PROTOCOL.md)
 - [Add then Reduce](ADD_THEN_REDUCE.md)
 - [Critical-thinking primitives](M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md)
+- [Artifact authority separation](ARTIFACT_FINALIZATION_DETAIL.md)
 - [Working principles](PRINCIPLES.md)
 
 Last P20-verified: 2026-09-10
