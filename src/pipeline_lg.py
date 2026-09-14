@@ -554,6 +554,7 @@ def node_sandbox(state: dict) -> dict:
     try:
         result = run_in_sandbox(function_code, test_code, timeout=10)
         passed = result.get("passed", False)
+        state["sandbox_error"] = result.get("error") or result.get("output") or ""
         state["sandbox_passed"] = passed
         if passed:
             logger.info(f"   PASS ({result.get('elapsed', 0)}s)")
@@ -580,7 +581,8 @@ def node_reflect(state: dict) -> dict:
 
     logger.info(f"4b. Reflect: attempt {attempts + 1}/3...")
     try:
-        result = reflect_and_improve(function_code, test_code, "failed",
+        error_msg = state.get("sandbox_error") or "failed"
+        result = reflect_and_improve(function_code, test_code, error_msg,
                                      max_attempts=1)
         state["reflect_attempts"] = attempts + 1
 
