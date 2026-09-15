@@ -1,5 +1,5 @@
-L0: Literature summary — 11 papers distilled to 1-line lessons each.
-Last P20-verified: 2026-07-13
+L0: Literature summary — 11 papers plus the external convention corpus distilled to 1-line lessons each.
+Last P20-verified: 2026-09-15
 
 ---
 description: "Papers we've read + how they inform v2.x / v3.x design"
@@ -30,6 +30,12 @@ form in `LITERATURE_DETAIL.md`.
 | **Polaris: Gödel Agent Framework** (Kakade 2026) | Recursive self-improvement 4-step cycle | USE: 1:1 mapping to 你 idea (拆解+类比+自指) |
 | **Geometric Dynamics of Agentic Loops** (Tacheny 2026) | Loops have predictable dynamics | RESEARCH: stability analysis for self-improve loop |
 | **Agentic LLMs Survey** (Plaat 2025, JAI Research) | Reflection = transition to active agent | CONTEXT: field-level positioning |
+
+## External convention corpus
+
+| Corpus | TL;DR | Use / Don't use |
+| --- | --- | --- |
+| **W3C WCAG 2.2 + GOV.UK Design System + Apple HIG + Android Developers** (retrieved 2026-09-15) | Mature ecosystems preserve consumer-facing relationships—affected input to correction, consequence to safe escape, and feature to consent—while allowing platform-specific presentation variants | **USE** as representative provenance for the E4-A grounded-experience benchmark; **DON'T** promote color, wording, geometry, or one platform's widget to a universal invariant |
 
 For the long form (full TL;DR, key quotes, applicability analysis), see
 [`LITERATURE_DETAIL.md`](LITERATURE_DETAIL.md).

@@ -1,5 +1,5 @@
 # M-acceptance-protocol (full text)
-Last P20-verified: 2026-09-11
+Last P20-verified: 2026-09-15
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-
 > acceptance-protocol段 (M-n 29).  Per P11
@@ -228,6 +228,31 @@ fresh controller invocation. The gate returns `RETRY_ALLOWED`,
 `GLOBAL_REPLAN_REQUIRED`, `ACCEPTANCE_AUTHORITY_UNVERIFIED`, or
 `RETRY_CONTEXT_REQUIRED`; it does not infer authority or causal layers from
 unclassified prose.
+
+### Grounded-experience acceptance checks
+
+For an open-ended task that is materially dependent on an established external
+ecosystem or consumer convention, the implementation-level acceptance record
+must show that the experience anchor was operationally consumed, not merely
+documented:
+
+1. representative sources were inspected and provenance was preserved;
+2. multiple examples were used when a single example could overfit;
+3. invariants, hypotheses, legitimate variants, and accidental features were
+   kept in separate classes;
+4. the relational/function constraint was mapped to the current artifact or
+   action;
+5. the compact anchor was re-consumed at the declared meaningful boundaries;
+6. target drift was detected even when local checks still passed; and
+7. a contradiction caused re-grounding and controller-level replanning.
+
+The state carrier may include the optional
+`GROUNDED_EXPERIENCE_ANCHOR` on the existing serialized `RetryState`; this
+preserves task-scoped state across an ordinary retry boundary and does not
+create a new database or universal ledger. Direct, fully specified controls
+must show no unnecessary grounding ceremony. Structural documentation tests
+alone do not establish retention; a fresh-agent multi-iteration benchmark is
+required.
 
 ### Step 4: If regression evidence fails or the evaluator materially edits → 新 任务 cycle
 

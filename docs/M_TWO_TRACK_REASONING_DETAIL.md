@@ -1,5 +1,5 @@
 # M-two-track-reasoning (full text)
-Last P20-verified: 2026-09-02
+Last P20-verified: 2026-09-15
 
 > L0: L2 detail for `OPERATING_RULES.md` § M-two-
 > track-reasoning段.  Per P11 摘要+引用 + R6, this
@@ -99,6 +99,34 @@ need not alternate sentence by sentence. Constructive expansion and synthesis
 may run as a batch before terminal critique. This ordering does not defer
 safety, known impossibility, an explicit hard constraint, or decisive existing
 evidence; those are immediate hard stops.
+
+### Grounded experience when Track 1 depends on an external ecosystem
+
+When an open-ended decision materially depends on a mature external convention,
+keep the analogy causally active with the bounded sequence:
+
+`GROUND → DISTILL → BIND → APPLY → RE-ANCHOR → VERIFY`.
+
+- **GROUND** with representative observations and preserved provenance. Use
+  multiple examples when one example could be an overfit.
+- **DISTILL** into evidence-backed invariants, tentative hypotheses,
+  legitimate non-binding variants, and accidental/unresolved features.
+- **BIND** the result to the current parent objective and consumer in a
+  compact task-scoped anchor, including the current constraint-to-artifact or
+  action mapping and negative knowledge.
+- **APPLY** the relational/function mapping to the target. A matching color,
+  word, layout, or other surface feature is not evidence of transfer.
+- **RE-ANCHOR** only at meaningful boundaries: major revision, representation
+  or production-substrate change, repeated local patches, target drift,
+  context restoration, local PASS with degraded consumer alignment, or a
+  proposed contradiction.
+- **VERIFY** that grounded constraints survive local PASS; detect drift and
+  re-ground/re-plan on contradiction. Existing classifications change only
+  when new evidence is supplied.
+
+Fully specified/direct execution is exempt. Do not create a permanent
+experience ledger, universal search quota, substrate-selection rule, or new
+reasoning primitive for this branch.
 
 ## How both tracks compose
 

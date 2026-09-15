@@ -8,7 +8,7 @@ layers from natural language.  Callers must classify those facts explicitly.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, Type, TypeVar
 
@@ -104,6 +104,255 @@ def _normalized(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
+def _dedupe_text(values: Optional[Sequence[Any] | str]) -> tuple[str, ...]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in _text_tuple(values):
+        normalized = _normalized(value)
+        if normalized not in seen:
+            seen.add(normalized)
+            result.append(value)
+    return tuple(result)
+
+
+@dataclass(frozen=True)
+class ExperienceSource:
+    """One provenance-preserving observation used by a task-scoped anchor."""
+
+    source_id: str
+    title: str
+    locator: str
+    observation: str
+    function: str
+
+    def __post_init__(self) -> None:
+        for field_name in ("source_id", "title", "locator", "observation", "function"):
+            object.__setattr__(
+                self,
+                field_name,
+                _text(getattr(self, field_name), field_name, required=True),
+            )
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "SOURCE_ID": self.source_id,
+            "TITLE": self.title,
+            "LOCATOR": self.locator,
+            "OBSERVATION": self.observation,
+            "FUNCTION": self.function,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "ExperienceSource":
+        def get(name: str) -> Any:
+            return data[name] if name in data else data.get(name.lower())
+
+        return cls(
+            source_id=get("SOURCE_ID"),
+            title=get("TITLE"),
+            locator=get("LOCATOR") or get("URL"),
+            observation=get("OBSERVATION"),
+            function=get("FUNCTION"),
+        )
+
+
+@dataclass(frozen=True)
+class ExperienceMapping:
+    """Relate an evidence-backed constraint to the current work."""
+
+    constraint: str
+    artifact_or_action: str
+    function_mapping: str
+
+    def __post_init__(self) -> None:
+        for field_name in ("constraint", "artifact_or_action", "function_mapping"):
+            object.__setattr__(
+                self,
+                field_name,
+                _text(getattr(self, field_name), field_name, required=True),
+            )
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "CONSTRAINT": self.constraint,
+            "ARTIFACT_OR_ACTION": self.artifact_or_action,
+            "FUNCTION_MAPPING": self.function_mapping,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "ExperienceMapping":
+        def get(name: str) -> Any:
+            return data[name] if name in data else data.get(name.lower())
+
+        return cls(
+            constraint=get("CONSTRAINT"),
+            artifact_or_action=get("ARTIFACT_OR_ACTION"),
+            function_mapping=get("FUNCTION_MAPPING"),
+        )
+
+
+def _coerce_source(value: ExperienceSource | Mapping[str, Any]) -> ExperienceSource:
+    return value if isinstance(value, ExperienceSource) else ExperienceSource.from_dict(value)
+
+
+def _coerce_mapping(value: ExperienceMapping | Mapping[str, Any]) -> ExperienceMapping:
+    return value if isinstance(value, ExperienceMapping) else ExperienceMapping.from_dict(value)
+
+
+@dataclass(frozen=True)
+class GroundedExperienceAnchor:
+    """Compact, task-scoped memory for externally grounded open-ended work.
+
+    This is deliberately a value object. It has no database, global ledger, or
+    retrieval policy. A caller creates it after grounding and carries it on an
+    existing task/acceptance state surface.
+    """
+
+    parent_objective: str
+    consumer: str
+    evidence_sources: tuple[ExperienceSource, ...] | Sequence[ExperienceSource | Mapping[str, Any]]
+    evidence_backed_invariants: tuple[str, ...] | Sequence[str]
+    tentative_hypotheses: tuple[str, ...] | Sequence[str] = ()
+    non_binding_variants: tuple[str, ...] | Sequence[str] = ()
+    negative_knowledge_anti_patterns: tuple[str, ...] | Sequence[str] = ()
+    current_constraint_to_artifact_or_action_mapping: tuple[ExperienceMapping, ...] | Sequence[ExperienceMapping | Mapping[str, Any]] = ()
+    last_reanchor_reason: str = "initial grounding"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "parent_objective", _text(self.parent_objective, "parent_objective", required=True))
+        object.__setattr__(self, "consumer", _text(self.consumer, "consumer", required=True))
+        sources = tuple(_coerce_source(item) for item in self.evidence_sources)
+        if not sources:
+            raise ValueError("evidence_sources must contain provenance")
+        if len({item.source_id for item in sources}) != len(sources):
+            raise ValueError("evidence_sources must have unique source_id values")
+        object.__setattr__(self, "evidence_sources", sources)
+        invariants = _dedupe_text(self.evidence_backed_invariants)
+        if not invariants:
+            raise ValueError("evidence_backed_invariants must not be empty")
+        hypotheses = _dedupe_text(self.tentative_hypotheses)
+        variants = _dedupe_text(self.non_binding_variants)
+        accidents = _dedupe_text(self.negative_knowledge_anti_patterns)
+        if set(map(_normalized, invariants)) & (set(map(_normalized, hypotheses)) | set(map(_normalized, variants))):
+            raise ValueError("tentative hypotheses and variants cannot become invariants")
+        object.__setattr__(self, "evidence_backed_invariants", invariants)
+        object.__setattr__(self, "tentative_hypotheses", hypotheses)
+        object.__setattr__(self, "non_binding_variants", variants)
+        object.__setattr__(self, "negative_knowledge_anti_patterns", accidents)
+        mappings = tuple(_coerce_mapping(item) for item in self.current_constraint_to_artifact_or_action_mapping)
+        if not mappings:
+            raise ValueError("current constraint-to-artifact mapping must not be empty")
+        object.__setattr__(self, "current_constraint_to_artifact_or_action_mapping", mappings)
+        object.__setattr__(self, "last_reanchor_reason", _text(self.last_reanchor_reason, "last_reanchor_reason", required=True))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "PARENT_OBJECTIVE": self.parent_objective,
+            "CONSUMER": self.consumer,
+            "EVIDENCE_SOURCES": [item.to_dict() for item in self.evidence_sources],
+            "EVIDENCE_BACKED_INVARIANTS": list(self.evidence_backed_invariants),
+            "TENTATIVE_HYPOTHESES": list(self.tentative_hypotheses),
+            "NON_BINDING_VARIANTS": list(self.non_binding_variants),
+            "NEGATIVE_KNOWLEDGE_ANTI_PATTERNS": list(self.negative_knowledge_anti_patterns),
+            "CURRENT_CONSTRAINT_TO_ARTIFACT_OR_ACTION_MAPPING": [
+                item.to_dict() for item in self.current_constraint_to_artifact_or_action_mapping
+            ],
+            "LAST_REANCHOR_REASON": self.last_reanchor_reason,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "GroundedExperienceAnchor":
+        def get(name: str, default: Any = None) -> Any:
+            return data[name] if name in data else data.get(name.lower(), default)
+
+        return cls(
+            parent_objective=get("PARENT_OBJECTIVE"),
+            consumer=get("CONSUMER"),
+            evidence_sources=tuple(_coerce_source(item) for item in get("EVIDENCE_SOURCES", ())),
+            evidence_backed_invariants=get("EVIDENCE_BACKED_INVARIANTS", ()),
+            tentative_hypotheses=get("TENTATIVE_HYPOTHESES", ()),
+            non_binding_variants=get("NON_BINDING_VARIANTS", ()),
+            negative_knowledge_anti_patterns=get("NEGATIVE_KNOWLEDGE_ANTI_PATTERNS", ()),
+            current_constraint_to_artifact_or_action_mapping=tuple(
+                _coerce_mapping(item)
+                for item in get("CURRENT_CONSTRAINT_TO_ARTIFACT_OR_ACTION_MAPPING", ())
+            ),
+            last_reanchor_reason=get("LAST_REANCHOR_REASON", "initial grounding"),
+        )
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), sort_keys=True)
+
+    @classmethod
+    def from_json(cls, value: str) -> "GroundedExperienceAnchor":
+        return cls.from_dict(json.loads(value))
+
+    def reconsume(
+        self,
+        reason: str,
+        *,
+        mapping: Optional[ExperienceMapping | Mapping[str, Any]] = None,
+    ) -> "GroundedExperienceAnchor":
+        """Re-read the compact anchor at a meaningful boundary.
+
+        Re-consumption changes only the current action mapping and boundary
+        reason. Evidence-backed classifications remain frozen until explicit
+        new evidence is supplied through ``update_from_evidence``.
+        """
+        mappings = self.current_constraint_to_artifact_or_action_mapping
+        if mapping is not None:
+            mappings = (*mappings, _coerce_mapping(mapping))
+        return replace(
+            self,
+            current_constraint_to_artifact_or_action_mapping=mappings,
+            last_reanchor_reason=_text(reason, "reason", required=True),
+        )
+
+    def update_from_evidence(
+        self,
+        reason: str,
+        *,
+        evidence_sources: Sequence[ExperienceSource | Mapping[str, Any]],
+        evidence_backed_invariants: Optional[Sequence[str]] = None,
+        tentative_hypotheses: Optional[Sequence[str]] = None,
+        non_binding_variants: Optional[Sequence[str]] = None,
+        negative_knowledge_anti_patterns: Optional[Sequence[str]] = None,
+        mapping: Optional[ExperienceMapping | Mapping[str, Any]] = None,
+    ) -> "GroundedExperienceAnchor":
+        """Update classifications only when new provenance is supplied."""
+        new_sources = tuple(_coerce_source(item) for item in evidence_sources)
+        if not new_sources:
+            raise ValueError("new evidence is required to update the anchor")
+        sources_by_id = {item.source_id: item for item in self.evidence_sources}
+        sources_by_id.update({item.source_id: item for item in new_sources})
+        mappings = self.current_constraint_to_artifact_or_action_mapping
+        if mapping is not None:
+            mappings = (*mappings, _coerce_mapping(mapping))
+        return GroundedExperienceAnchor(
+            parent_objective=self.parent_objective,
+            consumer=self.consumer,
+            evidence_sources=tuple(sources_by_id.values()),
+            evidence_backed_invariants=(
+                self.evidence_backed_invariants
+                if evidence_backed_invariants is None else evidence_backed_invariants
+            ),
+            tentative_hypotheses=(
+                self.tentative_hypotheses
+                if tentative_hypotheses is None else tentative_hypotheses
+            ),
+            non_binding_variants=(
+                self.non_binding_variants
+                if non_binding_variants is None else non_binding_variants
+            ),
+            negative_knowledge_anti_patterns=(
+                self.negative_knowledge_anti_patterns
+                if negative_knowledge_anti_patterns is None else negative_knowledge_anti_patterns
+            ),
+            current_constraint_to_artifact_or_action_mapping=mappings,
+            last_reanchor_reason=_text(reason, "reason", required=True),
+        )
+
+
 @dataclass(frozen=True)
 class RetryState:
     """Failure/rejection state that a caller can persist and reload."""
@@ -124,6 +373,7 @@ class RetryState:
     artifact_role_placement: Optional[str] = None
     representation_variant: Optional[str] = None
     causal_layer_changed: bool = False
+    grounded_experience_anchor: Optional[GroundedExperienceAnchor | Mapping[str, Any]] = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -169,6 +419,14 @@ class RetryState:
             _optional_text(self.representation_variant, "representation_variant"),
         )
         object.__setattr__(self, "causal_layer_changed", bool(self.causal_layer_changed))
+        if self.grounded_experience_anchor is not None and not isinstance(
+            self.grounded_experience_anchor, GroundedExperienceAnchor
+        ):
+            object.__setattr__(
+                self,
+                "grounded_experience_anchor",
+                GroundedExperienceAnchor.from_dict(self.grounded_experience_anchor),
+            )
 
     def to_dict(self) -> dict[str, Any]:
         """Return the stable, uppercase field schema used by runtimes."""
@@ -189,6 +447,10 @@ class RetryState:
             "ARTIFACT_ROLE_PLACEMENT": self.artifact_role_placement,
             "REPRESENTATION_VARIANT": self.representation_variant,
             "CAUSAL_LAYER_CHANGED": self.causal_layer_changed,
+            "GROUNDED_EXPERIENCE_ANCHOR": (
+                self.grounded_experience_anchor.to_dict()
+                if self.grounded_experience_anchor is not None else None
+            ),
         }
 
     def to_json(self) -> str:
@@ -217,6 +479,7 @@ class RetryState:
             artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", None),
             representation_variant=get("REPRESENTATION_VARIANT", None),
             causal_layer_changed=get("CAUSAL_LAYER_CHANGED", False),
+            grounded_experience_anchor=get("GROUNDED_EXPERIENCE_ANCHOR", None),
         )
 
     @classmethod
@@ -241,6 +504,7 @@ class RetryState:
     ARTIFACT_ROLE_PLACEMENT = property(lambda self: self.artifact_role_placement)
     REPRESENTATION_VARIANT = property(lambda self: self.representation_variant)
     CAUSAL_LAYER_CHANGED = property(lambda self: self.causal_layer_changed)
+    GROUNDED_EXPERIENCE_ANCHOR = property(lambda self: self.grounded_experience_anchor)
 
 
 @dataclass(frozen=True)
@@ -261,6 +525,7 @@ class RetryProposal:
     artifact_role_placement: Optional[str] = None
     representation_variant: Optional[str] = None
     causal_layer_changed: Optional[bool] = None
+    grounded_experience_anchor: Optional[GroundedExperienceAnchor | Mapping[str, Any]] = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -305,6 +570,14 @@ class RetryProposal:
         )
         if self.causal_layer_changed is not None:
             object.__setattr__(self, "causal_layer_changed", bool(self.causal_layer_changed))
+        if self.grounded_experience_anchor is not None and not isinstance(
+            self.grounded_experience_anchor, GroundedExperienceAnchor
+        ):
+            object.__setattr__(
+                self,
+                "grounded_experience_anchor",
+                GroundedExperienceAnchor.from_dict(self.grounded_experience_anchor),
+            )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -322,6 +595,10 @@ class RetryProposal:
             "ARTIFACT_ROLE_PLACEMENT": self.artifact_role_placement,
             "REPRESENTATION_VARIANT": self.representation_variant,
             "CAUSAL_LAYER_CHANGED": self.causal_layer_changed,
+            "GROUNDED_EXPERIENCE_ANCHOR": (
+                self.grounded_experience_anchor.to_dict()
+                if self.grounded_experience_anchor is not None else None
+            ),
         }
 
     @classmethod
@@ -344,6 +621,7 @@ class RetryProposal:
             artifact_role_placement=get("ARTIFACT_ROLE_PLACEMENT", None),
             representation_variant=get("REPRESENTATION_VARIANT", None),
             causal_layer_changed=get("CAUSAL_LAYER_CHANGED"),
+            grounded_experience_anchor=get("GROUNDED_EXPERIENCE_ANCHOR", None),
         )
 
 
@@ -466,6 +744,11 @@ def _carry_failure_forward(
             else prior.representation_variant
         ),
         causal_layer_changed=(prior.causal_layer is not proposal.causal_layer),
+        grounded_experience_anchor=(
+            proposal.grounded_experience_anchor
+            if proposal.grounded_experience_anchor is not None
+            else prior.grounded_experience_anchor
+        ),
     )
 
 
@@ -556,6 +839,9 @@ __all__ = [
     "CausalLayer",
     "CriterionClass",
     "FailureClass",
+    "ExperienceMapping",
+    "ExperienceSource",
+    "GroundedExperienceAnchor",
     "GLOBAL_REPLAN_REQUIRED",
     "ACCEPTANCE_AUTHORITY_UNVERIFIED",
     "RETRY_CONTEXT_REQUIRED",

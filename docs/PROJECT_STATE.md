@@ -81,6 +81,7 @@ and cannot by itself validate the generic detector.
 | AI4S research adapter | `docs/AI4S_RESEARCH_MODE.md` | scientific-state routing and evidence gates for new-knowledge tasks |
 | Specialization detector | `docs/DOMAIN_SPECIALIZATION_BOOTSTRAP.md` | audit recurring methodological friction before adapter proposals |
 | Artifact finalization adapter | `docs/ARTIFACT_FINALIZATION.md` | evidence-safe final-promotion orchestration for externally consumed artifacts |
+| Grounded-experience anchor | P2 / `docs/M_TWO_TRACK_REASONING_DETAIL.md` / `src/retry_gate.py` | conditional external grounding and task-scoped re-consumption across revisions |
 | Governance | `core-layer/` | 3-layer policy (核心/用户/项目) + modification gates |
 | Commit gates | `hooks/` + `agent-tools/scripts/` | commit-msg / pre-commit / pre-push / prepare-commit-msg |
 | Legacy runtime | `core/` + `src/` + `self_upgrade/` | v1.x-v3.x self-improving agent (documented legacy, functional) |
@@ -127,9 +128,10 @@ tests. The prior `docs/PLANS/PLAN_2026-07-30.md` remains historical context.
 - Domain specialization bootstrap: [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md)
 - Artifact finalization: [ARTIFACT_FINALIZATION.md](ARTIFACT_FINALIZATION.md)
 - Artifact-governance validation: [ARTIFACT_GOVERNANCE_VALIDATION.md](ARTIFACT_GOVERNANCE_VALIDATION.md)
+- Grounded-experience benchmark: [../benchmarks/e4_a_grounded_experience.json](../benchmarks/e4_a_grounded_experience.json)
 - User intent: [USER_INSIGHTS.md](USER_INSIGHTS.md)
 - Hard rules: [CONSTRAINTS.md](CONSTRAINTS.md)
 - Pending tasks: [../TODO.md](../TODO.md)
 - Done tasks: [../DONE.md](../DONE.md)
 
-Last P20-verified: 2026-09-11
+Last P20-verified: 2026-09-15

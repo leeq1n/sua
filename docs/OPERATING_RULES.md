@@ -1,5 +1,5 @@
 # Operating workflow rules
-Last P20-verified: 2026-09-11
+Last P20-verified: 2026-09-15
 
 |> L0: 9 operating rules (M-task-summary, M-must-read,
 |> M-context-snapshot, M-subtask-summary, M-intent-parsing,
@@ -185,6 +185,12 @@ For open-ended discovery, design, planning, or hypothesis formation, Add also
 means bounded constructive search-space expansion, not merely accumulating
 artifacts or evidence. Synthesize that expansion before terminal critique.
 Well-specified execution uses the direct path and incurs no creativity gate.
+
+When the open-ended decision materially depends on an established external
+ecosystem or consumer convention, load the conditional grounded-experience
+branch in `M_TWO_TRACK_REASONING_DETAIL.md`: ground, distill, bind the
+relational constraint, apply it, re-anchor at meaningful boundaries, and
+verify. Direct fully specified tasks remain exempt.
 
 If locally valid terminal decisions repeat while producing no surviving
 alternative or output-space expansion, STOP the local loop and schedule a

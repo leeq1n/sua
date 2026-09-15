@@ -1,6 +1,9 @@
 """Freeze and exercise the E4-A benchmark/scoring contract before implementation."""
 
+import json
+
 from benchmarks.e4_a_grounded_experience_eval import load_manifest, score
+from benchmarks.e4_a_grounded_experience_run import build_guide, collect
 
 
 def _passing_open_response(challenge):
@@ -102,3 +105,33 @@ def test_missing_boundary_is_measurement_failure_or_failed_score_not_silent_pass
 
     assert result["status"] == "REVERT"
     assert result["tasks"][manifest["challenges"][0]["id"]]["failures"]
+
+
+def test_runner_qualifies_baseline_and_treatment_guides_by_revision():
+    baseline, baseline_sources = build_guide("baseline")
+    treatment, treatment_sources = build_guide("treatment")
+
+    assert baseline_sources[0].startswith("a45de1b73ca4a959da0b7abf78e703f293a74427:")
+    assert treatment_sources[0] == "docs/PRINCIPLES_DETAIL_DETAIL.md"
+    assert "Conditional grounded-experience branch" not in baseline
+    assert "Conditional grounded-experience branch" in treatment
+
+
+def test_runner_collects_only_json_responses_and_preserves_arm_identity():
+    manifest = load_manifest()
+    passing = {item["task_id"]: item for item in _passing_responses(manifest)}
+
+    def fake_llm(prompt, *, system, config):
+        packet = json.loads(prompt.split("TASK PACKET:\n", 1)[1])
+        return json.dumps(passing[packet["id"]])
+
+    result = collect(
+        "treatment",
+        llm_call=fake_llm,
+        config=type("Config", (), {"ready": True})(),
+        manifest=manifest,
+    )
+
+    assert result["arm"] == "treatment"
+    assert result["base_commit"] == manifest["candidate_base_commit"]
+    assert {item["task_id"] for item in result["responses"]} == set(passing)

@@ -1,5 +1,5 @@
 # Add-then-reduce cycle (M-add-then-reduce M-rule)
-Last P20-verified: 2026-09-02
+Last P20-verified: 2026-09-15
 
 > L0: Add expands task-relevant state; Reduce tests, consolidates, and removes what no longer earns complexity.
 > Load when: planning a multi-leaf task,
@@ -58,6 +58,28 @@ For constructive search-space Add, "end" means the alternatives have been
 synthesized into comparable representations. Retrieval may expose known hard
 constraints during Add, but retrieval alone must not become the generation
 policy (`idea -> search -> reject -> repeat`).
+
+## Task-scoped grounded-experience state
+
+If the open-ended task materially depends on an established external
+ecosystem or consumer convention, the Add phase may create one compact,
+task-scoped experience anchor on an existing task/plan/acceptance/artifact
+surface. Its fields are:
+
+`PARENT_OBJECTIVE`, `CONSUMER`, `EVIDENCE_SOURCES`,
+`EVIDENCE_BACKED_INVARIANTS`, `TENTATIVE_HYPOTHESES`, `NON_BINDING_VARIANTS`,
+`NEGATIVE_KNOWLEDGE / ANTI_PATTERNS`,
+`CURRENT_CONSTRAINT_TO_ARTIFACT_OR_ACTION_MAPPING`, and
+`LAST_REANCHOR_REASON`.
+
+The anchor records relational/function transfer, not visual or lexical
+similarity. Re-consume it only at a meaningful boundary: major revision,
+representation change, production-substrate change, repeated local patches,
+target/reference drift, context restoration, local PASS with degraded
+consumer alignment, or proposed contradiction. A re-consumption preserves
+the evidence-backed mapping; re-ground and re-plan on contradiction. Do not
+change a classification without new evidence, and do not create the anchor
+for a fully specified/direct task.
 
 ## Reduce phase actions (per M-learn)
 

@@ -173,6 +173,45 @@ P14 (docs stay current) — search is one of the discovery
 mechanisms that triggers doc updates.
 
 
+#### Conditional grounded-experience branch
+
+When an **open-ended** task materially depends on an established external
+ecosystem, consumer convention, venue grammar, or mature professional
+practice, P2 is not satisfied by a paper/source list that remains passive.
+Use the bounded sequence `GROUND → DISTILL → BIND → APPLY → RE-ANCHOR →
+VERIFY`:
+
+1. **GROUND**: inspect representative external observations. Use multiple
+   examples when one example could be an overfit. Preserve each source's
+   provenance, observation, and relevant function.
+2. **DISTILL**: separate evidence-backed invariants from tentative
+   hypotheses, legitimate local/non-binding variants, and accidental or
+   unresolved surface features. Do not promote a preference or hypothesis to
+   an invariant.
+3. **BIND**: write a compact task-scoped anchor on the existing task, plan,
+   acceptance, or artifact-local surface. At minimum it records
+   `PARENT_OBJECTIVE`, `CONSUMER`, `EVIDENCE_SOURCES`,
+   `EVIDENCE_BACKED_INVARIANTS`, `TENTATIVE_HYPOTHESES`,
+   `NON_BINDING_VARIANTS`, `NEGATIVE_KNOWLEDGE / ANTI_PATTERNS`,
+   `CURRENT_CONSTRAINT_TO_ARTIFACT_OR_ACTION_MAPPING`, and
+   `LAST_REANCHOR_REASON`.
+4. **APPLY**: transfer the relational/function constraint to the current
+   artifact or action; visual or lexical similarity is not the transfer.
+5. **RE-ANCHOR**: re-consume the compact anchor at meaningful boundaries:
+   major revision, representation or production-substrate change, repeated
+   local patches, target/reference drift, context restoration, local PASS
+   with worsening consumer alignment, or a proposed contradiction.
+6. **VERIFY**: preserve the mapping when local checks pass, detect target
+   drift explicitly, and re-ground/re-plan when an evidence-backed invariant
+   is contradicted. Update or invalidate a classification only with new
+   evidence.
+
+This branch is conditional. Fully specified/direct tasks use the ordinary
+logical path and incur no grounding or anchor ceremony. The anchor is
+task-scoped; it is not a permanent universal ledger or a mandatory search
+quota.
+
+
 
 
 
