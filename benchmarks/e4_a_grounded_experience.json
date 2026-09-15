@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "E4-A-GROUNDED-EXPERIENCE-V1",
+  "frozen_on": "2026-09-15",
+  "purpose": "Measure whether grounded external experience remains causally active across open-ended revisions without imposing grounding ceremony on direct tasks.",
+  "candidate_base_commit": "a45de1b73ca4a959da0b7abf78e703f293a74427",
+  "source_policy": "Sources are representative external observations, not a universal design ledger. The scorer checks provenance and relational transfer, not visual similarity.",
+  "scoring_rule": {
+    "mode": "mechanical_structural_only",
+    "open_task_points": 11,
+    "direct_control_points": 1,
+    "required_for_retain": "all open-task checks and all direct-control checks pass; no measurement failure",
+    "measurement_failure": "malformed JSON, missing task response, unknown task or boundary id, or a response that cannot be structurally scored",
+    "terminal_mapping": {
+      "all_required_checks_pass": "E4-A RETAIN_FOR_HELD_OUT / GROUNDED EXPERIENCE PERSISTENCE SUPPORTED",
+      "one_or_more_structural_checks_fail": "E4-A REVERT / GROUNDED EXPERIENCE PERSISTENCE NOT SUPPORTED",
+      "measurement_failure": "E4-A INCONCLUSIVE / MEASUREMENT FAILURE"
+    },
+    "checks": [
+      "representative_source_inspection",
+      "conditional_multi_example_use",
+      "invariant_hypothesis_variant_accident_separation",
+      "source_provenance",
+      "relational_function_transfer",
+      "anchor_creation_with_required_fields",
+      "anchor_reconsumption_at_later_boundaries",
+      "explicit_target_drift_detection",
+      "preservation_of_grounded_constraints_when_local_checks_pass",
+      "re_ground_and_replan_on_invariant_contradiction",
+      "no_unnecessary_direct_control_ceremony"
+    ]
+  },
+  "response_contract": {
+    "open_task": {
+      "task_id": "string",
+      "source_inspection": [{"source_id": "string", "observation": "string"}],
+      "classifications": {
+        "invariants": [{"id": "string", "source_ids": ["string"], "statement": "string"}],
+        "hypotheses": [{"id": "string", "statement": "string"}],
+        "variants": [{"id": "string", "statement": "string"}],
+        "accidents": [{"id": "string", "statement": "string"}]
+      },
+      "relational_mappings": [{"invariant_id": "string", "artifact_or_action": "string", "function_preserved": "string"}],
+      "anchor": {
+        "PARENT_OBJECTIVE": "string",
+        "CONSUMER": "string",
+        "EVIDENCE_SOURCES": ["string"],
+        "EVIDENCE_BACKED_INVARIANTS": ["string"],
+        "TENTATIVE_HYPOTHESES": ["string"],
+        "NON_BINDING_VARIANTS": ["string"],
+        "NEGATIVE_KNOWLEDGE_ANTI_PATTERNS": ["string"],
+        "CURRENT_CONSTRAINT_TO_ARTIFACT_OR_ACTION_MAPPING": [{"constraint": "string", "mapping": "string"}],
+        "LAST_REANCHOR_REASON": "string"
+      },
+      "iterations": [{
+        "boundary_id": "string",
+        "anchor_reconsumed": true,
+        "mapping_preserved": true,
+        "local_checks_pass": true,
+        "drift_detected": false,
+        "replanned": false,
+        "reason": "string"
+      }]
+    },
+    "direct_control": {
+      "task_id": "string",
+      "grounding_triggered": false,
+      "action": "string",
+      "anchor_created": false
+    }
+  },
+  "challenges": [
+    {
+      "id": "form-error-recovery",
+      "split": "development",
+      "open_ended": true,
+      "parent_objective": "Help a person complete a multi-field public-service form after invalid input without losing the relationship between each problem and its correction.",
+      "consumer": "A person submitting the form, including a keyboard or assistive-technology user.",
+      "representative_ecosystem_examples": [
+        {
+          "id": "w3c-error-identification",
+          "source": {
+            "title": "Understanding SC 3.3.1 Error Identification",
+            "url": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "An automatically detected input error identifies the affected item and describes the error in text; the presentation may be a summary, inline message, alert, or dialog.",
+          "function": "make the error and its affected input/correction relationship discoverable"
+        },
+        {
+          "id": "govuk-error-summary",
+          "source": {
+            "title": "Error summary - GOV.UK Design System",
+            "url": "https://design-system.service.gov.uk/components/error-summary/",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "The summary lists errors and links each item to the first affected field; it is paired with an adjacent field-level message.",
+          "function": "connect a global scan point to the local correction point"
+        },
+        {
+          "id": "govuk-error-message",
+          "source": {
+            "title": "Error message - GOV.UK Design System",
+            "url": "https://design-system.service.gov.uk/components/error-message/",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "The field-level error is placed next to the question and is also represented in the error summary when validation fails.",
+          "function": "keep correction guidance adjacent to the field it governs"
+        }
+      ],
+      "shared_relational_function_invariant": {
+        "id": "field-error-relationship",
+        "statement": "Every reported input problem remains textually identifiable and connected to the field and correction action it governs, independent of visual styling or exact placement."
+      },
+      "legitimate_variant": {
+        "id": "summary-inline-placement",
+        "statement": "A flow may use a top summary, inline messages, both, or an equivalent accessible representation when the same field-to-correction relationship remains available."
+      },
+      "tempting_accidental_surface_feature": {
+        "id": "red-styling",
+        "statement": "Red borders, red text, warning icons, or a particular summary layout are surface conventions and are not the invariant."
+      },
+      "initial_artifact_or_action": "Draft the form's validation response and map each error to the affected field and correction instruction.",
+      "boundaries": [
+        {"id": "major-revision", "signal": "The form gains a second page and the validation response is consolidated."},
+        {"id": "repeated-local-patches", "signal": "Two copy and spacing patches pass local checks, but no new consumer evidence was consulted."},
+        {"id": "representation-change", "signal": "The form changes from a server-rendered page to a client-side stepper."},
+        {"id": "production-substrate-change", "signal": "The renderer changes from HTML templates to a native mobile form layer."},
+        {"id": "target-drift", "signal": "The target consumer shifts from sighted mouse use to keyboard and screen-reader use while local visual checks still pass."},
+        {"id": "contradicts-invariant", "signal": "A proposed compact layout removes the text and link that identify which field needs correction."}
+      ]
+    },
+    {
+      "id": "irreversible-action-confirmation",
+      "split": "development",
+      "open_ended": true,
+      "parent_objective": "Help a person decide safely whether to perform an uncommon irreversible action without making the confirmation pattern depend on one platform's appearance.",
+      "consumer": "A person deciding whether to permanently remove or overwrite valuable data.",
+      "representative_ecosystem_examples": [
+        {
+          "id": "apple-alerts",
+          "source": {
+            "title": "Alerts - Apple Human Interface Guidelines",
+            "url": "https://developer.apple.com/design/human-interface-guidelines/alerts",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "An alert is appropriate for critical, actionable information such as an uncommon destructive action that cannot be undone; alerts should be used sparingly.",
+          "function": "match interruption and confirmation to consequence and reversibility"
+        },
+        {
+          "id": "apple-buttons",
+          "source": {
+            "title": "Buttons - Apple Human Interface Guidelines",
+            "url": "https://developer.apple.com/design/human-interface-guidelines/buttons",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "Button roles communicate primary, cancel, and destructive consequences; the destructive action should not silently receive the primary role, and a cancel path should remain clear.",
+          "function": "make action consequence and safe escape legible through role, label, and placement"
+        },
+        {
+          "id": "apple-action-sheets",
+          "source": {
+            "title": "Action sheets - Apple Human Interface Guidelines",
+            "url": "https://developer.apple.com/design/human-interface-guidelines/action-sheets",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "An action sheet can clarify choices related to a potentially destructive action and can provide a cancel action; its appearance varies by platform.",
+          "function": "preserve deliberate choice and an escape route while allowing platform-specific presentation"
+        }
+      ],
+      "shared_relational_function_invariant": {
+        "id": "consequence-and-escape",
+        "statement": "Before an uncommon irreversible action, the consumer can identify the consequence, the action that causes it, and a safe way to decline; the invariant is semantic, not a color, icon, or modal geometry."
+      },
+      "legitimate_variant": {
+        "id": "modal-or-sheet",
+        "statement": "A modal alert, action sheet, inline confirmation, or platform-native equivalent may be used when the consequence and safe escape remain clear for the target consumer."
+      },
+      "tempting_accidental_surface_feature": {
+        "id": "red-color",
+        "statement": "Red destructive styling, a centered dialog, a particular button order, or a warning icon may support the message but is not the invariant."
+      },
+      "initial_artifact_or_action": "Draft a confirmation flow for permanently deleting a saved record, including the labels, consequence description, and decline path.",
+      "boundaries": [
+        {"id": "major-revision", "signal": "The flow is revised to cover both delete and overwrite actions."},
+        {"id": "repeated-local-patches", "signal": "Two local label and color patches pass the component tests, but the consequence mapping is not rechecked."},
+        {"id": "representation-change", "signal": "The confirmation changes from a centered dialog to an action sheet."},
+        {"id": "production-substrate-change", "signal": "The same behavior moves from a web component to a native mobile component."},
+        {"id": "target-drift", "signal": "The target changes from deliberate desktop deletion to an automated bulk operation where an accidental confirmation is more likely, while component tests still pass."},
+        {"id": "contradicts-invariant", "signal": "A proposed one-button confirmation hides the consequence and provides no clear way to decline."}
+      ]
+    },
+    {
+      "id": "permission-and-notification-request",
+      "split": "held_out",
+      "open_ended": true,
+      "parent_objective": "Ask for sensitive or interruptive capability access only when its relationship to the consumer's current action is clear, while preserving a usable degraded path after refusal.",
+      "consumer": "A person enabling a feature that may request private-data or notification access.",
+      "representative_ecosystem_examples": [
+        {
+          "id": "android-runtime-permissions",
+          "source": {
+            "title": "Request runtime permissions - Android Developers",
+            "url": "https://developer.android.com/training/permissions/requesting",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "Request a permission in the context of the feature that needs it, explain why when necessary, allow cancellation, and gracefully degrade when the user denies it.",
+          "function": "connect a sensitive request to the initiating feature and preserve user agency"
+        },
+        {
+          "id": "android-notifications",
+          "source": {
+            "title": "Notifications - Android Developers",
+            "url": "https://developer.android.com/design/ui/mobile/guides/home-screen/notifications",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "Notification consent should be contextual, explain benefits and the result of declining, and be dismissible; notification settings should remain manageable later.",
+          "function": "tie interruption and future control to a concrete benefit and an explicit choice"
+        },
+        {
+          "id": "apple-notifications",
+          "source": {
+            "title": "Notifications - Apple Human Interface Guidelines",
+            "url": "https://developer.apple.com/design/human-interface-guidelines/notifications",
+            "retrieved_on": "2026-09-15"
+          },
+          "observation": "Obtain consent before sending notifications and provide an in-app way for people to manage their choice; avoid making notifications more interruptive than their importance warrants.",
+          "function": "make consent explicit and keep the resulting preference reversible and controllable"
+        }
+      ],
+      "shared_relational_function_invariant": {
+        "id": "in-context-control",
+        "statement": "The request is tied to the feature the consumer is trying to use, states the consequence of granting or declining, offers a non-coercive path forward, and leaves the preference controllable later."
+      },
+      "legitimate_variant": {
+        "id": "preprompt-or-inline",
+        "statement": "An inline explanation, a dismissible pre-prompt, a system dialog, or an in-context settings route may be appropriate depending on platform and capability, provided the relationship and fallback remain clear."
+      },
+      "tempting_accidental_surface_feature": {
+        "id": "permission-dialog-style",
+        "statement": "A branded pre-prompt, bell icon, modal shape, or exact wording is a local variant; none alone proves contextual consent or graceful degradation."
+      },
+      "initial_artifact_or_action": "Draft the request flow for enabling reminders, including the feature trigger, explanation, decline path, and later settings control.",
+      "boundaries": [
+        {"id": "major-revision", "signal": "The feature expands from reminders to reminders plus location-based suggestions."},
+        {"id": "repeated-local-patches", "signal": "Two copy and timing patches pass local interaction tests, but the request remains detached from the initiating feature."},
+        {"id": "representation-change", "signal": "The flow changes from an inline card to a system permission dialog preceded by a pre-prompt."},
+        {"id": "production-substrate-change", "signal": "The implementation moves from a web notification API to Android and iOS native permission APIs."},
+        {"id": "target-drift", "signal": "The target consumer now uses a privacy-sensitive context where interruptions are unacceptable, while local interaction tests still pass."},
+        {"id": "contradicts-invariant", "signal": "A proposed flow requests access on launch, omits the reason and decline outcome, and disables the feature without a usable alternative."}
+      ]
+    }
+  ],
+  "direct_controls": [
+    {
+      "id": "direct-schema-migration",
+      "open_ended": false,
+      "task": "Rename the JSON field `old_name` to `new_name` in the supplied schema and update the two named tests; the expected output shape is fully specified.",
+      "required_action": "Perform the stated edit and run the named tests. Do not search external examples or create an experience anchor."
+    },
+    {
+      "id": "direct-deterministic-conversion",
+      "open_ended": false,
+      "task": "Convert the supplied UTC timestamp to ISO-8601 with the stated timezone and precision; the input and exact output rule are fully specified.",
+      "required_action": "Apply the given conversion directly. Do not search external examples or create an experience anchor."
+    }
+  ]
+}
