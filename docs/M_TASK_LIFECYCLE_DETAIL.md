@@ -33,6 +33,9 @@ When a task leaves ACTIVE, capture its capsule, persist it, then evict it
 to COLD or ARCHIVED. Resume only when the caller supplies the matching named
 trigger and the capsule still matches the current goal. The caller remains
 responsible for verifying that the external trigger actually occurred.
+A switch to another task, including a resume, rejects while the selected
+task is still ACTIVE/HOT. The current task must first complete its durable
+transition; a failed capsule write leaves that switch blocked.
 A superseded goal never re-enters by default.
 Any versioned goal revision suspends its nonterminal task plans for explicit
 review before they can resume. `replan_suspended_task` binds revised criteria

@@ -127,9 +127,16 @@ class ControlPlane:
                 or self.goals[task.goal_id].status != "ACTIVE"
                 or self.goal_checksum(task.goal_id) != self.goal_baselines[task.goal_id]):
             raise DriftError("task is not active and resident")
+        self._require_previous_task_evicted(task_id)
         if self.active_task_id != task_id:
             self.retrieved_knowledge.pop(self.active_task_id, None)
         self.active_goal_id, self.active_task_id = task.goal_id, task_id
+
+    def _require_previous_task_evicted(self, next_task_id: str):
+        if self.active_task_id and self.active_task_id != next_task_id:
+            previous = self.tasks[self.active_task_id]
+            if previous.status == "ACTIVE" and previous.residency == "HOT":
+                raise DriftError("persist and evict the current task before switching")
 
     def retrieve_knowledge(self, task_id: str, key: str):
         """Admit one durable item for the currently active task only."""
@@ -355,6 +362,7 @@ class ControlPlane:
                 or self.goal_checksum(task.goal_id) != self.goal_baselines[task.goal_id]
                 or not trigger or trigger != task.resume_trigger):
             raise DriftError("resume capsule or goal is stale")
+        self._require_previous_task_evicted(task_id)
         task.status, task.residency = "ACTIVE", "HOT"
         del self.capsules[task_id]
         self.retrieved_knowledge.pop(self.active_task_id, None)

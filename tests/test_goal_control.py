@@ -92,14 +92,18 @@ def test_superseded_goal_is_not_resident(tmp_path):
         p.record_action("write report", "T1", "report delivered")
 
 
-def test_adding_another_active_goal_keeps_context_consistent():
-    p = plane()
+def test_adding_another_active_goal_keeps_context_consistent(tmp_path):
+    p = plane(tmp_path)
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
     context = p.working_context()
     assert context["goal"].goal_id == "G1"
     assert set(context["tasks"]) == {"T1"}
     p.add_task(Task("T2", "Draw chart", "G2", ("chart delivered",)),
                p.goal_checksum("G2"))
+    with pytest.raises(DriftError):
+        p.activate_task("T2")
+    assert set(p.working_context()["tasks"]) == {"T1"}
+    p.wait_for_user("T1", "Report input arrives")
     p.activate_task("T2")
     context = p.working_context()
     assert context["goal"].goal_id == "G2"
@@ -387,16 +391,43 @@ def test_durable_knowledge_requires_explicit_retrieval():
     assert p.working_context()["knowledge"] == {"old failure": "historical note"}
 
 
-def test_retrieved_knowledge_does_not_leak_to_another_active_task():
-    p = plane()
+def test_retrieved_knowledge_does_not_leak_to_another_active_task(tmp_path):
+    p = plane(tmp_path)
     p.durable_knowledge["report-only"] = "old report note"
     p.retrieve_knowledge("T1", "report-only")
     p.add_task(Task("T2", "Verify citations", "G1", ("report delivered",)),
                p.goal_checksum("G1"))
+    p.wait_for_user("T1", "Report input arrives")
     p.activate_task("T2")
     assert p.working_context()["knowledge"] == {}
     p.retrieve_knowledge("T2", "report-only")
     assert p.working_context()["knowledge"] == {"report-only": "old report note"}
+
+
+def test_resume_cannot_displace_another_hot_task(tmp_path):
+    p = plane(tmp_path)
+    p.wait_for_user("T1", "Report input arrives")
+    p.add_task(Task("T2", "Verify citations", "G1", ("report delivered",)),
+               p.goal_checksum("G1"))
+    p.wait_for_user("T2", "Citations arrive")
+    p.resume("T1", p.capture("T1"), "Report input arrives")
+    with pytest.raises(DriftError):
+        p.resume("T2", p.capture("T2"), "Citations arrive")
+    assert p.active_task_id == "T1"
+    assert p.tasks["T2"].residency == "COLD"
+
+
+def test_failed_eviction_cannot_be_bypassed_by_switch(tmp_path):
+    p = plane()
+    p.add_task(Task("T2", "Other task", "G1", ("report delivered",)),
+               p.goal_checksum("G1"))
+    with pytest.raises(FileNotFoundError):
+        p.pause_and_persist("T1", "SUSPENDED", tmp_path / "missing" / "capsule.json",
+                            "reviewed switch")
+    with pytest.raises(DriftError):
+        p.activate_task("T2")
+    assert p.active_task_id == "T1"
+    assert p.tasks["T1"].residency == "HOT"
 
 
 @pytest.mark.parametrize("status,residency", [

@@ -25,6 +25,7 @@ failure rate.
 | Stale feedback | A previous Goal Checksum cannot supersede a changed goal or attach a new task | `test_stale_goal_mutation_route_cannot_supersede`, `test_stale_new_task_route_cannot_attach_task` |
 | Criterion correction recovery | An old capsule cannot resume after revision; explicit replan binds current criteria and persists before task mutation | `test_corrected_goal_requires_explicit_replan_before_resume`, `test_replan_persistence_failure_preserves_suspended_task`, `test_replan_rejects_stale_or_unlinked_criteria`, `test_replanned_capsule_resumes_in_fresh_controller` |
 | v4 context and action boundary | The thinker receives only current HOT context; raw history and COLD items stay out. A dynamic plan is reviewed before execution; denied, changed-argument, or stale-goal steps stop before the delegate; a new review revokes old authorization | `test_goal_control_v4.py` |
+| Task switch residency | Activation or resume cannot displace an ACTIVE/HOT task; the current task must persist and evict first, and a failed write leaves the switch blocked | `test_adding_another_active_goal_keeps_context_consistent`, `test_resume_cannot_displace_another_hot_task`, `test_failed_eviction_cannot_be_bypassed_by_switch` |
 
 The reference implementation in `src/goal_control.py` checks explicit inputs.
 It needs a durable `capsule_dir` or an explicit file path before evicting a
