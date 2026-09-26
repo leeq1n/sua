@@ -657,7 +657,7 @@ Commit: `f3c9372`. Tag: `v2.9.0`.
 
 **MINOR cleanup of core layer.** Per user explicit
 authorization + M-n 15 multi-session rule (core layer
-modification requires user turn 3+), this commit cleans
+modification requires at least three user messages), this commit cleans
 `core-layer/AGENTS_CORE.md` (the always-loaded L0 contract
 that future agents see first).
 
