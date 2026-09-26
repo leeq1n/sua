@@ -51,6 +51,11 @@ transition; without a durable destination, eviction fails closed.
 `pause_and_persist` writes a capsule before eviction; `resume_from_file`
 checks it against reconstructed current contracts and a named trigger. This is
 not automatic natural-language classification or a runtime-wide integration.
+For the existing v4 loop, `src/goal_control_v4.py` offers an opt-in executor
+wrapper. A host first reviews and authorizes the exact planned Step plus
+criterion; the wrapper rejects an unapproved Step before delegation and
+records the attempted Action → Task → Criterion → Goal trace. The wrapper
+does not construct the thinker's context or verify semantic goal alignment.
 Existing P30 acceptance authority remains separate.
 
 ### Phase 1: task-init
