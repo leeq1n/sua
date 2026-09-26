@@ -14,7 +14,7 @@
 
 > L0: SUA project README — orientation, current state.
 
-> SUA is an **agent discipline knowledge library** — agent
+> SUA is a **cross-runtime long-term Agent Control Plane**, delivered as an agent discipline knowledge library — agent
 
 > behavior rules, reasoning primitives, and operating principles
 
@@ -23,6 +23,11 @@
 
 
 ## What is SUA?
+
+Its control path is Goal → Task → Context → Evidence → Knowledge. The current
+goal and task govern which historical knowledge is retrieved. AI4S K0–K7 is a
+domain adapter. The deterministic reference contract and drift regressions
+are in `src/goal_control.py` and `tests/test_goal_control.py`.
 
 
 

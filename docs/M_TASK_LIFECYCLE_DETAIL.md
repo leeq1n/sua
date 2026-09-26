@@ -10,6 +10,27 @@ Last P20-verified: 2026-09-10
 
 ## 4-phase decision tree
 
+## Goal and task identity extension (2026-09-26)
+
+The Goal Contract is `goal_id`, `objective`, `success_criteria`, `non_goals`,
+`constraints`, `status`, `version`. It is the authority for task planning;
+the title is descriptive and never encodes retry/revision/feedback history.
+A Task has stable `task_id`, title, goal_id, criterion links, status, version,
+dependencies, and residency. Allowed statuses are `ACTIVE`, `WAITING_USER`,
+`BLOCKED`, `SUSPENDED`, `SUPERSEDED`, `DONE`, `ABANDONED`.
+
+At each material action, record `Action → Task → Criterion → Goal`.
+Goal Guard checks that all links still refer to the active versions and that
+the action is inside constraints and outside non_goals. A checksum of the
+Goal Contract detects silent changes; it does not judge semantic alignment.
+When a task leaves ACTIVE, capture its capsule, persist it, then evict it
+to COLD or ARCHIVED. Resume only on a named trigger after checking the capsule
+against the current goal. A superseded goal never re-enters by default.
+
+`src/goal_control.py` is a deterministic reference contract with regression
+tests; it is not automatic natural-language classification or a runtime-wide
+integration. Existing P30 acceptance authority remains separate.
+
 ### Phase 1: task-init
 
 **Trigger**: agent receives user message with
