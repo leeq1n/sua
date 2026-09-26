@@ -28,8 +28,10 @@ to COLD or ARCHIVED. Resume only on a named trigger after checking the capsule
 against the current goal. A superseded goal never re-enters by default.
 
 `src/goal_control.py` is a deterministic reference contract with regression
-tests; it is not automatic natural-language classification or a runtime-wide
-integration. Existing P30 acceptance authority remains separate.
+tests. `pause_and_persist` writes a capsule before eviction;
+`resume_from_file` checks it against reconstructed current contracts. This is
+not automatic natural-language classification or a runtime-wide integration.
+Existing P30 acceptance authority remains separate.
 
 ### Phase 1: task-init
 

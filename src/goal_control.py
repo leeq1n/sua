@@ -7,6 +7,9 @@ The caller must supply explicit action/criterion links and feedback categories.
 from dataclasses import dataclass, field
 from hashlib import sha256
 import json
+import os
+from pathlib import Path
+import tempfile
 from typing import Dict, Tuple
 
 
@@ -157,8 +160,50 @@ class ControlPlane:
 
     def capture(self, task_id: str):
         task = self.tasks[task_id]
-        return (task.task_id, task.goal_id, task.version, task.title,
+        return (task.task_id, task.goal_id, self.goals[task.goal_id].version,
+                self.goal_checksum(task.goal_id), task.version, task.title,
                 task.criteria, task.resume_trigger)
+
+    def pause_and_persist(self, task_id: str, status: str, path, trigger: str = ""):
+        """Write a task capsule atomically before moving it out of HOT."""
+        if status not in {"WAITING_USER", "BLOCKED", "SUSPENDED"}:
+            raise ValueError("only resumable statuses can be persisted")
+        task = self.tasks[task_id]
+        if task.status != "ACTIVE" or task.residency != "HOT":
+            raise DriftError("only an active task can be paused")
+        previous_trigger = task.resume_trigger
+        task.resume_trigger = trigger
+        capsule = self.capture(task_id)
+        destination = Path(path)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=destination.parent,
+                                             prefix=destination.name + ".", suffix=".tmp",
+                                             delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(capsule, stream, ensure_ascii=False)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, destination)
+        except Exception:
+            task.resume_trigger = previous_trigger
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+            raise
+        self.transition_task(task_id, status, trigger)
+        return capsule
+
+    def resume_from_file(self, task_id: str, path):
+        """Re-admit a persisted capsule only when the live contracts match."""
+        with Path(path).open("r", encoding="utf-8") as stream:
+            raw = json.load(stream)
+        if not isinstance(raw, list) or len(raw) != 8 or not isinstance(raw[6], list):
+            raise DriftError("invalid capsule")
+        capsule = tuple(raw[:6]) + (tuple(raw[6]), raw[7])
+        if capsule != self.capture(task_id):
+            raise DriftError("persisted capsule does not match current contracts")
+        self.capsules[task_id] = capsule
+        self.resume(task_id, capsule)
 
     def resume(self, task_id: str, capsule):
         task = self.tasks[task_id]
