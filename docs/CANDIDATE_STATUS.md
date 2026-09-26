@@ -18,6 +18,7 @@ and untracked audit material without adding them to `main` by default.
 | Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed; independent review remains open. |
 | Pipeline filter retention | `d2e9da9` on `codex/pipeline-filter-retention` | Keep qualified papers available after the memory write; clear stale scores on a failed filter; isolate the offline end-to-end fixture | Five memory/filter tests and the no-qualified-papers route passed. Its full-flow end-to-end test still reaches the separate planner contract failure on this branch. |
 | Planner + pipeline integration | `0a7112e0eb204facec2b0b971dc4e992167d521c` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above | 57 focused/offline tests passed, including all three end-to-end cases. A broader run stopped at five failures after 441 passed and nine skipped; see below. This is an integration candidate, not independently accepted capability. |
+| Windows suite hygiene | `4ad032216b1378eade49f5f147d7d840aa95ccbb` on `codex/windows-suite-hygiene` | Preserve readable checklist output under Windows subprocess decoding and remove one banned phrase from historical changelog prose | Both previously failing tests pass alone; broader suite and independent review remain open. |
 
 Keep these candidates and their evidence reachable, but do not count them as
 implemented `main` features. A future promotion should take one bounded
@@ -73,3 +74,6 @@ in the targeted `main` run and need an order-dependent baseline comparison:
 `test_pipeline_lg_safety_net_works` (planner byte restoration) and two
 `test_planner_harness_persistence.py` cases. No claim of a green full suite or
 behavioral improvement follows from the 57 focused passes.
+The two independently reproduced Windows failures have a separate hygiene
+candidate; its passing targeted tests do not change this recorded integration
+run or promote that candidate into `main`.
