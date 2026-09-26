@@ -12,7 +12,7 @@ and untracked audit material without adding them to `main` by default.
 |---|---|---|---|
 | E1.3-M1 parent lifecycle | `633de67386db5f585755c824626c50f529307a9a` | Generic controller change, tests, frozen identity, separate worktree | Implementation candidate; parent behavioral/independent acceptance outstanding. Direct merge from its older base would also remove the canonical E2-M2 regression test. |
 | E2-M3 sandbox evidence | `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` | Small diagnostic-preservation patch and regression | Local construction verified; autonomous-repair comparison remains inconclusive. |
-| E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the mixed `codex/e3-m4-authority-separation` branch is not a single-feature promotion unit. |
+| E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` on `codex/e3-m4-isolated` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the older mixed `codex/e3-m4-authority-separation` branch is historical, not a single-feature promotion unit. |
 | E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
 | Goal Control and Context Residency | `9aae306` on `codex/goal-control-isolated` | Stable Goal/Task contracts, hot-path reduction, drift/resume regressions | Rebased cleanly onto `main`; 43 focused tests and local structure/link checks passed. Live-agent behavioral effect and independent acceptance unmeasured. |
 
@@ -32,3 +32,25 @@ evidence or operator material, not a sixth implementation candidate. Their
 identity and intended authority must be checked before any packaging; this
 inventory does not add, relocate, or delete them. Use a clean worktree for
 canonical development and exact-artifact review.
+
+## Promotion order and stop conditions
+
+1. Review Goal Control first because it directly serves the newly stated
+   project objective. Its 43 passing focused tests support a structural
+   candidate only. Do not claim reduced live drift until a valid held-out
+   behavior comparison and independent artifact-first review are complete.
+2. Evaluate E2-M3 and E3-M4 in their own frozen task families. Missing
+   credentials, quota-truncated replicates, or missing consumer evidence leave
+   the candidate inconclusive; preserve the result rather than substituting
+   scripted runs or an altered fixture.
+3. Review E1.3-M1 and E4-A together for `src/retry_gate.py` compatibility, then
+   measure and promote separately. Neither an old-base merge that removes
+   E2-M2 coverage nor a silent combination of the two candidate state models
+   is acceptable.
+
+The canonical full-suite planner mismatch is a separate known baseline debt:
+legacy `tests/auto/test_planner_harness.py` expects a `list`, while the current
+`core.planner.plan_task` returns a persisted `RoundResult`. Resolve that API
+decision in its own bounded change. Until then, compare each candidate's
+regression delta against the same-environment `main` result and report the
+full-suite state honestly.
