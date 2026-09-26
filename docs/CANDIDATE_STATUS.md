@@ -40,7 +40,7 @@ canonical development and exact-artifact review.
 ## Promotion order and stop conditions
 
 1. Review Goal Control first because it directly serves the newly stated
-   project objective. Its 51 passing focused/adjacent tests support a structural
+   project objective. Its 91 passing focused/adjacent tests support a structural
    candidate only. Do not claim reduced live drift until a valid held-out
    behavior comparison and independent artifact-first review are complete.
 2. Evaluate E2-M3 and E3-M4 in their own frozen task families. Missing
