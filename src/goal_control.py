@@ -49,14 +49,16 @@ class Task:
 @dataclass
 class ControlPlane:
     goals: Dict[str, Goal] = field(default_factory=dict)
+    goal_baselines: Dict[str, str] = field(default_factory=dict)
     tasks: Dict[str, Task] = field(default_factory=dict)
     active_goal_id: str = ""
     active_task_id: str = ""
     durable_knowledge: Dict[str, str] = field(default_factory=dict)
-    retrieved_knowledge: Tuple[str, ...] = ()
+    retrieved_knowledge: Dict[str, set] = field(default_factory=dict)
     allowed_actions: Dict[str, set] = field(default_factory=dict)
     traces: list = field(default_factory=list)
     capsules: Dict[str, tuple] = field(default_factory=dict)
+    capsule_dir: Path | None = None
 
     def goal_checksum(self, goal_id: str):
         goal = self.goals[goal_id]
@@ -70,7 +72,8 @@ class ControlPlane:
         if goal.goal_id in self.goals:
             raise ValueError("goal identity already exists")
         self.goals[goal.goal_id] = goal
-        if goal.status == "ACTIVE":
+        self.goal_baselines[goal.goal_id] = self.goal_checksum(goal.goal_id)
+        if goal.status == "ACTIVE" and not self.active_goal_id:
             self.active_goal_id = goal.goal_id
 
     def add_task(self, task: Task):
@@ -80,18 +83,43 @@ class ControlPlane:
         if task.task_id in self.tasks or task.status not in TASK_STATUSES:
             raise ValueError("invalid or duplicate task identity/status")
         self.tasks[task.task_id] = task
-        if task.status == "ACTIVE" and not self.active_task_id:
+        if (task.status == "ACTIVE" and task.goal_id == self.active_goal_id
+                and not self.active_task_id):
             self.active_task_id = task.task_id
 
-    def allow_action(self, task_id: str, action: str):
-        """Record a reviewed action plan; free text is never self-authorizing."""
-        self.allowed_actions.setdefault(task_id, set()).add(action)
+    def allow_action(self, task_id: str, action: str, criterion: str):
+        """Bind a reviewed action to one criterion and current goal version."""
+        task = self.tasks[task_id]
+        goal = self.goals[task.goal_id]
+        checksum = self.goal_checksum(goal.goal_id)
+        if (task_id != self.active_task_id or task.goal_id != self.active_goal_id
+                or task.status != "ACTIVE" or task.residency != "HOT"
+                or goal.status != "ACTIVE" or checksum != self.goal_baselines[goal.goal_id]
+                or criterion not in task.criteria or criterion not in goal.success_criteria
+                or action in goal.non_goals):
+            raise DriftError("action plan lacks a current task, criterion, and goal")
+        self.allowed_actions.setdefault(task_id, set()).add((action, criterion, checksum))
 
     def activate_task(self, task_id: str):
         task = self.tasks[task_id]
-        if task.status != "ACTIVE" or task.residency != "HOT" or self.goals[task.goal_id].status != "ACTIVE":
+        if (task.status != "ACTIVE" or task.residency != "HOT"
+                or self.goals[task.goal_id].status != "ACTIVE"
+                or self.goal_checksum(task.goal_id) != self.goal_baselines[task.goal_id]):
             raise DriftError("task is not active and resident")
+        if self.active_task_id != task_id:
+            self.retrieved_knowledge.pop(self.active_task_id, None)
         self.active_goal_id, self.active_task_id = task.goal_id, task_id
+
+    def retrieve_knowledge(self, task_id: str, key: str):
+        """Admit one durable item for the currently active task only."""
+        task = self.tasks[task_id]
+        goal = self.goals[task.goal_id]
+        if (task_id != self.active_task_id or task.goal_id != self.active_goal_id
+                or task.status != "ACTIVE" or task.residency != "HOT"
+                or goal.status != "ACTIVE" or key not in self.durable_knowledge
+                or self.goal_checksum(goal.goal_id) != self.goal_baselines[goal.goal_id]):
+            raise DriftError("knowledge retrieval needs a current task and item")
+        self.retrieved_knowledge.setdefault(task_id, set()).add(key)
 
     def record_action(self, action: str, task_id: str, criterion: str):
         task = self.tasks.get(task_id)
@@ -101,7 +129,9 @@ class ControlPlane:
         goal = self.goals[task.goal_id]
         if (goal.status != "ACTIVE" or criterion not in task.criteria
                 or criterion not in goal.success_criteria or action in goal.non_goals
-                or action not in self.allowed_actions.get(task_id, set())):
+                or (action, criterion, self.goal_checksum(goal.goal_id))
+                not in self.allowed_actions.get(task_id, set())
+                or self.goal_checksum(goal.goal_id) != self.goal_baselines[goal.goal_id]):
             raise DriftError("action is not authorized by task and criterion")
         trace = (action, task_id, criterion, goal.goal_id)
         self.traces.append(trace)
@@ -111,8 +141,16 @@ class ControlPlane:
         if task_id not in self.tasks:
             raise KeyError(task_id)
         if kind == "method_feedback":
-            self.tasks[task_id].version += 1
+            task = self.tasks[task_id]
+            goal = self.goals[task.goal_id]
+            if (task_id != self.active_task_id or task.goal_id != self.active_goal_id
+                    or task.status != "ACTIVE" or task.residency != "HOT"
+                    or goal.status != "ACTIVE"
+                    or self.goal_checksum(goal.goal_id) != self.goal_baselines[goal.goal_id]):
+                raise DriftError("method feedback needs the current active task")
+            task.version += 1
             self.allowed_actions.pop(task_id, None)
+            self.retrieved_knowledge.pop(task_id, None)
             return task_id
         if kind in {"criterion_correction", "goal_mutation", "new_task"}:
             raise DriftError(f"{kind} needs an explicit goal/task contract update")
@@ -121,42 +159,84 @@ class ControlPlane:
     def revise_goal(self, goal_id: str, expected_checksum: str, *, objective=None,
                     success_criteria=None, non_goals=None, constraints=None):
         goal = self.goals[goal_id]
-        if expected_checksum != self.goal_checksum(goal_id) or goal.status != "ACTIVE":
+        if (expected_checksum != self.goal_checksum(goal_id)
+                or expected_checksum != self.goal_baselines[goal_id]
+                or goal.status != "ACTIVE"):
             raise DriftError("goal changed since feedback was classified")
-        for key, value in (("objective", objective), ("success_criteria", success_criteria),
-                           ("non_goals", non_goals), ("constraints", constraints)):
+        changes = (("objective", objective), ("success_criteria", success_criteria),
+                   ("non_goals", non_goals), ("constraints", constraints))
+        if not any(value is not None and value != getattr(goal, key) for key, value in changes):
+            raise ValueError("goal revision needs a changed contract field")
+        affected = [task.task_id for task in self.tasks.values()
+                    if (task.goal_id == goal_id
+                        and task.status not in {"SUPERSEDED", "DONE", "ABANDONED"})]
+        self._transition_batch(affected, "SUSPENDED", "goal contract changed")
+        for key, value in changes:
             if value is not None:
                 setattr(goal, key, value)
         goal.version += 1
-        for task in self.tasks.values():
-            if task.goal_id == goal_id and not set(task.criteria) <= set(goal.success_criteria):
-                task.status, task.residency = "SUSPENDED", "COLD"
+        self.goal_baselines[goal_id] = self.goal_checksum(goal_id)
         self.allowed_actions.clear()
+        self.retrieved_knowledge.clear()
 
     def supersede_goal(self, old_id: str, new_id: str):
         if old_id not in self.goals or new_id not in self.goals:
             raise KeyError("goal not found")
+        if (old_id == new_id or self.goals[old_id].status != "ACTIVE"
+                or self.goals[new_id].status != "ACTIVE"
+                or self.goal_checksum(old_id) != self.goal_baselines[old_id]
+                or self.goal_checksum(new_id) != self.goal_baselines[new_id]):
+            raise DriftError("supersession needs distinct active goal contracts")
+        affected = [task.task_id for task in self.tasks.values()
+                    if (task.goal_id == old_id
+                        and task.status not in {"SUPERSEDED", "DONE", "ABANDONED"})]
+        self._transition_batch(affected, "SUPERSEDED", "goal superseded")
         self.goals[old_id].status = "SUPERSEDED"
+        self.goal_baselines[old_id] = self.goal_checksum(old_id)
         self.active_goal_id = new_id
-        for task in self.tasks.values():
-            if task.goal_id == old_id and task.status == "ACTIVE":
-                task.status, task.residency = "SUPERSEDED", "ARCHIVED"
+        if self.active_task_id and self.tasks[self.active_task_id].goal_id == old_id:
+            self.active_task_id = ""
         self.allowed_actions.clear()
+        self.retrieved_knowledge.clear()
 
-    def wait_for_user(self, task_id: str, trigger: str):
-        self.transition_task(task_id, "WAITING_USER", trigger)
+    def wait_for_user(self, task_id: str, trigger: str, path=None):
+        self.transition_task(task_id, "WAITING_USER", trigger, path)
 
-    def transition_task(self, task_id: str, status: str, trigger: str = ""):
+    def transition_task(self, task_id: str, status: str, trigger: str = "", path=None):
         if status not in TASK_STATUSES or status == "ACTIVE":
             raise ValueError("use resume or activate_task for ACTIVE")
+        if status in {"WAITING_USER", "BLOCKED", "SUSPENDED"} and not trigger:
+            raise ValueError("resumable transition needs a named trigger")
+        task = self.tasks[task_id]
+        if task.status in {"SUPERSEDED", "DONE", "ABANDONED"}:
+            raise DriftError("terminal task cannot transition")
+        capsule = self.capture(task_id)[:-1] + (trigger,)
+        self._persist_capsule(task_id, capsule, path)
+        self._apply_transition(task_id, status, trigger, capsule)
+        return capsule
+
+    def _transition_batch(self, task_ids, status: str, trigger: str):
+        """Persist every capsule before changing any task in a multi-task edit."""
+        prepared = []
+        for task_id in task_ids:
+            capsule = self.capture(task_id)[:-1] + (trigger,)
+            self._persist_capsule(task_id, capsule)
+            prepared.append((task_id, capsule))
+        for task_id, capsule in prepared:
+            self._apply_transition(task_id, status, trigger, capsule)
+
+    def _apply_transition(self, task_id: str, status: str, trigger: str, capsule: tuple):
         task = self.tasks[task_id]
         task.status, task.resume_trigger = status, trigger
         task.residency = "ARCHIVED" if status in {"SUPERSEDED", "DONE", "ABANDONED"} else "COLD"
         if task.residency == "COLD":
-            self.capsules[task_id] = self.capture(task_id)
+            self.capsules[task_id] = capsule
         else:
             self.capsules.pop(task_id, None)
         self.allowed_actions.pop(task_id, None)
+        self.retrieved_knowledge.pop(task_id, None)
+        if self.active_task_id == task_id:
+            self.active_task_id = ""
 
     def capture(self, task_id: str):
         task = self.tasks[task_id]
@@ -171,10 +251,15 @@ class ControlPlane:
         task = self.tasks[task_id]
         if task.status != "ACTIVE" or task.residency != "HOT":
             raise DriftError("only an active task can be paused")
-        previous_trigger = task.resume_trigger
-        task.resume_trigger = trigger
-        capsule = self.capture(task_id)
-        destination = Path(path)
+        return self.transition_task(task_id, status, trigger, path)
+
+    def _persist_capsule(self, task_id: str, capsule: tuple, path=None):
+        if path is None:
+            if self.capsule_dir is None:
+                raise DriftError("durable capsule destination required before eviction")
+            destination = Path(self.capsule_dir) / (sha256(task_id.encode()).hexdigest() + ".json")
+        else:
+            destination = Path(path)
         temporary = None
         try:
             with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=destination.parent,
@@ -186,14 +271,11 @@ class ControlPlane:
                 os.fsync(stream.fileno())
             os.replace(temporary, destination)
         except Exception:
-            task.resume_trigger = previous_trigger
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
             raise
-        self.transition_task(task_id, status, trigger)
-        return capsule
 
-    def resume_from_file(self, task_id: str, path):
+    def resume_from_file(self, task_id: str, path, trigger: str):
         """Re-admit a persisted capsule only when the live contracts match."""
         with Path(path).open("r", encoding="utf-8") as stream:
             raw = json.load(stream)
@@ -203,29 +285,37 @@ class ControlPlane:
         if capsule != self.capture(task_id):
             raise DriftError("persisted capsule does not match current contracts")
         self.capsules[task_id] = capsule
-        self.resume(task_id, capsule)
+        self.resume(task_id, capsule, trigger)
 
-    def resume(self, task_id: str, capsule):
+    def resume(self, task_id: str, capsule, trigger: str):
         task = self.tasks[task_id]
         if (capsule != self.capsules.get(task_id) or capsule != self.capture(task_id)
                 or task.status not in {"WAITING_USER", "BLOCKED", "SUSPENDED"}
-                or self.goals[task.goal_id].status != "ACTIVE"):
+                or self.goals[task.goal_id].status != "ACTIVE"
+                or self.goal_checksum(task.goal_id) != self.goal_baselines[task.goal_id]
+                or not trigger or trigger != task.resume_trigger):
             raise DriftError("resume capsule or goal is stale")
         task.status, task.residency = "ACTIVE", "HOT"
         del self.capsules[task_id]
+        self.retrieved_knowledge.pop(self.active_task_id, None)
         self.active_goal_id, self.active_task_id = task.goal_id, task_id
 
     def working_context(self):
         goal = self.goals.get(self.active_goal_id)
         task = self.tasks.get(self.active_task_id)
         visible = {}
-        if goal and goal.status == "ACTIVE" and task and task.status == "ACTIVE":
+        goal_valid = bool(goal and goal.status == "ACTIVE" and
+                          self.goal_checksum(goal.goal_id) == self.goal_baselines[goal.goal_id])
+        task_valid = bool(goal_valid and task and task.status == "ACTIVE"
+                          and task.residency == "HOT" and task.goal_id == goal.goal_id)
+        if task_valid:
             visible[task.task_id] = task
             for dep_id in task.dependencies:
                 dep = self.tasks.get(dep_id)
                 if dep and dep.goal_id == goal.goal_id and dep.residency == "HOT":
                     visible[dep_id] = dep
-        return {"goal": goal if goal and goal.status == "ACTIVE" else None,
+        retrieved = self.retrieved_knowledge.get(task.task_id, set()) if task_valid else set()
+        return {"goal": goal if goal_valid else None,
                 "tasks": visible,
                 "knowledge": {key: self.durable_knowledge[key]
-                              for key in self.retrieved_knowledge if key in self.durable_knowledge}}
+                              for key in retrieved if key in self.durable_knowledge}}

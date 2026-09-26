@@ -20,16 +20,23 @@ dependencies, and residency. Allowed statuses are `ACTIVE`, `WAITING_USER`,
 `BLOCKED`, `SUSPENDED`, `SUPERSEDED`, `DONE`, `ABANDONED`.
 
 At each material action, record `Action → Task → Criterion → Goal`.
-Goal Guard checks that all links still refer to the active versions and that
-the action is inside constraints and outside non_goals. A checksum of the
-Goal Contract detects silent changes; it does not judge semantic alignment.
+Goal Guard checks that action, task, criterion, and Goal Contract version
+still match a reviewed authorization. The reference contract rejects an exact
+`non_goals` action string; the caller must judge natural-language constraints
+and semantic alignment. A stored checksum detects direct Goal Contract edits.
 When a task leaves ACTIVE, capture its capsule, persist it, then evict it
-to COLD or ARCHIVED. Resume only on a named trigger after checking the capsule
-against the current goal. A superseded goal never re-enters by default.
+to COLD or ARCHIVED. Resume only when the caller supplies the matching named
+trigger and the capsule still matches the current goal. The caller remains
+responsible for verifying that the external trigger actually occurred.
+A superseded goal never re-enters by default.
+Any versioned goal revision suspends its nonterminal task plans for explicit
+review before they can resume.
 
 `src/goal_control.py` is a deterministic reference contract with regression
-tests. `pause_and_persist` writes a capsule before eviction;
-`resume_from_file` checks it against reconstructed current contracts. This is
+tests. Configure `ControlPlane(capsule_dir=...)` or pass a path to a task
+transition; without a durable destination, eviction fails closed.
+`pause_and_persist` writes a capsule before eviction; `resume_from_file`
+checks it against reconstructed current contracts and a named trigger. This is
 not automatic natural-language classification or a runtime-wide integration.
 Existing P30 acceptance authority remains separate.
 

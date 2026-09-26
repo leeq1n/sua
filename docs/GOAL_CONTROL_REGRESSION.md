@@ -14,15 +14,21 @@ failure rate.
 |---|---|---|
 | Proxy drift | A method is not promoted to the objective | `test_action_requires_goal_trace` |
 | Subtask drift | Unlinked work cannot execute as active task action | `test_action_requires_goal_trace` |
-| Feedback drift | Method feedback retains goal; mutations require versioned update | `test_feedback_does_not_silently_mutate_goal`, `test_goal_checksum_rejects_stale_feedback_and_suspends_old_criterion` |
-| Superseded goal leakage | Old goal/task absent from working context | `test_superseded_goal_is_not_resident` |
+| Feedback drift | Method feedback changes only the active task; a versioned contract mutation suspends existing task plans | `test_feedback_does_not_silently_mutate_goal`, `test_method_feedback_cannot_modify_inactive_task`, `test_goal_checksum_rejects_stale_feedback_and_suspends_old_criterion`, `test_objective_revision_suspends_existing_task_plan` |
+| Superseded goal leakage | Old goal/task absent from working context; adding another ACTIVE goal cannot mix goal and task identities | `test_superseded_goal_is_not_resident`, `test_adding_another_active_goal_keeps_context_consistent` |
 | Meta drift | Improving the controller requires its own authorized link | `test_action_requires_goal_trace` |
-| Resume fidelity | Paused capsule matches current identity and goal version, including after file persistence | `test_resume_fidelity_and_eviction`, `test_resume_rejects_capsule_after_goal_version_changes`, `test_capsule_persists_before_eviction_and_resumes_in_fresh_controller` |
-| Traceability | Every recorded action has Task, Criterion, Goal IDs | `test_traceability_and_dependencies` |
+| Resume fidelity | Paused capsule matches current identity, goal version, and named trigger, including after file persistence | `test_resume_fidelity_and_eviction`, `test_resume_rejects_capsule_after_goal_version_changes`, `test_resume_needs_matching_named_trigger`, `test_capsule_persists_before_eviction_and_resumes_in_fresh_controller` |
+| Traceability | Action authorization binds the exact Task, Criterion, and Goal version | `test_traceability_and_dependencies`, `test_action_authorization_cannot_be_relabelled_to_another_criterion` |
+| Persistence before eviction | A missing store or failed write leaves the live task in HOT; multi-task supersession does not partially evict | `test_direct_transition_requires_durable_capsule`, `test_failed_persistence_does_not_evict_task`, `test_supersession_persistence_failure_does_not_partially_evict` |
+| Context admission | Explicitly retrieved knowledge stays scoped to its active task | `test_durable_knowledge_requires_explicit_retrieval`, `test_retrieved_knowledge_does_not_leak_to_another_active_task` |
+| Silent goal mutation | Direct changes to a Goal Contract cannot authorize an action or enter working context | `test_direct_goal_mutation_cannot_authorize_an_action` |
 
 The reference implementation in `src/goal_control.py` checks explicit inputs.
-It does not classify natural language or automatically rehydrate a full task
-store across processes. A fresh controller can import a persisted capsule
-after its goal and task contracts are reconstructed. These tests do not
-prove that a live agent follows the rules. A fresh, blinded behavioral
-comparison is required before claiming drift reduction or resume improvement.
+It needs a durable `capsule_dir` or an explicit file path before evicting a
+task. It does not classify natural language, judge whether an action satisfies
+a natural-language constraint, verify that a named resume event truly occurred,
+or automatically rehydrate a full task store across processes. A fresh
+controller can import a persisted capsule after its goal and task contracts
+are reconstructed. These tests do not prove that a live agent follows the
+rules. A fresh, blinded behavioral comparison is required before claiming
+drift reduction or resume improvement.

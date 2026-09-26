@@ -10,8 +10,9 @@
 > (100% cache hit when stable).  Per-task 段s are in
 > `AGENTS.md` as references (per P11 摘要+引用).
 >
-> **Architecture note**: SUA is a self-contained
-> knowledge library; sibling repositories are
+> **Architecture note**: SUA aims to be a cross-runtime Agent Control Plane.
+> Its current canonical delivery is a self-contained knowledge library;
+> sibling repositories are
 > maintained independently (standalone or frozen)
 > and are not downstream of SUA.  Cross-ref details
 > in AGENTS.md "Cross-project sync"段.
@@ -241,5 +242,4 @@ list.
 State the ambiguity, list the options you considered, pick one,
 apply, and cite the principle in your commit message.  Same as
 if you were the maintainer reading your PR.
-
 
