@@ -183,10 +183,12 @@ def test_apply_memory_policy_accepts_user_fn():
         os.unlink(path)
 
 
-def test_apply_memory_policy_hard_ceiling_fuse():
+def test_apply_memory_policy_hard_ceiling_fuse(monkeypatch):
     """Hard ceiling MAX_LEARNING_ROWS fires if user policy is too lax."""
     import tempfile
     sys.path.insert(0, PROJECT)
+    from src import learning as learning_mod
+    monkeypatch.setattr(learning_mod, "MAX_LEARNING_ROWS", 32)
     from src.learning import (
         init_db, mark_paper_seen, apply_memory_policy, MAX_LEARNING_ROWS
     )
