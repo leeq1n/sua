@@ -23,6 +23,7 @@ failure rate.
 | Context admission | Explicitly retrieved knowledge stays scoped to its active task | `test_durable_knowledge_requires_explicit_retrieval`, `test_retrieved_knowledge_does_not_leak_to_another_active_task` |
 | Silent goal mutation | Direct changes to a Goal Contract cannot authorize an action or enter working context | `test_direct_goal_mutation_cannot_authorize_an_action` |
 | Stale feedback | A previous Goal Checksum cannot supersede a changed goal or attach a new task | `test_stale_goal_mutation_route_cannot_supersede`, `test_stale_new_task_route_cannot_attach_task` |
+| Criterion correction recovery | An old capsule cannot resume after revision; explicit replan binds current criteria and persists before task mutation | `test_corrected_goal_requires_explicit_replan_before_resume`, `test_replan_persistence_failure_preserves_suspended_task`, `test_replan_rejects_stale_or_unlinked_criteria`, `test_replanned_capsule_resumes_in_fresh_controller` |
 
 The reference implementation in `src/goal_control.py` checks explicit inputs.
 It needs a durable `capsule_dir` or an explicit file path before evicting a
@@ -34,5 +35,7 @@ are reconstructed with the task in COLD; the fresh-controller test reads the
 original capsule without creating a replacement. These tests do not prove
 that a live agent follows the rules. A fresh, blinded behavioral comparison
 is required before claiming drift reduction or resume improvement.
+The reference contract has no production runtime caller, so these checks
+demonstrate the API behavior only.
 Multi-task transitions prevent partial in-memory eviction after a write error;
 separate capsule files do not provide a cross-file transaction after a crash.

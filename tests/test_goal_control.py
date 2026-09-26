@@ -128,6 +128,79 @@ def test_resume_rejects_capsule_after_goal_version_changes(tmp_path):
     assert p.tasks["T1"].residency == "COLD"
 
 
+def test_corrected_goal_requires_explicit_replan_before_resume(tmp_path):
+    p = plane(tmp_path)
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    old_capsule = p.capsules["T1"]
+    with pytest.raises(DriftError):
+        p.resume("T1", old_capsule, "goal contract changed")
+    capsule = p.replan_suspended_task(
+        "T1", p.goal_checksum("G1"),
+        criteria=("updated report delivered",),
+        next_action="Write updated report", trigger="replan reviewed")
+    assert p.tasks["T1"].version == 2
+    assert p.tasks["T1"].status == "SUSPENDED"
+    assert capsule == p.capture("T1")
+    with pytest.raises(DriftError):
+        p.resume("T1", capsule, "goal contract changed")
+    p.resume("T1", capsule, "replan reviewed")
+    p.allow_action("T1", "Write updated report", "updated report delivered")
+    assert p.record_action("Write updated report", "T1", "updated report delivered") == (
+        "Write updated report", "T1", "updated report delivered", "G1")
+
+
+def test_replan_persistence_failure_preserves_suspended_task(tmp_path):
+    p = plane(tmp_path)
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    old_capsule = p.capsules["T1"]
+    with pytest.raises(FileNotFoundError):
+        p.replan_suspended_task(
+            "T1", p.goal_checksum("G1"),
+            criteria=("updated report delivered",),
+            next_action="Write updated report", trigger="replan reviewed",
+            path=tmp_path / "missing" / "capsule.json")
+    assert p.tasks["T1"].version == 1
+    assert p.tasks["T1"].criteria == ("report delivered",)
+    assert p.capsules["T1"] == old_capsule
+
+
+def test_replan_rejects_stale_or_unlinked_criteria(tmp_path):
+    p = plane(tmp_path)
+    old_checksum = p.goal_checksum("G1")
+    p.revise_goal("G1", old_checksum,
+                  success_criteria=("updated report delivered",))
+    for checksum, criteria in (
+        (old_checksum, ("updated report delivered",)),
+        (p.goal_checksum("G1"), ("report delivered",)),
+    ):
+        with pytest.raises(DriftError):
+            p.replan_suspended_task("T1", checksum, criteria=criteria,
+                                    next_action="Write", trigger="replan reviewed")
+    assert p.tasks["T1"].version == 1
+
+
+def test_replanned_capsule_resumes_in_fresh_controller(tmp_path):
+    p = plane(tmp_path)
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    path = tmp_path / "replanned.json"
+    p.replan_suspended_task("T1", p.goal_checksum("G1"),
+                            criteria=("updated report delivered",),
+                            next_action="Write updated report",
+                            trigger="replan reviewed", path=path)
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("updated report delivered",),
+                        ("build a dashboard",), ("use cited evidence",), version=2))
+    fresh.add_task(Task("T1", "Write report", "G1", ("updated report delivered",),
+                        status="SUSPENDED", version=2, residency="COLD",
+                        next_action="Write updated report", resume_trigger="replan reviewed"),
+                   fresh.goal_checksum("G1"))
+    fresh.resume_from_file("T1", path, "replan reviewed")
+    assert fresh.working_context()["tasks"]["T1"].version == 2
+
+
 def test_capsule_persists_before_eviction_and_resumes_in_fresh_controller(tmp_path):
     path = tmp_path / "capsule.json"
     p = plane()

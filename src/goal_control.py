@@ -209,6 +209,32 @@ class ControlPlane:
         self.allowed_actions.clear()
         self.retrieved_knowledge.clear()
 
+    def replan_suspended_task(self, task_id: str, expected_goal_checksum: str, *,
+                              criteria: Tuple[str, ...], next_action: str,
+                              trigger: str, path=None):
+        """Bind a suspended task to the revised goal before it may resume."""
+        task = self.tasks[task_id]
+        goal = self.goals[task.goal_id]
+        if (task.status != "SUSPENDED" or task.residency != "COLD"
+                or goal.status != "ACTIVE"
+                or expected_goal_checksum != self.goal_checksum(goal.goal_id)
+                or expected_goal_checksum != self.goal_baselines[goal.goal_id]
+                or not criteria or not set(criteria) <= set(goal.success_criteria)
+                or not next_action.strip() or not trigger.strip()):
+            raise DriftError("replan needs a suspended task and current goal criteria")
+        capsule = (task.task_id, task.goal_id, goal.version,
+                   expected_goal_checksum, task.version + 1, task.title,
+                   tuple(criteria), task.dependencies, next_action,
+                   task.blocker, trigger)
+        self._persist_capsule(task_id, capsule, path)
+        task.criteria, task.next_action = tuple(criteria), next_action
+        task.version += 1
+        task.resume_trigger = trigger
+        self.capsules[task_id] = capsule
+        self.allowed_actions.pop(task_id, None)
+        self.retrieved_knowledge.pop(task_id, None)
+        return capsule
+
     def supersede_goal(self, old_id: str, new_id: str, expected_checksum: str):
         if old_id not in self.goals or new_id not in self.goals:
             raise KeyError("goal not found")
