@@ -55,6 +55,38 @@ def test_resume_fidelity_and_eviction():
     assert p.tasks["T1"].residency == "HOT"
 
 
+def test_resume_rejects_capsule_after_goal_version_changes():
+    p = plane()
+    p.wait_for_user("T1", "Need source approval")
+    capsule = p.capture("T1")
+    p.revise_goal("G1", p.goal_checksum("G1"), objective="Deliver the updated report")
+    with pytest.raises(DriftError):
+        p.resume("T1", capsule)
+    assert p.tasks["T1"].residency == "COLD"
+
+
+def test_capsule_persists_before_eviction_and_resumes_in_fresh_controller(tmp_path):
+    path = tmp_path / "capsule.json"
+    p = plane()
+    p.pause_and_persist("T1", "WAITING_USER", path, "Need source approval")
+    assert path.exists()
+    assert p.tasks["T1"].residency == "COLD"
+    fresh = plane()
+    fresh.wait_for_user("T1", "Need source approval")
+    fresh.resume_from_file("T1", path)
+    assert fresh.tasks["T1"].status == "ACTIVE"
+    assert fresh.working_context()["tasks"]["T1"].title == "Write report"
+
+
+def test_failed_persistence_does_not_evict_task(tmp_path):
+    p = plane()
+    with pytest.raises(FileNotFoundError):
+        p.pause_and_persist("T1", "WAITING_USER", tmp_path / "missing" / "capsule.json")
+    assert p.tasks["T1"].status == "ACTIVE"
+    assert p.tasks["T1"].residency == "HOT"
+    assert p.working_context()["tasks"]["T1"].title == "Write report"
+
+
 def test_traceability_and_dependencies():
     p = plane()
     p.add_task(Task("T0", "Collect citations", "G1", ("report delivered",)))

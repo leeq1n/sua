@@ -17,10 +17,12 @@ failure rate.
 | Feedback drift | Method feedback retains goal; mutations require versioned update | `test_feedback_does_not_silently_mutate_goal`, `test_goal_checksum_rejects_stale_feedback_and_suspends_old_criterion` |
 | Superseded goal leakage | Old goal/task absent from working context | `test_superseded_goal_is_not_resident` |
 | Meta drift | Improving the controller requires its own authorized link | `test_action_requires_goal_trace` |
-| Resume fidelity | Paused capsule matches current identity and goal | `test_resume_fidelity_and_eviction` |
+| Resume fidelity | Paused capsule matches current identity and goal version, including after file persistence | `test_resume_fidelity_and_eviction`, `test_resume_rejects_capsule_after_goal_version_changes`, `test_capsule_persists_before_eviction_and_resumes_in_fresh_controller` |
 | Traceability | Every recorded action has Task, Criterion, Goal IDs | `test_traceability_and_dependencies` |
 
 The reference implementation in `src/goal_control.py` checks explicit inputs.
-It does not classify natural language, persist capsules across processes, or
+It does not classify natural language or automatically rehydrate a full task
+store across processes. A fresh controller can import a persisted capsule
+after its goal and task contracts are reconstructed. These tests do not
 prove that a live agent follows the rules. A fresh, blinded behavioral
 comparison is required before claiming drift reduction or resume improvement.
