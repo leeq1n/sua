@@ -7,11 +7,16 @@ status: "summary"
 
 ## Goal
 
-**SUA is an agent-discipline knowledge library.**  It packages agent
+**SUA's long-term goal is a cross-runtime Agent Control Plane.** Its current
+canonical delivery is an agent-discipline knowledge library. It packages agent
 behavior rules (P-n working principles + M-n operating rules),
 reasoning primitives, and operating conventions that any agent
 runtime can carry into a project.  The repo is self-contained and
 does not depend on sibling repositories.
+
+Goal, task, context-residency, and related controller changes are being built
+as isolated candidates. They are not current `main` capability; the exact
+heads and evidence boundaries are in [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md).
 
 The current top-level project goal is **SUA self-application for constructive
 control, with Phase A AI4S as the first adapter evidence source**:
@@ -108,6 +113,12 @@ atomic, user-edits-keys-never-agent, etc.).  Project constraints
 change rarely; that file is the source of truth.
 
 ## Next step
+
+Reconcile one isolated candidate at a time against current `main`; first
+confirm the claimed target behavior and exact acceptance boundary in
+[CANDIDATE_STATUS.md](CANDIDATE_STATUS.md). Do not merge a mixed branch merely
+to collect its descendants. Goal Control has a clean single-feature branch
+ready for independent review, not a demonstrated live-agent outcome.
 
 Phase A decisions are AI4S `AI4S_PROJECT_ADAPTER_VALIDATED` and generic `PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`.
 Next, run the fixed AI4S (including discovery and Pre-Agent), generic

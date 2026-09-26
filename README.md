@@ -14,11 +14,16 @@
 
 > L0: SUA project README — orientation, current state.
 
-> SUA is an **agent discipline knowledge library** — agent
+> SUA aims to be a **cross-runtime, long-term Agent Control Plane**. Its current
+> canonical delivery is an agent discipline knowledge library — agent
 
 > behavior rules, reasoning primitives, and operating principles
 
 > that you can carry into any agent runtime.
+
+The control-plane work is being developed in isolated candidates. See
+[`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md) for the current `main`
+boundary and what remains unverified.
 
 
 

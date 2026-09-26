@@ -22,6 +22,7 @@
 | [../AGENTS.md](../AGENTS.md) | [../AGENTS_DETAIL.md](../AGENTS_DETAIL.md) | Operating rules for AI agents in this repo |
 | [INDEX.md](INDEX.md) | (this file) | Full navigation map |
 | [PROJECT_STATE.md](PROJECT_STATE.md) | [PROJECT_STATE_DETAIL.md](PROJECT_STATE_DETAIL.md) | Goal + current state + next step |
+| [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) | (self-contained) | Canonical baseline and isolated candidate boundaries |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | [CONSTRAINTS_DETAIL.md](CONSTRAINTS_DETAIL.md) | Invariants the system must preserve |
 | [USER_INSIGHTS.md](USER_INSIGHTS.md) | [USER_INSIGHTS_DETAIL.md](USER_INSIGHTS_DETAIL.md) | Paraphrased user rules + verbatim quotes |
 | [HOW_TO_READ_GRAPH.md](HOW_TO_READ_GRAPH.md) | (within file) | Read pattern for new agents (L0 → L1 → L2) |
