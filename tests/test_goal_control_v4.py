@@ -1,6 +1,8 @@
-"""Exercise Goal Control at the v4 executor boundary, without a provider."""
+"""Exercise Goal Control at the v4 planning and execution boundary."""
 
-from src.goal_control import ControlPlane, Goal, Task
+import pytest
+
+from src.goal_control import ControlPlane, DriftError, Goal, Task
 from src.goal_control_v4 import GoalGuardedExecutor, GoalReviewingThinker, step_action
 from src.v4_executor import MockExecutor
 from src.v4_loop import Loop, LoopStatus
@@ -94,3 +96,61 @@ def test_new_plan_review_revokes_prior_step_authorization():
     result = loop.run("deliver report")
     assert result.status is LoopStatus.FAILED
     assert delegate.call_log == []
+
+
+def test_thinker_receives_only_resident_context():
+    class CapturingThinker(Thinker):
+        def plan(self, prompt):
+            self.prompt_seen = prompt
+            return [Step("write", {"target": "report.md"})]
+
+    control = ControlPlane()
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_goal(Goal("G2", "OLD_GOAL_SECRET", ("old result",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    control.add_task(Task("T2", "COLD_TASK_SECRET", "G1", ("report delivered",),
+                          status="WAITING_USER", residency="COLD"),
+                     control.goal_checksum("G1"))
+    control.durable_knowledge["relevant"] = "APPROVED_NOTE"
+    control.durable_knowledge["unretrieved"] = "COLD_KNOWLEDGE_SECRET"
+    control.retrieve_knowledge("T1", "relevant")
+    delegate = CapturingThinker()
+    reviewer = GoalReviewingThinker(delegate, control, "T1",
+                                    lambda _step, _context: "report delivered")
+    reviewer.plan("OLD_HISTORY_SECRET")
+    assert "Deliver report" in delegate.prompt_seen
+    assert "Write report" in delegate.prompt_seen
+    assert "APPROVED_NOTE" in delegate.prompt_seen
+    for excluded in ("OLD_GOAL_SECRET", "COLD_TASK_SECRET",
+                     "COLD_KNOWLEDGE_SECRET", "OLD_HISTORY_SECRET"):
+        assert excluded not in delegate.prompt_seen
+
+
+def test_inactive_task_cannot_plan_using_another_tasks_context():
+    control = ControlPlane()
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    control.add_task(Task("T2", "Other task", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    reviewer = GoalReviewingThinker(MockThinker([Step("write")]), control, "T2",
+                                    lambda _step, _context: "report delivered")
+    with pytest.raises(DriftError):
+        reviewer.plan("anything")
+
+
+def test_review_callback_cannot_mutate_live_goal_through_context():
+    control = ControlPlane()
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+
+    def review(_step, context):
+        context["goal"].objective = "Mutated copy"
+        return "report delivered"
+
+    reviewer = GoalReviewingThinker(MockThinker([Step("write")]), control,
+                                    "T1", review)
+    reviewer.plan("anything")
+    assert control.goals["G1"].objective == "Deliver report"

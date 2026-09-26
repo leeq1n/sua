@@ -56,7 +56,9 @@ executor wrappers. A host review callback authorizes each exact planned Step
 plus criterion; each new plan review revokes the prior plan's authorizations.
 The executor wrapper rejects an unapproved Step before delegation and
 records the attempted Action → Task → Criterion → Goal trace. The wrapper
-does not construct the thinker's context or verify semantic goal alignment.
+constructs the thinker's prompt only from current HOT context and discards
+the raw Loop prompt. The host must reflect current user intent in the Goal
+and Task contracts and still verify semantic goal alignment.
 Existing P30 acceptance authority remains separate.
 
 ### Phase 1: task-init

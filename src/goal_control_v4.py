@@ -5,6 +5,8 @@ step_action(step) and a goal criterion before the executor receives it.
 """
 
 import json
+from copy import deepcopy
+from dataclasses import asdict
 from typing import Callable
 
 from src.goal_control import ControlPlane, DriftError
@@ -19,7 +21,11 @@ def step_action(step: Step) -> str:
 
 
 class GoalReviewingThinker(Thinker):
-    """Let the host review a dynamic plan against the current working context."""
+    """Plan from HOT context, then let the host review each planned step.
+
+    The raw Loop prompt is deliberately not forwarded. The host must first
+    reflect current user intent in its Goal and Task contracts.
+    """
 
     def __init__(self, delegate: Thinker, control: ControlPlane, task_id: str,
                  review_step: Callable[[Step, dict], str | None]):
@@ -31,8 +37,19 @@ class GoalReviewingThinker(Thinker):
 
     def plan(self, prompt: str) -> Plan:
         self.control.allowed_actions.pop(self.task_id, None)
-        plan = self.delegate.plan(prompt)
-        context = self.control.working_context()
+        context = deepcopy(self.control.working_context())
+        if context["goal"] is None or self.task_id not in context["tasks"]:
+            raise DriftError("planning needs the current HOT goal and task")
+        resident_prompt = (
+            "Plan actions for the current task using only this context. "
+            "Return a JSON array of {\"name\": string, \"args\": object} steps.\n"
+            + json.dumps({
+                "goal": asdict(context["goal"]),
+                "tasks": {key: asdict(task) for key, task in context["tasks"].items()},
+                "knowledge": context["knowledge"],
+            }, ensure_ascii=False, sort_keys=True)
+        )
+        plan = self.delegate.plan(resident_prompt)
         for step in plan:
             criterion = self.review_step(step, context)
             if criterion:

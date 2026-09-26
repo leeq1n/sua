@@ -24,7 +24,7 @@ failure rate.
 | Silent goal mutation | Direct changes to a Goal Contract cannot authorize an action or enter working context | `test_direct_goal_mutation_cannot_authorize_an_action` |
 | Stale feedback | A previous Goal Checksum cannot supersede a changed goal or attach a new task | `test_stale_goal_mutation_route_cannot_supersede`, `test_stale_new_task_route_cannot_attach_task` |
 | Criterion correction recovery | An old capsule cannot resume after revision; explicit replan binds current criteria and persists before task mutation | `test_corrected_goal_requires_explicit_replan_before_resume`, `test_replan_persistence_failure_preserves_suspended_task`, `test_replan_rejects_stale_or_unlinked_criteria`, `test_replanned_capsule_resumes_in_fresh_controller` |
-| v4 action boundary | A dynamic plan is reviewed before execution; an approved exact Step reaches the executor and records its goal trace; denied, changed-argument, or stale-goal steps stop before the delegate; a new review revokes old authorization | `test_goal_control_v4.py` |
+| v4 context and action boundary | The thinker receives only current HOT context; raw history and COLD items stay out. A dynamic plan is reviewed before execution; denied, changed-argument, or stale-goal steps stop before the delegate; a new review revokes old authorization | `test_goal_control_v4.py` |
 
 The reference implementation in `src/goal_control.py` checks explicit inputs.
 It needs a durable `capsule_dir` or an explicit file path before evicting a
@@ -41,8 +41,11 @@ executor. The host's review callback receives each planned Step and the
 current working context, then returns its linked criterion or denies it. A
 new plan review revokes prior Step authorizations. The executor wrapper
 records an attempted action before calling the delegate and blocks
-unauthorized steps before side effects. It
-does not automatically classify feedback or constrain the thinker's prompt.
+unauthorized steps before side effects. The thinker wrapper constructs its
+prompt from the active Goal, active Task, HOT direct dependencies, and
+explicitly retrieved knowledge. It discards the raw Loop prompt; the host
+must first bind the current user intent into its Goal and Task contracts.
+It does not automatically classify feedback or judge semantic goal alignment.
 No production entrypoint constructs this adapter by default, so the tests
 demonstrate an execution boundary, not live agent drift reduction.
 Multi-task transitions prevent partial in-memory eviction after a write error;
