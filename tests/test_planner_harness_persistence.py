@@ -187,7 +187,7 @@ class TestHarnessPersistence:
         try:
             mock_llm = MagicMock(return_value="1. Step one\n2. Step two")
             # Per real signature: plan_task(task, llm_call)
-            result = plan_task("test", mock_llm)
+            result = planner_mod.plan_task("test", mock_llm)
             assert result is not None
             # Verify saved to DB (per default v3.x persistence)
             conn = sqlite3.connect(str(db_path))
@@ -220,7 +220,7 @@ class TestHarnessPersistence:
             planner_mod._init_db()
             mock_llm = MagicMock(return_value="1. Step one")
             # Real signature: plan_task(task, llm_call) - persists by default
-            result = plan_task("test", mock_llm)
+            result = planner_mod.plan_task("test", mock_llm)
             assert result is not None
             # Verify saved (default behavior in v3.x)
             conn = sqlite3.connect(str(db_path))
