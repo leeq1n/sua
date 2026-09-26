@@ -15,6 +15,7 @@ and untracked audit material without adding them to `main` by default.
 | E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` on `codex/e3-m4-isolated` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the older mixed `codex/e3-m4-authority-separation` branch is historical, not a single-feature promotion unit. |
 | E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` on `codex/e4-a-grounded-experience-anchor` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
 | Goal Control and Context Residency | `9aae306` on `codex/goal-control-isolated` | Stable Goal/Task contracts, hot-path reduction, drift/resume regressions | Rebased cleanly onto `main`; 43 focused tests and local structure/link checks passed. Live-agent behavioral effect and independent acceptance unmeasured. |
+| Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed. The separate end-to-end filter failure occurs on both `main` and candidate; independent review and full-suite delta remain open. |
 
 Keep these candidates and their evidence reachable, but do not count them as
 implemented `main` features. A future promotion should take one bounded
@@ -47,10 +48,15 @@ canonical development and exact-artifact review.
    measure and promote separately. Neither an old-base merge that removes
    E2-M2 coverage nor a silent combination of the two candidate state models
    is acceptable.
+4. Review the planner contract repair as a separate maintenance lane. Preserve
+   `RoundResult` persistence and direct agent execution; compare the full
+   suite with `main` before promoting. Do not fold the separate filter-stage
+   end-to-end failure into this repair.
 
-The canonical full-suite planner mismatch is a separate known baseline debt:
+The canonical full-suite planner mismatch has a separate repair candidate:
 legacy `tests/auto/test_planner_harness.py` expects a `list`, while the current
-`core.planner.plan_task` returns a persisted `RoundResult`. Resolve that API
-decision in its own bounded change. Until then, compare each candidate's
+`core.planner.plan_task` returns a persisted `RoundResult`. Until that
+candidate is reviewed and promoted, compare each candidate's
 regression delta against the same-environment `main` result and report the
-full-suite state honestly.
+full-suite state honestly. The end-to-end filter failure and any later test
+failures remain separate baseline investigations.
