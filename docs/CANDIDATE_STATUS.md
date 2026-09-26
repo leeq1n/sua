@@ -17,8 +17,8 @@ and untracked audit material without adding them to `main` by default.
 | Goal Control and Context Residency | `9aae306` on `codex/goal-control-isolated` | Stable Goal/Task contracts, hot-path reduction, drift/resume regressions | Rebased cleanly onto `main`; 43 focused tests and local structure/link checks passed. Live-agent behavioral effect and independent acceptance unmeasured. |
 | Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed; independent review remains open. |
 | Pipeline filter retention | `d2e9da9` on `codex/pipeline-filter-retention` | Keep qualified papers available after the memory write; clear stale scores on a failed filter; isolate the offline end-to-end fixture | Five memory/filter tests and the no-qualified-papers route passed. Its full-flow end-to-end test still reaches the separate planner contract failure on this branch. |
-| Planner + pipeline integration | `0a7112e0eb204facec2b0b971dc4e992167d521c` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above | 57 focused/offline tests passed, including all three end-to-end cases. A broader run stopped at five failures after 441 passed and nine skipped; see below. This is an integration candidate, not independently accepted capability. |
-| Windows suite hygiene | `4ad032216b1378eade49f5f147d7d840aa95ccbb` on `codex/windows-suite-hygiene` | Preserve readable checklist output under Windows subprocess decoding and remove one banned phrase from historical changelog prose | Both previously failing tests pass alone; broader suite and independent review remain open. |
+| Planner + pipeline integration | `7f3fe1e7fd647f5159fe6323fc12dac70097d616` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above, with suite hygiene cherry-picked for order-independent offline verification | 57 focused tests and the repository's offline fast suite passed: 987 passed, 15 skipped, zero failures. This is an integration candidate, not independently accepted capability. |
+| Suite hygiene | `3df9ffadbec1e12be294594ae684f8b9b0eba6df` on `codex/windows-suite-hygiene` | Windows subprocess decoding, planner test isolation, bounded memory-ceiling fixture, and context tests isolated from developer memory | Targeted failures and the v1.8.1 feature file pass. Full-suite evidence is on the integration branch, which also contains this branch's changes; independent review remains open. |
 
 Keep these candidates and their evidence reachable, but do not count them as
 implemented `main` features. A future promotion should take one bounded
@@ -51,11 +51,11 @@ canonical development and exact-artifact review.
    measure and promote separately. Neither an old-base merge that removes
    E2-M2 coverage nor a silent combination of the two candidate state models
    is acceptable.
-4. Review planner and filter repairs first as separate diagnoses, then use the
-   integration branch for their end-to-end interaction. Preserve `RoundResult`
-   persistence and qualified-paper routing. Compare the broad suite against
-   current `main` and obtain a P30 independent decision on the exact clean
-   integration artifact before any promotion.
+4. Review planner, filter, and suite hygiene as separate diagnoses, then use
+   the integration branch for their end-to-end interaction. Preserve
+   `RoundResult` persistence and qualified-paper routing. Obtain a P30
+   independent decision on the exact clean integration artifact before any
+   promotion.
 
 The canonical planner mismatch has a separate repair candidate: legacy
 `tests/auto/test_planner_harness.py` expects a `list`, while the current
@@ -65,15 +65,10 @@ the memory write, ending a qualified run before patch generation. The
 integration candidate demonstrates both paths together without changing
 their separate provenance.
 
-The broader integration run (`SUA_SKIP_NETWORK=1 uv run pytest tests/ -q
---maxfail=5 --tb=short`) reported 5 failed, 441 passed, 9 skipped. Two
-failures also reproduce alone on `main`: a Windows subprocess UTF-8 decode
-error in `test_constructive_control.py`, and a banned phrase in historical
-`CHANGELOG.md` detected by `test_prompt_hygiene.py`. Three were not reproduced
-in the targeted `main` run and need an order-dependent baseline comparison:
-`test_pipeline_lg_safety_net_works` (planner byte restoration) and two
-`test_planner_harness_persistence.py` cases. No claim of a green full suite or
-behavioral improvement follows from the 57 focused passes.
-The two independently reproduced Windows failures have a separate hygiene
-candidate; its passing targeted tests do not change this recorded integration
-run or promote that candidate into `main`.
+The final integration run used `SUA_SKIP_NETWORK=1`, `SUA_FAST=1`, and
+`PYTHONIOENCODING=utf-8` with `uv run pytest tests/ -q --maxfail=5
+--tb=short`: 987 passed, 15 skipped, zero failed in 99.17 seconds. Earlier
+non-fast runs exposed five test-environment/order failures and a slow test
+that inserts over 10,000 rows; the separate hygiene branch retains their
+fixes. The non-fast suite was not completed. The fast-suite result is code
+regression evidence, not live-agent drift reduction or P30 acceptance.
