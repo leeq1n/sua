@@ -91,15 +91,16 @@ avoid re-reading every diff; the leaf reflection
 relies on M-task-summary; the project's memory quality
 relies on M-learn firing correctly.
 
-## Pre-existing pytest failure context
+## Planner contract drift
 
-SUA has a pre-existing test failure in
-`auto/test_planner_harness.py::test_plan_task_returns_list_of_strings`
-(expects `list`, gets `RoundResult` from `core/planner.py`).
-This is **sibling's** return-type change, NOT introduced by
-this session's commits (verified via `git stash` in commit
-`f10c604`).  Per M-rules: sibling's code = sibling's
-responsibility.  Document but don't fix unless asked.
+The v1.8 harness assumed `plan_task()` returned `list[str]`, while the later
+persistence contract returns `RoundResult` with `steps: list[str]`. A direct
+caller in `core.agent.run()` also treated that object as a list. The bounded
+repair keeps the persisted `RoundResult`, has the agent consume `.steps`, and
+updates the harness to verify the current shape and step behavior. Historical
+full-suite results before this repair must not be relabeled as regressions
+caused by later candidate branches. Other full-suite failures still need
+their own baseline-versus-candidate comparison.
 
 ## Open work categories
 
