@@ -10,10 +10,10 @@ and untracked audit material without adding them to `main` by default.
 
 | Candidate | Exact head at this snapshot | What to retain | Current boundary |
 |---|---|---|---|
-| E1.3-M1 parent lifecycle | `633de67386db5f585755c824626c50f529307a9a` | Generic controller change, tests, frozen identity, separate worktree | Implementation candidate; parent behavioral/independent acceptance outstanding. Direct merge from its older base would also remove the canonical E2-M2 regression test. |
-| E2-M3 sandbox evidence | `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` | Small diagnostic-preservation patch and regression | Local construction verified; autonomous-repair comparison remains inconclusive. |
+| E1.3-M1 parent lifecycle | `633de67386db5f585755c824626c50f529307a9a` on `codex/e1-3-m1-implement` | Generic controller change, tests, frozen identity, separate worktree | Implementation candidate; parent behavioral/independent acceptance outstanding. Direct merge from its older base would also remove the canonical E2-M2 regression test. |
+| E2-M3 sandbox evidence | `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` on `codex/e2-m3-preserve-sandbox-evidence` | Small diagnostic-preservation patch and regression | Local construction verified; autonomous-repair comparison remains inconclusive. |
 | E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` on `codex/e3-m4-isolated` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the older mixed `codex/e3-m4-authority-separation` branch is historical, not a single-feature promotion unit. |
-| E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
+| E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` on `codex/e4-a-grounded-experience-anchor` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
 | Goal Control and Context Residency | `9aae306` on `codex/goal-control-isolated` | Stable Goal/Task contracts, hot-path reduction, drift/resume regressions | Rebased cleanly onto `main`; 43 focused tests and local structure/link checks passed. Live-agent behavioral effect and independent acceptance unmeasured. |
 
 Keep these candidates and their evidence reachable, but do not count them as
