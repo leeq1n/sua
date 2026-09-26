@@ -134,11 +134,46 @@ def test_capsule_persists_before_eviction_and_resumes_in_fresh_controller(tmp_pa
     p.pause_and_persist("T1", "WAITING_USER", path, "Need source approval")
     assert path.exists()
     assert p.tasks["T1"].residency == "COLD"
-    fresh = plane(tmp_path)
-    fresh.wait_for_user("T1", "Need source approval")
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    fresh.add_task(Task("T1", "Write report", "G1", ("report delivered",),
+                        status="WAITING_USER", residency="COLD",
+                        resume_trigger="Need source approval"),
+                   fresh.goal_checksum("G1"))
     fresh.resume_from_file("T1", path, "Need source approval")
     assert fresh.tasks["T1"].status == "ACTIVE"
     assert fresh.working_context()["tasks"]["T1"].title == "Write report"
+
+
+def test_resume_capsule_preserves_dependencies_next_action_and_blocker(tmp_path):
+    path = tmp_path / "capsule.json"
+    p = plane(tmp_path)
+    p.tasks["T1"].dependencies = ("T0",)
+    p.tasks["T1"].next_action = "Verify source"
+    p.tasks["T1"].blocker = "Source approval pending"
+    p.pause_and_persist("T1", "WAITING_USER", path, "Source approved")
+    persisted = path.read_text(encoding="utf-8")
+    assert "Verify source" in persisted
+    assert "Source approval pending" in persisted
+    assert "T0" in persisted
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    fresh.add_task(Task("T1", "Write report", "G1", ("report delivered",),
+                        status="WAITING_USER", dependencies=("T0",),
+                        residency="COLD", resume_trigger="Source approved",
+                        next_action="Different action", blocker="Source approval pending"),
+                   fresh.goal_checksum("G1"))
+    with pytest.raises(DriftError):
+        fresh.resume_from_file("T1", path, "Source approved")
+    fresh.tasks["T1"].next_action = "Verify source"
+    fresh.resume_from_file("T1", path, "Source approved")
+    task = fresh.working_context()["tasks"]["T1"]
+    assert task.dependencies == ("T0",)
+    assert task.next_action == "Verify source"
+    assert task.blocker == "Source approval pending"
 
 
 def test_failed_persistence_does_not_evict_task(tmp_path):
@@ -156,6 +191,14 @@ def test_direct_transition_requires_durable_capsule():
         p.transition_task("T1", "WAITING_USER", "Need source approval")
     assert p.tasks["T1"].status == "ACTIVE"
     assert p.tasks["T1"].residency == "HOT"
+
+
+def test_task_status_and_residency_must_match():
+    p = plane()
+    with pytest.raises(ValueError):
+        p.add_task(Task("T2", "Stale task", "G1", ("report delivered",),
+                        status="WAITING_USER", residency="HOT"),
+                   p.goal_checksum("G1"))
 
 
 def test_resume_needs_matching_named_trigger(tmp_path):

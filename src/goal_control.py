@@ -44,6 +44,8 @@ class Task:
     dependencies: Tuple[str, ...] = ()
     residency: str = "HOT"
     resume_trigger: str = ""
+    next_action: str = ""
+    blocker: str = ""
 
 
 @dataclass(frozen=True)
@@ -96,6 +98,11 @@ class ControlPlane:
             raise DriftError("task criteria must link to its goal")
         if task.task_id in self.tasks or task.status not in TASK_STATUSES:
             raise ValueError("invalid or duplicate task identity/status")
+        required_residency = ("HOT" if task.status == "ACTIVE" else
+                              "ARCHIVED" if task.status in {"SUPERSEDED", "DONE", "ABANDONED"}
+                              else "COLD")
+        if task.residency != required_residency:
+            raise ValueError("task status and residency disagree")
         self.tasks[task.task_id] = task
         if (task.status == "ACTIVE" and task.goal_id == self.active_goal_id
                 and not self.active_task_id):
@@ -266,7 +273,8 @@ class ControlPlane:
         task = self.tasks[task_id]
         return (task.task_id, task.goal_id, self.goals[task.goal_id].version,
                 self.goal_checksum(task.goal_id), task.version, task.title,
-                task.criteria, task.resume_trigger)
+                task.criteria, task.dependencies, task.next_action,
+                task.blocker, task.resume_trigger)
 
     def pause_and_persist(self, task_id: str, status: str, path, trigger: str = ""):
         """Write a task capsule atomically before moving it out of HOT."""
@@ -303,9 +311,10 @@ class ControlPlane:
         """Re-admit a persisted capsule only when the live contracts match."""
         with Path(path).open("r", encoding="utf-8") as stream:
             raw = json.load(stream)
-        if not isinstance(raw, list) or len(raw) != 8 or not isinstance(raw[6], list):
+        if (not isinstance(raw, list) or len(raw) != 11
+                or not isinstance(raw[6], list) or not isinstance(raw[7], list)):
             raise DriftError("invalid capsule")
-        capsule = tuple(raw[:6]) + (tuple(raw[6]), raw[7])
+        capsule = tuple(raw[:6]) + (tuple(raw[6]), tuple(raw[7]), *raw[8:])
         if capsule != self.capture(task_id):
             raise DriftError("persisted capsule does not match current contracts")
         self.capsules[task_id] = capsule
@@ -315,6 +324,7 @@ class ControlPlane:
         task = self.tasks[task_id]
         if (capsule != self.capsules.get(task_id) or capsule != self.capture(task_id)
                 or task.status not in {"WAITING_USER", "BLOCKED", "SUSPENDED"}
+                or task.residency != "COLD"
                 or self.goals[task.goal_id].status != "ACTIVE"
                 or self.goal_checksum(task.goal_id) != self.goal_baselines[task.goal_id]
                 or not trigger or trigger != task.resume_trigger):

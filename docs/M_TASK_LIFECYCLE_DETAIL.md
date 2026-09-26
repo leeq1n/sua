@@ -16,7 +16,7 @@ The Goal Contract is `goal_id`, `objective`, `success_criteria`, `non_goals`,
 `constraints`, `status`, `version`. It is the authority for task planning;
 the title is descriptive and never encodes retry/revision/feedback history.
 A Task has stable `task_id`, title, goal_id, criterion links, status, version,
-dependencies, and residency. Allowed statuses are `ACTIVE`, `WAITING_USER`,
+dependencies, next action, blocker, and residency. Allowed statuses are `ACTIVE`, `WAITING_USER`,
 `BLOCKED`, `SUSPENDED`, `SUPERSEDED`, `DONE`, `ABANDONED`.
 
 At each material action, record `Action → Task → Criterion → Goal`.
@@ -24,6 +24,11 @@ Goal Guard checks that action, task, criterion, and Goal Contract version
 still match a reviewed authorization. The reference contract rejects an exact
 `non_goals` action string; the caller must judge natural-language constraints
 and semantic alignment. A stored checksum detects direct Goal Contract edits.
+Before a material action, ask whether it could succeed while the linked
+criterion remains unmet. If yes, name the action's necessary contribution
+and return point; if neither is clear, replan instead of promoting a method
+or metric into the objective. This is a reasoning check, not a semantic
+guarantee from the deterministic reference code.
 When a task leaves ACTIVE, capture its capsule, persist it, then evict it
 to COLD or ARCHIVED. Resume only when the caller supplies the matching named
 trigger and the capsule still matches the current goal. The caller remains

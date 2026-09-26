@@ -24,7 +24,9 @@
 task_id, criterion, and goal version from `docs/PROJECT_STATE.md` or the
 user's newer instruction. Keep paused/superseded history out of the default
 working context. Record `Action → Task → Criterion → Goal`; recheck after
-feedback or resume. Details: `docs/M_TASK_LIFECYCLE_DETAIL.md` and
+feedback or resume. Ask whether the action could succeed while its linked
+criterion remains unmet; if so, name its contribution and return point or
+replan. Details: `docs/M_TASK_LIFECYCLE_DETAIL.md` and
 `docs/OPERATING_RULES.md` (M-context-snapshot, M-intent-parsing).
 
 ## What's here vs full AGENTS.md
@@ -242,4 +244,3 @@ list.
 State the ambiguity, list the options you considered, pick one,
 apply, and cite the principle in your commit message.  Same as
 if you were the maintainer reading your PR.
-
