@@ -69,6 +69,11 @@ def _fake_chat(messages, system=None, config=None, response_format=None,
 @pytest.fixture
 def mocked_end_to_end_env(monkeypatch, tmp_path):
     """Set up: load .env, mock LLM, isolate upgrades/ to tmp_path."""
+    from src import learning
+    original_init_db = learning.init_db
+    test_db = str(tmp_path / "learning.db")
+    monkeypatch.setattr(learning, "init_db", lambda: original_init_db(test_db))
+
     # Load .env
     env_path = os.path.join(
         os.path.dirname(__file__), "..", ".env"
