@@ -441,6 +441,8 @@ def node_filter(state: dict) -> dict:
         logger.debug(f"node_filter: LLMConfig.from_env failed ({e}); using keyword only")
     use_llm = llm_config is not None and llm_config.ready
 
+    scored = []
+    state["scored_papers"] = []
     try:
         scored = filter_papers(papers, cfg.filter, use_llm=use_llm, llm_config=llm_config)
         state["scored_papers"] = scored
@@ -471,8 +473,6 @@ def node_filter(state: dict) -> dict:
             ).get("memory_id")
         except Exception as e:
             logger.debug(f"memory_add_paper failed: {e}")
-        state["scored_papers"] = []
-
     return state
 
 

@@ -54,6 +54,44 @@ def _make_paper(arxiv_id="2310.02170"):
 
 
 class TestPipelineMemoryWrites:
+    def test_filter_keeps_qualified_paper_after_memory_write(self, monkeypatch):
+        """Remembering a paper must not remove it from downstream routing."""
+        from src.config import load_config
+        from src.filter import ScoredPaper
+        from src import mcp_client
+
+        paper = _make_paper("2606.12345")
+        scored = ScoredPaper(paper, abstract_score=7, applicability_score=9,
+                             novelty_score=8)
+        monkeypatch.setattr(pipeline_lg, "filter_papers", lambda *args, **kwargs: [scored])
+        monkeypatch.setattr(mcp_client, "call_tool", lambda *args, **kwargs: {"memory_id": "M1"})
+        state = {"papers": [paper], "config": load_config("config.yaml"),
+                 "errors": [], "scored_papers": []}
+
+        result = pipeline_lg.node_filter(state)
+
+        assert result["scored_papers"] == [scored]
+        assert result["_memory_paper_id"] == "M1"
+        assert pipeline_lg._papers_qualified(result) == "generate"
+
+    def test_filter_failure_does_not_reuse_previous_scores(self, monkeypatch):
+        """A failed scoring attempt must not route stale papers to generation."""
+        from src.config import load_config
+
+        paper = _make_paper("2606.12345")
+        def fail_filter(*args, **kwargs):
+            raise RuntimeError("scoring unavailable")
+
+        monkeypatch.setattr(pipeline_lg, "filter_papers", fail_filter)
+        state = {"papers": [paper], "config": load_config("config.yaml"),
+                 "errors": [], "scored_papers": [object()]}
+
+        result = pipeline_lg.node_filter(state)
+
+        assert result["scored_papers"] == []
+        assert result["errors"] == ["Filter: scoring unavailable"]
+        assert pipeline_lg._papers_qualified(result) != "generate"
+
     def test_filter_writes_paper_to_memory(self, fresh_memory, monkeypatch):
         """After filter, top paper should be in memory."""
         # Build a minimal state with one paper
