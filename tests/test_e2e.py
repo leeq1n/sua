@@ -54,7 +54,8 @@ SCORE_JSON = json.dumps({
 GOOD_TASK_RESPONSE = "1. Plan the trip\n2. Book hotels\n3. Pack bags"
 
 
-def _fake_chat(messages, system=None, config=None, response_format=None):
+def _fake_chat(messages, system=None, config=None, response_format=None,
+               enable_thinking=None, thinking_budget=None):
     """Mock LLM chat: returns scores for filter, patches for patchgen,
     task outputs for benchmark."""
     prompt = " ".join(m.get("content", "") for m in messages)
@@ -97,12 +98,7 @@ def mocked_end_to_end_env(monkeypatch, tmp_path):
         ).content,
     )
 
-    # node_filter calls filter_papers(..., use_llm=True) without passing
-    # llm_config, so score_paper() short-circuits to keyword scoring and
-    # the mock chat() / chat_simple() above never gets invoked for the
-    # filter stage.  Replace score_paper() wholesale so all papers
-    # route through the LLM-mock path and qualify with deterministic
-    # high scores.
+    # Keep filtering deterministic while exercising the full pipeline.
     from src import filter as filter_mod
     monkeypatch.setattr(
         filter_mod, "score_paper",
