@@ -34,17 +34,27 @@ def test_planner_with_mock_llm():
     from core.planner import plan_task
     def mock_llm(prompt):
         return "1. Do A\n2. Do B\n3. Do C"
-    steps = plan_task("test", mock_llm)
-    assert len(steps) == 3
-    assert "Do A" in steps[0]
+    result = plan_task("test", mock_llm)
+    assert result.round_id is not None
+    assert result.steps == ["Do A", "Do B", "Do C"]
 
 def test_planner_no_steps_fallback():
     from core.planner import plan_task
     def mock_llm(prompt):
         return "Just do it"
-    steps = plan_task("test", mock_llm)
-    assert len(steps) >= 1
-    assert "test" in steps[0]
+    result = plan_task("test", mock_llm)
+    assert result.steps == ["Just do it"]
+
+
+def test_agent_run_consumes_persisted_plan():
+    from core.agent import run
+
+    def mock_llm(prompt):
+        return '["Do A", "Do B"]' if "Decompose this task" in prompt else "none"
+
+    outcome = run("test", mock_llm, max_turns=2)
+    assert outcome["steps_planned"] == 2
+    assert outcome["steps_executed"] == 2
 
 def test_tools_module():
     from core.tools import tool_shell, tool_calculate, tool_read_file, tool_write_file

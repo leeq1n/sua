@@ -61,7 +61,8 @@ def run(
     results = []
 
     # 1. 规划
-    plan = plan_task(task, llm_call)
+    plan_result = plan_task(task, llm_call)
+    plan = plan_result.steps
     if verbose:
         print(f"  Plan: {len(plan)} steps")
 
