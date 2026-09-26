@@ -91,6 +91,8 @@ def mocked_end_to_end_env(monkeypatch, tmp_path):
     # Mock src.llm
     import src.llm
     monkeypatch.setattr(src.llm, "chat", _fake_chat)
+    from src import patchgen as patchgen_mod
+    monkeypatch.setattr(patchgen_mod, "chat", _fake_chat)
     monkeypatch.setattr(
         src.llm, "chat_simple",
         lambda prompt, system=None, **kw: _fake_chat(
