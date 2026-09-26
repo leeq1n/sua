@@ -17,7 +17,7 @@ failure rate.
 | Feedback drift | Router separates method, criterion, goal mutation, and new-task feedback; criterion correction suspends task plans; objective mutation needs a successor goal | `test_feedback_does_not_silently_mutate_goal`, `test_feedback_router_distinguishes_contract_updates`, `test_method_feedback_cannot_modify_inactive_task`, `test_objective_mutation_requires_successor_goal` |
 | Superseded goal leakage | Old goal/task absent from working context; adding another ACTIVE goal cannot mix goal and task identities | `test_superseded_goal_is_not_resident`, `test_adding_another_active_goal_keeps_context_consistent` |
 | Meta drift | Improving the controller requires its own authorized link | `test_action_requires_goal_trace` |
-| Resume fidelity | Paused capsule matches identity, goal version, dependencies, next action, blocker, and named trigger after file persistence | `test_resume_fidelity_and_eviction`, `test_resume_rejects_capsule_after_goal_version_changes`, `test_resume_needs_matching_named_trigger`, `test_capsule_persists_before_eviction_and_resumes_in_fresh_controller`, `test_resume_capsule_preserves_dependencies_next_action_and_blocker` |
+| Resume fidelity | Paused capsule matches identity, goal version, dependencies, next action, blocker, and named trigger after file persistence; a fresh controller can rebuild the task from the file when given the current Goal Contract | `test_resume_fidelity_and_eviction`, `test_resume_rejects_capsule_after_goal_version_changes`, `test_resume_needs_matching_named_trigger`, `test_capsule_persists_before_eviction_and_resumes_in_fresh_controller`, `test_resume_capsule_preserves_dependencies_next_action_and_blocker`, `test_resume_from_file_rehydrates_task_after_process_restart`, `test_rehydration_rejects_stale_goal_without_registering_task`, `test_rehydration_rejects_another_hot_task_without_registering_task` |
 | Traceability | Action authorization binds the exact Task, Criterion, and Goal version | `test_traceability_and_dependencies`, `test_action_authorization_cannot_be_relabelled_to_another_criterion` |
 | Persistence before eviction | A missing store or failed write leaves the live task in HOT; multi-task supersession does not partially evict | `test_direct_transition_requires_durable_capsule`, `test_failed_persistence_does_not_evict_task`, `test_supersession_persistence_failure_does_not_partially_evict` |
 | Context admission | Explicitly retrieved knowledge stays scoped to its active task | `test_durable_knowledge_requires_explicit_retrieval`, `test_retrieved_knowledge_does_not_leak_to_another_active_task` |
@@ -32,9 +32,12 @@ It needs a durable `capsule_dir` or an explicit file path before evicting a
 task. It does not classify natural language, judge whether an action satisfies
 a natural-language constraint, verify that a named resume event truly occurred,
 or automatically rehydrate a full task store across processes. A fresh
-controller can import a persisted capsule after its goal and task contracts
-are reconstructed with the task in COLD; the fresh-controller test reads the
-original capsule without creating a replacement. These tests do not prove
+controller can rebuild one resumable task from a versioned persisted capsule
+after the host provides the current Goal Contract. The file records the task
+status so a terminal task cannot be revived; legacy list capsules can still
+resume a task already reconstructed in memory. It rejects a stale goal or an
+occupied HOT task before registering the recovered task. This is not a durable Goal store,
+an authenticated capsule, or automatic recovery of all tasks. These tests do not prove
 that a live agent follows the rules. A fresh, blinded behavioral comparison
 is required before claiming drift reduction or resume improvement.
 `src/goal_control_v4.py` provides opt-in wrappers for the v4 thinker and

@@ -236,7 +236,7 @@ class ControlPlane:
                    expected_goal_checksum, task.version + 1, task.title,
                    tuple(criteria), new_dependencies, next_action,
                    new_blocker, trigger)
-        self._persist_capsule(task_id, capsule, path)
+        self._persist_capsule(task_id, capsule, path, status="SUSPENDED")
         task.criteria, task.next_action = tuple(criteria), next_action
         task.dependencies, task.blocker = new_dependencies, new_blocker
         task.version += 1
@@ -279,7 +279,7 @@ class ControlPlane:
         if task.status in {"SUPERSEDED", "DONE", "ABANDONED"}:
             raise DriftError("terminal task cannot transition")
         capsule = self.capture(task_id)[:-1] + (trigger,)
-        self._persist_capsule(task_id, capsule, path)
+        self._persist_capsule(task_id, capsule, path, status=status)
         self._apply_transition(task_id, status, trigger, capsule)
         return capsule
 
@@ -288,7 +288,7 @@ class ControlPlane:
         prepared = []
         for task_id in task_ids:
             capsule = self.capture(task_id)[:-1] + (trigger,)
-            self._persist_capsule(task_id, capsule)
+            self._persist_capsule(task_id, capsule, status=status)
             prepared.append((task_id, capsule))
         for task_id, capsule in prepared:
             self._apply_transition(task_id, status, trigger, capsule)
@@ -322,7 +322,7 @@ class ControlPlane:
             raise DriftError("only an active task can be paused")
         return self.transition_task(task_id, status, trigger, path)
 
-    def _persist_capsule(self, task_id: str, capsule: tuple, path=None):
+    def _persist_capsule(self, task_id: str, capsule: tuple, path=None, *, status: str):
         if path is None:
             if self.capsule_dir is None:
                 raise DriftError("durable capsule destination required before eviction")
@@ -335,7 +335,8 @@ class ControlPlane:
                                              prefix=destination.name + ".", suffix=".tmp",
                                              delete=False) as stream:
                 temporary = Path(stream.name)
-                json.dump(capsule, stream, ensure_ascii=False)
+                json.dump({"schema": 1, "status": status, "capsule": capsule},
+                          stream, ensure_ascii=False)
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, destination)
@@ -345,17 +346,57 @@ class ControlPlane:
             raise
 
     def resume_from_file(self, task_id: str, path, trigger: str):
-        """Re-admit a persisted capsule only when the live contracts match."""
+        """Re-admit a capsule against the current goal, rebuilding a missing task."""
         with Path(path).open("r", encoding="utf-8") as stream:
             raw = json.load(stream)
+        persisted_status = None
+        if isinstance(raw, dict):
+            if (raw.get("schema") != 1 or raw.get("status") not in TASK_STATUSES):
+                raise DriftError("invalid capsule envelope")
+            persisted_status = raw["status"]
+            raw = raw.get("capsule")
         if (not isinstance(raw, list) or len(raw) != 11
-                or not isinstance(raw[6], list) or not isinstance(raw[7], list)):
+                or not isinstance(raw[6], list) or not isinstance(raw[7], list)
+                or any(not isinstance(value, str) for value in
+                       (*raw[:2], raw[3], raw[5], *raw[6], *raw[7], *raw[8:]))
+                or not isinstance(raw[2], int) or not isinstance(raw[4], int)):
             raise DriftError("invalid capsule")
         capsule = tuple(raw[:6]) + (tuple(raw[6]), tuple(raw[7]), *raw[8:])
-        if capsule != self.capture(task_id):
-            raise DriftError("persisted capsule does not match current contracts")
-        self.capsules[task_id] = capsule
-        self.resume(task_id, capsule, trigger)
+        if task_id not in self.tasks:
+            (stored_task_id, goal_id, goal_version, goal_checksum,
+             task_version, title, criteria, dependencies, next_action,
+             blocker, resume_trigger) = capsule
+            goal = self.goals.get(goal_id)
+            if (persisted_status not in {"WAITING_USER", "BLOCKED", "SUSPENDED"}
+                    or stored_task_id != task_id or not title or task_version < 1
+                    or not criteria or not trigger or trigger != resume_trigger
+                    or goal is None or goal.status != "ACTIVE"
+                    or goal_version != goal.version
+                    or goal_checksum != self.goal_checksum(goal_id)
+                    or goal_checksum != self.goal_baselines[goal_id]
+                    or not set(criteria) <= set(goal.success_criteria)):
+                raise DriftError("persisted capsule does not match current goal")
+            self._require_previous_task_evicted(task_id)
+            task = Task(task_id, title, goal_id, criteria,
+                        status=persisted_status, version=task_version,
+                        dependencies=dependencies, residency="COLD",
+                        resume_trigger=resume_trigger, next_action=next_action,
+                        blocker=blocker)
+            self.add_task(task, goal_checksum)
+            self.capsules[task_id] = capsule
+            try:
+                self.resume(task_id, capsule, trigger)
+            except Exception:
+                self.capsules.pop(task_id, None)
+                self.tasks.pop(task_id, None)
+                raise
+        else:
+            if (capsule != self.capture(task_id)
+                    or (persisted_status is not None
+                        and persisted_status != self.tasks[task_id].status)):
+                raise DriftError("persisted capsule does not match current contracts")
+            self.capsules[task_id] = capsule
+            self.resume(task_id, capsule, trigger)
 
     def resume(self, task_id: str, capsule, trigger: str):
         task = self.tasks[task_id]

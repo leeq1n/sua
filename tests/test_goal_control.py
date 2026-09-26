@@ -1,5 +1,7 @@
 """Bounded drift and resume regressions for the runtime-neutral control contract."""
 
+import json
+
 import pytest
 
 from src.goal_control import ControlPlane, Goal, Task, DriftError
@@ -277,6 +279,84 @@ def test_resume_capsule_preserves_dependencies_next_action_and_blocker(tmp_path)
     assert task.blocker == "Source approval pending"
 
 
+def test_resume_from_file_rehydrates_task_after_process_restart(tmp_path):
+    path = tmp_path / "capsule.json"
+    original = plane(tmp_path)
+    original.tasks["T1"].dependencies = ("T0",)
+    original.tasks["T1"].next_action = "Verify source"
+    original.tasks["T1"].blocker = "Source approval pending"
+    original.pause_and_persist("T1", "WAITING_USER", path, "Source approved")
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    fresh.resume_from_file("T1", path, "Source approved")
+    task = fresh.working_context()["tasks"]["T1"]
+    assert task.status == "ACTIVE"
+    assert task.dependencies == ("T0",)
+    assert task.next_action == "Verify source"
+    assert task.blocker == "Source approval pending"
+
+
+def test_rehydration_rejects_stale_goal_without_registering_task(tmp_path):
+    path = tmp_path / "capsule.json"
+    original = plane(tmp_path)
+    original.pause_and_persist("T1", "WAITING_USER", path, "Source approved")
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver another report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    with pytest.raises(DriftError):
+        fresh.resume_from_file("T1", path, "Source approved")
+    assert "T1" not in fresh.tasks
+
+
+def test_rehydration_rejects_another_hot_task_without_registering_task(tmp_path):
+    path = tmp_path / "capsule.json"
+    original = plane(tmp_path)
+    original.pause_and_persist("T1", "WAITING_USER", path, "Source approved")
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    fresh.add_task(Task("T2", "Review report", "G1", ("report delivered",)),
+                   fresh.goal_checksum("G1"))
+    with pytest.raises(DriftError):
+        fresh.resume_from_file("T1", path, "Source approved")
+    assert "T1" not in fresh.tasks
+
+
+def test_rehydration_cannot_revive_a_terminal_task(tmp_path):
+    path = tmp_path / "terminal.json"
+    original = plane(tmp_path)
+    original.transition_task("T1", "DONE", "completed", path)
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    with pytest.raises(DriftError):
+        fresh.resume_from_file("T1", path, "completed")
+    assert "T1" not in fresh.tasks
+
+
+def test_legacy_capsule_needs_an_existing_cold_task(tmp_path):
+    path = tmp_path / "legacy.json"
+    original = plane(tmp_path)
+    original.wait_for_user("T1", "Source approved")
+    path.write_text(json.dumps(original.capture("T1")), encoding="utf-8")
+
+    fresh = ControlPlane(capsule_dir=tmp_path)
+    fresh.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
+                        ("build a dashboard",), ("use cited evidence",)))
+    with pytest.raises(DriftError):
+        fresh.resume_from_file("T1", path, "Source approved")
+    fresh.add_task(Task("T1", "Write report", "G1", ("report delivered",),
+                        status="WAITING_USER", residency="COLD",
+                        resume_trigger="Source approved"), fresh.goal_checksum("G1"))
+    fresh.resume_from_file("T1", path, "Source approved")
+    assert fresh.tasks["T1"].status == "ACTIVE"
+
+
 def test_failed_persistence_does_not_evict_task(tmp_path):
     p = plane()
     with pytest.raises(FileNotFoundError):
@@ -327,10 +407,10 @@ def test_supersession_persistence_failure_does_not_partially_evict(tmp_path, mon
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
     original = p._persist_capsule
 
-    def fail_second(task_id, capsule, path=None):
+    def fail_second(task_id, capsule, path=None, *, status):
         if task_id == "T3":
             raise OSError("store unavailable")
-        return original(task_id, capsule, path)
+        return original(task_id, capsule, path, status=status)
 
     monkeypatch.setattr(p, "_persist_capsule", fail_second)
     with pytest.raises(OSError):
