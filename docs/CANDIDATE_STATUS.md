@@ -25,3 +25,10 @@ Behavioral improvement claims require valid held-out behavior evidence; a
 quota/credential failure or zero valid runs is measurement failure, not a
 negative or positive result. Do not silently combine overlapping candidates
 or use a broad merge to promote an unrelated ancestor.
+
+The original mixed worktree also contains untracked `experiments/` packages,
+E1.2 apparatus/protocol tests, and historical P30 audit reports. They are
+evidence or operator material, not a sixth implementation candidate. Their
+identity and intended authority must be checked before any packaging; this
+inventory does not add, relocate, or delete them. Use a clean worktree for
+canonical development and exact-artifact review.
