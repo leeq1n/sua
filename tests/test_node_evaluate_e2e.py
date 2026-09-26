@@ -102,16 +102,20 @@ def test_node_evaluate_real_no_patch_returns_early():
 def test_pipeline_lg_safety_net_works():
     """Verify the v1.7.1 _safety_restore_planner works on a fake corruption."""
     import src.pipeline_lg as plg
-    pre_md5 = _pre_md5()
-    # Manually corrupt planner.py
     p = os.path.join(PROJECT, "core", "planner.py")
-    with open(p, "r+b") as f:
-        f.write(b"# corrupted\n")
-    corrupted = hashlib.md5(open(p, "rb").read()).hexdigest()
-    assert corrupted != pre_md5
-    # Run safety restore
-    restored = plg._safety_restore_planner()
-    assert restored, "safety restore returned False"
-    # Verify restored
-    post_md5 = _pre_md5()
-    assert post_md5 == pre_md5, f"safety restore failed: {pre_md5} != {post_md5}"
+    with open(p, "rb") as f:
+        original = f.read()
+    committed = subprocess.check_output(
+        ["git", "show", "HEAD:core/planner.py"], cwd=PROJECT
+    )
+    try:
+        # The safety net restores the committed bytes, even if another test
+        # previously rewrote identical text with different line endings.
+        with open(p, "wb") as f:
+            f.write(b"# corrupted\n")
+        assert plg._safety_restore_planner(), "safety restore returned False"
+        with open(p, "rb") as f:
+            assert f.read() == committed
+    finally:
+        with open(p, "wb") as f:
+            f.write(original)
