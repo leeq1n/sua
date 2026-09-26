@@ -7,15 +7,42 @@ step_action(step) and a goal criterion before the executor receives it.
 import json
 from typing import Callable
 
-from src.goal_control import ControlPlane
+from src.goal_control import ControlPlane, DriftError
 from src.v4_executor import Executor, Result
-from src.v4_thinker import Step
+from src.v4_thinker import Plan, Step, Thinker
 
 
 def step_action(step: Step) -> str:
     """Stable identity for the whole planned action, including its arguments."""
     return json.dumps(step.to_dict(), ensure_ascii=False, sort_keys=True,
                       separators=(",", ":"))
+
+
+class GoalReviewingThinker(Thinker):
+    """Let the host review a dynamic plan against the current working context."""
+
+    def __init__(self, delegate: Thinker, control: ControlPlane, task_id: str,
+                 review_step: Callable[[Step, dict], str | None]):
+        super().__init__()
+        self.delegate = delegate
+        self.control = control
+        self.task_id = task_id
+        self.review_step = review_step
+
+    def plan(self, prompt: str) -> Plan:
+        self.control.allowed_actions.pop(self.task_id, None)
+        plan = self.delegate.plan(prompt)
+        context = self.control.working_context()
+        for step in plan:
+            criterion = self.review_step(step, context)
+            if criterion:
+                try:
+                    self.control.allow_action(self.task_id, step_action(step), criterion)
+                except DriftError:
+                    # The execution wrapper still rejects this step. The
+                    # reviewer cannot authorize a stale or unlinked action.
+                    pass
+        return plan
 
 
 class GoalGuardedExecutor(Executor):
