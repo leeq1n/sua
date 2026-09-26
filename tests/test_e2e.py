@@ -283,7 +283,7 @@ class TestEndToEnd:
         ev = state.get("eval") or state.get("evaluation") or {}
         assert ev.get("baseline_rate", 0) > 0
 
-    def test_pipeline_handles_no_papers_qualified(self, monkeypatch):
+    def test_pipeline_handles_no_papers_qualified(self, mocked_end_to_end_env, monkeypatch):
         """If the filter rejects all papers, pipeline should end cleanly
         with empty patch (no promote, no crash)."""
         from src.llm import LLMConfig
@@ -298,9 +298,8 @@ class TestEndToEnd:
         monkeypatch.setattr(llm_mod, "chat", reject_all)
         monkeypatch.setattr(llm_mod, "chat_simple", lambda p, **kw: reject_all([{"role":"user","content":p}]).content)
 
-        # node_filter uses keyword scoring (no llm_config), so the chat
-        # mock above never affects filter.  Patch score_paper to return
-        # sub-threshold scores so the filter rejects every paper.
+        # Patch score_paper to return sub-threshold scores so the filter
+        # rejects every paper.
         from src import filter as filter_mod
         monkeypatch.setattr(
             filter_mod, "score_paper",
@@ -312,43 +311,16 @@ class TestEndToEnd:
             ),
         )
 
-        # Load .env so from_env works
-        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-        if os.path.exists(env_path):
-            with open(env_path, encoding="utf-8-sig") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    k, v = line.split("=", 1)
-                    k = k.strip()
-                    v = v.strip()
-                    if " #" in v:
-                        v = v.split(" #", 1)[0].rstrip()
-                    v = v.strip('"').strip("'")
-                    if k and k not in os.environ:
-                        os.environ[k] = v
-
         from src.pipeline_lg import run
         from src.config import load_config
         cfg = load_config("config.yaml")
 
-        # Snapshot planner to restore later
-        planner = os.path.join(os.path.dirname(__file__), "..", "core", "planner.py")
-        with open(planner, encoding="utf-8") as f:
-            original = f.read()
-        try:
-            state = run(cfg, dry_run=False)
-            # Pipeline exits cleanly when filter rejects all papers:
-            # _papers_qualified routes to END, and "done" stays False
-            # because node_decide is the only node that flips it.
-            assert state.get("done") is False, (
-                "expected early END (done=False), got done=True"
-            )
-            # No patch was generated (filter rejected all)
-            assert not state.get("patch"), "should not promote with no patch"
-            # No exceptions bubbled up
-            assert not state.get("errors"), f"pipeline errors: {state.get('errors')}"
-        finally:
-            with open(planner, "w", encoding="utf-8") as f:
-                f.write(original)
+        state = run(cfg, dry_run=False)
+        # Pipeline exits cleanly when filter rejects all papers:
+        # _papers_qualified routes to END, and "done" stays False
+        # because node_decide is the only node that flips it.
+        assert state.get("done") is False, (
+            "expected early END (done=False), got done=True"
+        )
+        assert not state.get("patch"), "should not promote with no patch"
+        assert not state.get("errors"), f"pipeline errors: {state.get('errors')}"
