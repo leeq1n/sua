@@ -158,6 +158,7 @@ def test_mn29_script_is_task_generic_and_honest_about_semantic_coverage():
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
