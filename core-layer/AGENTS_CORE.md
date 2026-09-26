@@ -19,6 +19,13 @@
 > Cross-ref: full content here.  AGENTS.md has
 > references, not duplicates.
 
+**Active control check:** before material action, identify current goal_id,
+task_id, criterion, and goal version from `docs/PROJECT_STATE.md` or the
+user's newer instruction. Keep paused/superseded history out of the default
+working context. Record `Action → Task → Criterion → Goal`; recheck after
+feedback or resume. Details: `docs/M_TASK_LIFECYCLE_DETAIL.md` and
+`docs/OPERATING_RULES.md` (M-context-snapshot, M-intent-parsing).
+
 ## What's here vs full AGENTS.md
 
 | Here (always-loaded) | AGENTS.md (per-task) |

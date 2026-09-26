@@ -11,6 +11,11 @@ Last P20-verified: 2026-07-15
 
 ## Why this L2 doc exists
 
+At every re-analysis, compare the current task's criterion links and the
+latest Goal Contract checksum before continuing. A useful method or subtask
+must not become an objective through repetition. If links fail, stop the
+action, classify the feedback or plan a new task, and keep the old task COLD.
+
 The OPERATING_RULES.md § M-periodic-re-analysis
 段 (c127) provides the 3 sub-steps.  This L2
 doc provides decision tree, worked examples,

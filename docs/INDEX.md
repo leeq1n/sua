@@ -23,6 +23,7 @@
 | [INDEX.md](INDEX.md) | (this file) | Full navigation map |
 | [PROJECT_STATE.md](PROJECT_STATE.md) | [PROJECT_STATE_DETAIL.md](PROJECT_STATE_DETAIL.md) | Goal + current state + next step |
 | [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) | (self-contained) | Canonical baseline and isolated candidate boundaries |
+| [GOAL_CONTROL_REGRESSION.md](GOAL_CONTROL_REGRESSION.md) | (self-contained) | Goal and context control scenarios with evidence limits |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | [CONSTRAINTS_DETAIL.md](CONSTRAINTS_DETAIL.md) | Invariants the system must preserve |
 | [USER_INSIGHTS.md](USER_INSIGHTS.md) | [USER_INSIGHTS_DETAIL.md](USER_INSIGHTS_DETAIL.md) | Paraphrased user rules + verbatim quotes |
 | [HOW_TO_READ_GRAPH.md](HOW_TO_READ_GRAPH.md) | (within file) | Read pattern for new agents (L0 → L1 → L2) |
