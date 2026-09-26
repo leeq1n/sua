@@ -81,6 +81,15 @@ copy (per P11).
 
 ### M-context-snapshot
 
+**Context residency extension (P29):** capture the active task's identity,
+goal/version, criterion links, next action, blocker, dependencies, and resume
+trigger; persist the capsule; then evict nonactive task detail from working
+context. `HOT` is the active goal, active task, direct dependencies, and
+durable knowledge explicitly retrieved for this task. `COLD` is persisted
+and searchable but absent from the default prompt. `ARCHIVED` is terminal or
+superseded history. Persisting or summarizing alone does not imply HOT.
+Resume requires an explicit trigger and current goal/version check.
+
 Before switching tasks, capture the current session's state
 to a `session_search`-able artifact (or to a brief note).
 On return, load the snapshot to restore context.  **Don't**
@@ -138,6 +147,13 @@ should NOT need to re-read every leaf's diff — the summaries
 suffice.
 
 ### M-intent-parsing
+
+**Human feedback router:** classify each message as method feedback,
+criterion correction, goal mutation, or new task before acting. Method
+feedback changes the task method/revision while retaining identity.
+Criterion correction and goal mutation require an explicit versioned Goal
+Contract update; a new task receives a new task_id. Ambiguous feedback does
+not silently rewrite the goal. Recheck the Goal Checksum after classification.
 
 When user input is messy (multiple asks, scattered,
 contradicts itself), **first find the user's actual goal**

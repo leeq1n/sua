@@ -22,6 +22,9 @@
 | [../AGENTS.md](../AGENTS.md) | [../AGENTS_DETAIL.md](../AGENTS_DETAIL.md) | Operating rules for AI agents in this repo |
 | [INDEX.md](INDEX.md) | (this file) | Full navigation map |
 | [PROJECT_STATE.md](PROJECT_STATE.md) | [PROJECT_STATE_DETAIL.md](PROJECT_STATE_DETAIL.md) | Goal + current state + next step |
+| [archive/PROJECT_STATE_pre_goal_control_2026-09-26.md](archive/PROJECT_STATE_pre_goal_control_2026-09-26.md) | (history) | Previous Phase A and P30 snapshot; retrieve only when relevant |
+| [HANDOFF.md](HANDOFF.md) | [HANDOFF_DETAIL.md](HANDOFF_DETAIL.md) | Current onboarding and goal trace |
+| [GOAL_CONTROL_REGRESSION.md](GOAL_CONTROL_REGRESSION.md) | (self-contained) | Drift baseline, scenarios, and measurement boundary |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | [CONSTRAINTS_DETAIL.md](CONSTRAINTS_DETAIL.md) | Invariants the system must preserve |
 | [USER_INSIGHTS.md](USER_INSIGHTS.md) | [USER_INSIGHTS_DETAIL.md](USER_INSIGHTS_DETAIL.md) | Paraphrased user rules + verbatim quotes |
 | [HOW_TO_READ_GRAPH.md](HOW_TO_READ_GRAPH.md) | (within file) | Read pattern for new agents (L0 → L1 → L2) |
