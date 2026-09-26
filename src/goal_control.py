@@ -46,6 +46,16 @@ class Task:
     resume_trigger: str = ""
 
 
+@dataclass(frozen=True)
+class FeedbackRoute:
+    kind: str
+    message: str
+    task_id: str
+    goal_id: str
+    goal_checksum: str
+    contract_action: str
+
+
 @dataclass
 class ControlPlane:
     goals: Dict[str, Goal] = field(default_factory=dict)
@@ -57,6 +67,7 @@ class ControlPlane:
     retrieved_knowledge: Dict[str, set] = field(default_factory=dict)
     allowed_actions: Dict[str, set] = field(default_factory=dict)
     traces: list = field(default_factory=list)
+    feedback_routes: list = field(default_factory=list)
     capsules: Dict[str, tuple] = field(default_factory=dict)
     capsule_dir: Path | None = None
 
@@ -76,9 +87,12 @@ class ControlPlane:
         if goal.status == "ACTIVE" and not self.active_goal_id:
             self.active_goal_id = goal.goal_id
 
-    def add_task(self, task: Task):
+    def add_task(self, task: Task, expected_goal_checksum: str):
         goal = self.goals.get(task.goal_id)
-        if goal is None or not set(task.criteria) <= set(goal.success_criteria):
+        if (goal is None or goal.status != "ACTIVE"
+                or expected_goal_checksum != self.goal_checksum(task.goal_id)
+                or expected_goal_checksum != self.goal_baselines[task.goal_id]
+                or not set(task.criteria) <= set(goal.success_criteria)):
             raise DriftError("task criteria must link to its goal")
         if task.task_id in self.tasks or task.status not in TASK_STATUSES:
             raise ValueError("invalid or duplicate task identity/status")
@@ -140,21 +154,28 @@ class ControlPlane:
     def route_feedback(self, task_id: str, message: str, kind: str):
         if task_id not in self.tasks:
             raise KeyError(task_id)
+        actions = {"method_feedback": "REPLAN_METHOD",
+                   "criterion_correction": "REVISE_GOAL",
+                   "goal_mutation": "SUPERSEDE_GOAL",
+                   "new_task": "CREATE_TASK"}
+        if kind not in actions or not message.strip():
+            raise ValueError("feedback needs a known category and message")
+        task = self.tasks[task_id]
+        goal = self.goals[task.goal_id]
+        checksum = self.goal_checksum(goal.goal_id)
+        if goal.status != "ACTIVE" or checksum != self.goal_baselines[goal.goal_id]:
+            raise DriftError("feedback cannot target a stale goal")
         if kind == "method_feedback":
-            task = self.tasks[task_id]
-            goal = self.goals[task.goal_id]
             if (task_id != self.active_task_id or task.goal_id != self.active_goal_id
-                    or task.status != "ACTIVE" or task.residency != "HOT"
-                    or goal.status != "ACTIVE"
-                    or self.goal_checksum(goal.goal_id) != self.goal_baselines[goal.goal_id]):
+                    or task.status != "ACTIVE" or task.residency != "HOT"):
                 raise DriftError("method feedback needs the current active task")
             task.version += 1
             self.allowed_actions.pop(task_id, None)
             self.retrieved_knowledge.pop(task_id, None)
-            return task_id
-        if kind in {"criterion_correction", "goal_mutation", "new_task"}:
-            raise DriftError(f"{kind} needs an explicit goal/task contract update")
-        raise ValueError("unknown feedback category")
+        route = FeedbackRoute(kind, message, task_id, goal.goal_id,
+                              checksum, actions[kind])
+        self.feedback_routes.append(route)
+        return route
 
     def revise_goal(self, goal_id: str, expected_checksum: str, *, objective=None,
                     success_criteria=None, non_goals=None, constraints=None):
@@ -163,6 +184,8 @@ class ControlPlane:
                 or expected_checksum != self.goal_baselines[goal_id]
                 or goal.status != "ACTIVE"):
             raise DriftError("goal changed since feedback was classified")
+        if objective is not None and objective != goal.objective:
+            raise DriftError("objective mutation needs a successor goal identity")
         changes = (("objective", objective), ("success_criteria", success_criteria),
                    ("non_goals", non_goals), ("constraints", constraints))
         if not any(value is not None and value != getattr(goal, key) for key, value in changes):
@@ -179,11 +202,12 @@ class ControlPlane:
         self.allowed_actions.clear()
         self.retrieved_knowledge.clear()
 
-    def supersede_goal(self, old_id: str, new_id: str):
+    def supersede_goal(self, old_id: str, new_id: str, expected_checksum: str):
         if old_id not in self.goals or new_id not in self.goals:
             raise KeyError("goal not found")
         if (old_id == new_id or self.goals[old_id].status != "ACTIVE"
                 or self.goals[new_id].status != "ACTIVE"
+                or expected_checksum != self.goal_checksum(old_id)
                 or self.goal_checksum(old_id) != self.goal_baselines[old_id]
                 or self.goal_checksum(new_id) != self.goal_baselines[new_id]):
             raise DriftError("supersession needs distinct active goal contracts")

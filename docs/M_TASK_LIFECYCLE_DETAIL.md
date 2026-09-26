@@ -31,6 +31,11 @@ responsible for verifying that the external trigger actually occurred.
 A superseded goal never re-enters by default.
 Any versioned goal revision suspends its nonterminal task plans for explicit
 review before they can resume.
+Criterion correction keeps the goal_id and increments the contract version;
+objective mutation needs a new goal_id and explicit supersession. New task
+creation and supersession both require the expected Goal Checksum. The
+feedback router returns a typed next action without silently applying these
+contract changes.
 
 `src/goal_control.py` is a deterministic reference contract with regression
 tests. Configure `ControlPlane(capsule_dir=...)` or pass a path to a task

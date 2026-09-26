@@ -9,7 +9,8 @@ def plane(capsule_dir=None):
     control = ControlPlane(capsule_dir=capsule_dir)
     control.add_goal(Goal("G1", "Deliver the user report", ("report delivered",),
                           ("build a dashboard",), ("use cited evidence",)))
-    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
     return control
 
 
@@ -25,11 +26,50 @@ def test_action_requires_goal_trace(action):
 
 def test_feedback_does_not_silently_mutate_goal():
     p = plane()
-    assert p.route_feedback("T1", "try a shorter method", "method_feedback") == "T1"
+    route = p.route_feedback("T1", "try a shorter method", "method_feedback")
+    assert route.kind == "method_feedback"
+    assert route.contract_action == "REPLAN_METHOD"
     assert p.goals["G1"].version == 1
+    route = p.route_feedback("T1", "ship a dashboard", "goal_mutation")
+    assert route.contract_action == "SUPERSEDE_GOAL"
+    assert p.goals["G1"].version == 1
+
+
+def test_feedback_router_distinguishes_contract_updates(tmp_path):
+    p = plane(tmp_path)
+    correction = p.route_feedback("T1", "whole workflow speed", "criterion_correction")
+    assert correction.contract_action == "REVISE_GOAL"
+    assert correction.goal_checksum == p.goal_checksum("G1")
+    p.revise_goal("G1", correction.goal_checksum,
+                  success_criteria=("workflow delivered",))
+    assert p.goals["G1"].version == 2
+    mutation = p.route_feedback("T1", "stability instead of speed", "goal_mutation")
+    assert mutation.contract_action == "SUPERSEDE_GOAL"
+    new_task = p.route_feedback("T1", "look at another project", "new_task")
+    assert new_task.contract_action == "CREATE_TASK"
+    assert p.goals["G1"].status == "ACTIVE"
+
+
+def test_stale_goal_mutation_route_cannot_supersede(tmp_path):
+    p = plane(tmp_path)
+    route = p.route_feedback("T1", "change objective", "goal_mutation")
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    p.add_goal(Goal("G2", "Deliver another artifact", ("artifact delivered",)))
     with pytest.raises(DriftError):
-        p.route_feedback("T1", "ship a dashboard", "goal_mutation")
-    assert p.goals["G1"].version == 1
+        p.supersede_goal("G1", "G2", route.goal_checksum)
+    assert p.goals["G1"].status == "ACTIVE"
+
+
+def test_stale_new_task_route_cannot_attach_task(tmp_path):
+    p = plane(tmp_path)
+    route = p.route_feedback("T1", "add an audit task", "new_task")
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    with pytest.raises(DriftError):
+        p.add_task(Task("T2", "Audit report", "G1", ("updated report delivered",)),
+                   route.goal_checksum)
+    assert "T2" not in p.tasks
 
 
 def test_method_feedback_cannot_modify_inactive_task(tmp_path):
@@ -43,8 +83,9 @@ def test_method_feedback_cannot_modify_inactive_task(tmp_path):
 def test_superseded_goal_is_not_resident(tmp_path):
     p = plane(tmp_path)
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
-    p.add_task(Task("T2", "Draw chart", "G2", ("chart delivered",)))
-    p.supersede_goal("G1", "G2")
+    p.add_task(Task("T2", "Draw chart", "G2", ("chart delivered",)),
+               p.goal_checksum("G2"))
+    p.supersede_goal("G1", "G2", p.goal_checksum("G1"))
     assert p.working_context()["goal"].goal_id == "G2"
     assert "T1" not in p.working_context()["tasks"]
     with pytest.raises(DriftError):
@@ -57,7 +98,8 @@ def test_adding_another_active_goal_keeps_context_consistent():
     context = p.working_context()
     assert context["goal"].goal_id == "G1"
     assert set(context["tasks"]) == {"T1"}
-    p.add_task(Task("T2", "Draw chart", "G2", ("chart delivered",)))
+    p.add_task(Task("T2", "Draw chart", "G2", ("chart delivered",)),
+               p.goal_checksum("G2"))
     p.activate_task("T2")
     context = p.working_context()
     assert context["goal"].goal_id == "G2"
@@ -80,7 +122,7 @@ def test_resume_rejects_capsule_after_goal_version_changes(tmp_path):
     p = plane(tmp_path)
     p.wait_for_user("T1", "Need source approval")
     capsule = p.capture("T1")
-    p.revise_goal("G1", p.goal_checksum("G1"), objective="Deliver the updated report")
+    p.revise_goal("G1", p.goal_checksum("G1"), success_criteria=("updated report delivered",))
     with pytest.raises(DriftError):
         p.resume("T1", capsule, "Need source approval")
     assert p.tasks["T1"].residency == "COLD"
@@ -129,14 +171,15 @@ def test_supersession_requires_persistence_before_goal_change():
     p = plane()
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
     with pytest.raises(DriftError):
-        p.supersede_goal("G1", "G2")
+        p.supersede_goal("G1", "G2", p.goal_checksum("G1"))
     assert p.goals["G1"].status == "ACTIVE"
     assert p.tasks["T1"].status == "ACTIVE"
 
 
 def test_supersession_persistence_failure_does_not_partially_evict(tmp_path, monkeypatch):
     p = plane(tmp_path)
-    p.add_task(Task("T3", "Check report", "G1", ("report delivered",)))
+    p.add_task(Task("T3", "Check report", "G1", ("report delivered",)),
+               p.goal_checksum("G1"))
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
     original = p._persist_capsule
 
@@ -147,7 +190,7 @@ def test_supersession_persistence_failure_does_not_partially_evict(tmp_path, mon
 
     monkeypatch.setattr(p, "_persist_capsule", fail_second)
     with pytest.raises(OSError):
-        p.supersede_goal("G1", "G2")
+        p.supersede_goal("G1", "G2", p.goal_checksum("G1"))
     assert p.goals["G1"].status == "ACTIVE"
     assert p.tasks["T1"].status == "ACTIVE"
     assert p.tasks["T3"].status == "ACTIVE"
@@ -157,14 +200,15 @@ def test_supersession_archives_cold_tasks(tmp_path):
     p = plane(tmp_path)
     p.wait_for_user("T1", "Need source approval")
     p.add_goal(Goal("G2", "Deliver a chart", ("chart delivered",)))
-    p.supersede_goal("G1", "G2")
+    p.supersede_goal("G1", "G2", p.goal_checksum("G1"))
     assert p.tasks["T1"].status == "SUPERSEDED"
     assert p.tasks["T1"].residency == "ARCHIVED"
 
 
 def test_traceability_and_dependencies():
     p = plane()
-    p.add_task(Task("T0", "Collect citations", "G1", ("report delivered",)))
+    p.add_task(Task("T0", "Collect citations", "G1", ("report delivered",)),
+               p.goal_checksum("G1"))
     p.tasks["T1"].dependencies = ("T0",)
     p.activate_task("T1")
     p.allow_action("T1", "Draft report", "report delivered")
@@ -183,12 +227,17 @@ def test_goal_checksum_rejects_stale_feedback_and_suspends_old_criterion(tmp_pat
         p.revise_goal("G1", checksum, objective="stale edit")
 
 
-def test_objective_revision_suspends_existing_task_plan(tmp_path):
+def test_objective_mutation_requires_successor_goal(tmp_path):
     p = plane(tmp_path)
     p.allow_action("T1", "Draft report", "report delivered")
-    p.revise_goal("G1", p.goal_checksum("G1"), objective="Deliver a different report")
-    assert p.tasks["T1"].status == "SUSPENDED"
-    assert p.tasks["T1"].residency == "COLD"
+    with pytest.raises(DriftError):
+        p.revise_goal("G1", p.goal_checksum("G1"), objective="Deliver a different report")
+    assert p.goals["G1"].objective == "Deliver the user report"
+    p.add_goal(Goal("G2", "Deliver a different report", ("different report delivered",)))
+    p.supersede_goal("G1", "G2", p.goal_checksum("G1"))
+    assert p.goals["G1"].status == "SUPERSEDED"
+    assert p.tasks["T1"].status == "SUPERSEDED"
+    assert p.working_context()["goal"].goal_id == "G2"
     with pytest.raises(DriftError):
         p.record_action("Draft report", "T1", "report delivered")
 
@@ -205,7 +254,8 @@ def test_direct_goal_mutation_cannot_authorize_an_action():
 def test_action_authorization_cannot_be_relabelled_to_another_criterion():
     p = ControlPlane()
     p.add_goal(Goal("G1", "Deliver report and chart", ("report delivered", "chart delivered")))
-    p.add_task(Task("T1", "Prepare outputs", "G1", ("report delivered", "chart delivered")))
+    p.add_task(Task("T1", "Prepare outputs", "G1", ("report delivered", "chart delivered")),
+               p.goal_checksum("G1"))
     p.allow_action("T1", "Draft report", "report delivered")
     with pytest.raises(DriftError):
         p.record_action("Draft report", "T1", "chart delivered")
@@ -225,7 +275,8 @@ def test_retrieved_knowledge_does_not_leak_to_another_active_task():
     p = plane()
     p.durable_knowledge["report-only"] = "old report note"
     p.retrieve_knowledge("T1", "report-only")
-    p.add_task(Task("T2", "Verify citations", "G1", ("report delivered",)))
+    p.add_task(Task("T2", "Verify citations", "G1", ("report delivered",)),
+               p.goal_checksum("G1"))
     p.activate_task("T2")
     assert p.working_context()["knowledge"] == {}
     p.retrieve_knowledge("T2", "report-only")

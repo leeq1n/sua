@@ -151,9 +151,11 @@ suffice.
 **Human feedback router:** classify each message as method feedback,
 criterion correction, goal mutation, or new task before acting. Method
 feedback changes the task method/revision while retaining identity.
-Criterion correction and goal mutation require an explicit versioned Goal
-Contract update; a new task receives a new task_id. Ambiguous feedback does
-not silently rewrite the goal. Recheck the Goal Checksum after classification.
+Criterion correction updates the same Goal Contract under a new version.
+Goal mutation creates a successor goal_id and supersedes the old goal; it is
+not a retry or an in-place objective edit. A new task receives a new task_id.
+Ambiguous feedback does not silently rewrite the goal. Recheck the Goal
+Checksum after classification and before applying the contract change.
 
 When user input is messy (multiple asks, scattered,
 contradicts itself), **first find the user's actual goal**
