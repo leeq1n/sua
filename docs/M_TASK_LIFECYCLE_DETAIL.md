@@ -39,7 +39,8 @@ transition; a failed capsule write leaves that switch blocked.
 A superseded goal never re-enters by default.
 Any versioned goal revision suspends its nonterminal task plans for explicit
 review before they can resume. `replan_suspended_task` binds revised criteria
-and a next action to the current Goal Checksum, persists a new capsule, and
+and a next action to the current Goal Checksum, can update dependencies and
+blocker, persists a new capsule before mutating the task, and
 requires its named review trigger before resume. The pre-revision capsule
 cannot reactivate the old plan.
 Criterion correction keeps the goal_id and increments the contract version;

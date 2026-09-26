@@ -218,7 +218,8 @@ class ControlPlane:
 
     def replan_suspended_task(self, task_id: str, expected_goal_checksum: str, *,
                               criteria: Tuple[str, ...], next_action: str,
-                              trigger: str, path=None):
+                              trigger: str, dependencies=None, blocker=None,
+                              path=None):
         """Bind a suspended task to the revised goal before it may resume."""
         task = self.tasks[task_id]
         goal = self.goals[task.goal_id]
@@ -229,12 +230,15 @@ class ControlPlane:
                 or not criteria or not set(criteria) <= set(goal.success_criteria)
                 or not next_action.strip() or not trigger.strip()):
             raise DriftError("replan needs a suspended task and current goal criteria")
+        new_dependencies = task.dependencies if dependencies is None else tuple(dependencies)
+        new_blocker = task.blocker if blocker is None else blocker
         capsule = (task.task_id, task.goal_id, goal.version,
                    expected_goal_checksum, task.version + 1, task.title,
-                   tuple(criteria), task.dependencies, next_action,
-                   task.blocker, trigger)
+                   tuple(criteria), new_dependencies, next_action,
+                   new_blocker, trigger)
         self._persist_capsule(task_id, capsule, path)
         task.criteria, task.next_action = tuple(criteria), next_action
+        task.dependencies, task.blocker = new_dependencies, new_blocker
         task.version += 1
         task.resume_trigger = trigger
         self.capsules[task_id] = capsule

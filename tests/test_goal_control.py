@@ -156,6 +156,8 @@ def test_corrected_goal_requires_explicit_replan_before_resume(tmp_path):
 
 def test_replan_persistence_failure_preserves_suspended_task(tmp_path):
     p = plane(tmp_path)
+    p.tasks["T1"].dependencies = ("OLD_DEP",)
+    p.tasks["T1"].blocker = "Old blocker"
     p.revise_goal("G1", p.goal_checksum("G1"),
                   success_criteria=("updated report delivered",))
     old_capsule = p.capsules["T1"]
@@ -164,9 +166,12 @@ def test_replan_persistence_failure_preserves_suspended_task(tmp_path):
             "T1", p.goal_checksum("G1"),
             criteria=("updated report delivered",),
             next_action="Write updated report", trigger="replan reviewed",
+            dependencies=(), blocker="",
             path=tmp_path / "missing" / "capsule.json")
     assert p.tasks["T1"].version == 1
     assert p.tasks["T1"].criteria == ("report delivered",)
+    assert p.tasks["T1"].dependencies == ("OLD_DEP",)
+    assert p.tasks["T1"].blocker == "Old blocker"
     assert p.capsules["T1"] == old_capsule
 
 
@@ -203,6 +208,25 @@ def test_replanned_capsule_resumes_in_fresh_controller(tmp_path):
                    fresh.goal_checksum("G1"))
     fresh.resume_from_file("T1", path, "replan reviewed")
     assert fresh.working_context()["tasks"]["T1"].version == 2
+
+
+def test_replan_updates_dependencies_and_blocker_durably(tmp_path):
+    p = plane(tmp_path)
+    p.tasks["T1"].dependencies = ("OLD_DEP",)
+    p.tasks["T1"].blocker = "Old blocker"
+    p.revise_goal("G1", p.goal_checksum("G1"),
+                  success_criteria=("updated report delivered",))
+    path = tmp_path / "replanned.json"
+    capsule = p.replan_suspended_task(
+        "T1", p.goal_checksum("G1"),
+        criteria=("updated report delivered",), next_action="Write update",
+        dependencies=(), blocker="", trigger="replan reviewed", path=path)
+    assert p.tasks["T1"].dependencies == ()
+    assert p.tasks["T1"].blocker == ""
+    assert capsule == p.capture("T1")
+    assert path.exists()
+    p.resume_from_file("T1", path, "replan reviewed")
+    assert p.tasks["T1"].status == "ACTIVE"
 
 
 def test_capsule_persists_before_eviction_and_resumes_in_fresh_controller(tmp_path):
