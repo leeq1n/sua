@@ -75,12 +75,43 @@ class ControlPlane:
     capsules: Dict[str, tuple] = field(default_factory=dict)
     capsule_dir: Path | None = None
     capsule_key: bytes | None = field(default=None, repr=False)
+    capsule_anchor_dir: Path | None = None
 
     def __post_init__(self):
         if self.capsule_key is not None and (
                 not isinstance(self.capsule_key, bytes)
                 or len(self.capsule_key) < 32):
             raise ValueError("capsule authentication key needs at least 32 bytes")
+        if self.capsule_key is not None and self.capsule_anchor_dir is None:
+            raise ValueError("signed capsules need a host-owned state anchor")
+
+    def _anchor_path(self, task_id: str, path):
+        identity = f"{task_id}\0{Path(path).resolve()}".encode("utf-8")
+        return Path(self.capsule_anchor_dir) / (sha256(identity).hexdigest() + ".json")
+
+    def _read_anchor(self, task_id: str, path):
+        anchor = self._anchor_path(task_id, path)
+        if not anchor.exists():
+            return None
+        try:
+            data = json.loads(anchor.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise DriftError("invalid host capsule state anchor") from exc
+        if (not isinstance(data, dict) or data.get("schema") != 1
+                or not isinstance(data.get("sequence"), int)
+                or data["sequence"] < 1
+                or not isinstance(data.get("digest"), str)):
+            raise DriftError("invalid host capsule state anchor")
+        return data
+
+    def _require_latest_capsule(self, task_id: str, path):
+        if self.capsule_key is None:
+            return
+        anchor = self._read_anchor(task_id, path)
+        if anchor is None or not Path(path).is_file():
+            raise DriftError("stale capsule: host state anchor missing")
+        if sha256(Path(path).read_bytes()).hexdigest() != anchor["digest"]:
+            raise DriftError("stale capsule: host state anchor mismatch")
 
     def _authenticate_capsule(self, envelope):
         """Require host-keyed integrity for capsules created in keyed mode."""
@@ -315,6 +346,7 @@ class ControlPlane:
         with Path(path).open("r", encoding="utf-8") as stream:
             envelope = json.load(stream)
         envelope = self._authenticate_capsule(envelope)
+        self._require_latest_capsule(task_id, path)
         if (not isinstance(envelope, dict) or envelope.get("schema") != 1
                 or envelope.get("status") != "SUSPENDED"
                 or "traces" not in envelope
@@ -464,6 +496,13 @@ class ControlPlane:
             destination = Path(self.capsule_dir) / (sha256(task_id.encode()).hexdigest() + ".json")
         else:
             destination = Path(path)
+        previous_anchor = None
+        if self.capsule_key is not None:
+            previous_anchor = self._read_anchor(task_id, destination)
+            if previous_anchor is not None:
+                self._require_latest_capsule(task_id, destination)
+            elif destination.exists():
+                raise DriftError("stale capsule: host state anchor missing")
         temporary = None
         try:
             with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=destination.parent,
@@ -492,6 +531,21 @@ class ControlPlane:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, destination)
+            if self.capsule_key is not None:
+                anchor = self._anchor_path(task_id, destination)
+                anchor.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=anchor.parent,
+                                                 prefix=anchor.name + ".", suffix=".tmp",
+                                                 delete=False) as state_stream:
+                    temporary = Path(state_stream.name)
+                    json.dump({"schema": 1,
+                               "sequence": previous_anchor["sequence"] + 1
+                               if previous_anchor else 1,
+                               "digest": sha256(destination.read_bytes()).hexdigest()},
+                              state_stream)
+                    state_stream.flush()
+                    os.fsync(state_stream.fileno())
+                os.replace(temporary, anchor)
         except Exception:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
@@ -502,6 +556,7 @@ class ControlPlane:
         with Path(path).open("r", encoding="utf-8") as stream:
             raw = json.load(stream)
         raw = self._authenticate_capsule(raw)
+        self._require_latest_capsule(task_id, path)
         persisted_status = None
         if isinstance(raw, dict):
             if (raw.get("schema") != 1 or raw.get("status") not in TASK_STATUSES):

@@ -295,7 +295,8 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
                  "criteria": ["answer is 4"]},
     }), encoding="utf-8")
     verifier = tmp_path / "verify.py"
-    key_file = tmp_path / "host.key"
+    key_file = tmp_path / "private" / "host.key"
+    key_file.parent.mkdir()
     key_file.write_bytes(b"host-owned-test-key-with-at-least-32-bytes")
     verifier.write_text(
         "def verify_completion(context, logs):\n"
@@ -309,7 +310,8 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
     monkeypatch.setattr(agent, "plan_task",
                         lambda prompt, llm_call: SimpleNamespace(steps=["Calculate"]))
     monkeypatch.setattr(agent, "call_tool", lambda name, *args, **kwargs: "4")
-    capsule = tmp_path / "task.json"
+    capsule = tmp_path / "capsules" / "task.json"
+    capsule.parent.mkdir()
     result = agent.quick_test("Calculate", stream=False, goal_contract_path=contract,
                               verifier_path=verifier, capsule_path=capsule,
                               capsule_key_path=key_file)
@@ -394,7 +396,8 @@ def test_invalid_persisted_trace_cannot_resume_a_task(tmp_path):
 
 def test_signed_capsule_rejects_forged_linked_action(tmp_path):
     key = b"host-owned-test-key-with-at-least-32-bytes"
-    control = ControlPlane(capsule_key=key)
+    anchor = tmp_path / "private-anchor"
+    control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
     control.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
     control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
                      control.goal_checksum("G1"))
@@ -404,20 +407,41 @@ def test_signed_capsule_rejects_forged_linked_action(tmp_path):
     control.transition_task("T1", "SUSPENDED", "continue", capsule)
     saved = json.loads(capsule.read_text(encoding="utf-8"))
     assert saved["auth"]["alg"] == "HMAC-SHA256"
-    fresh = ControlPlane(capsule_key=key)
+    fresh = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
     fresh.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
     fresh.resume_from_file("T1", capsule, "continue")
     assert fresh.traces == [("read: source.txt", "T1", "report delivered", "G1")]
 
     saved["traces"][0][0] = "forged action"
     capsule.write_text(json.dumps(saved), encoding="utf-8")
-    rejected = ControlPlane(capsule_key=key)
+    rejected = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
     rejected.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
     with pytest.raises(DriftError, match="authentication failed"):
         rejected.resume_from_file("T1", capsule, "continue")
     assert rejected.tasks == {}
     with pytest.raises(DriftError, match="host capsule key required"):
         ControlPlane().resume_from_file("T1", capsule, "continue")
+
+
+@pytest.mark.parametrize("new_status", ["DONE", "SUPERSEDED", "SUSPENDED"])
+def test_old_valid_signed_capsule_cannot_reenter_after_newer_state(tmp_path, new_status):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    control.transition_task("T1", "SUSPENDED", "continue", capsule)
+    old_valid = capsule.read_bytes()
+    control.resume_from_file("T1", capsule, "continue")
+    control.transition_task("T1", new_status, "later", capsule)
+    capsule.write_bytes(old_valid)
+    fresh = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    fresh.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    with pytest.raises(DriftError, match="stale capsule"):
+        fresh.resume_from_file("T1", capsule, "continue")
+    assert fresh.tasks == {}
 
 
 def test_daily_cli_routes_feedback_without_model_call(tmp_path):
@@ -428,8 +452,10 @@ def test_daily_cli_routes_feedback_without_model_call(tmp_path):
         "task": {"task_id": "T1", "title": "Write report", "goal_id": "G1",
                  "criteria": ["report delivered"]},
     }), encoding="utf-8")
-    capsule = tmp_path / "task.json"
-    key_file = tmp_path / "host.key"
+    capsule = tmp_path / "capsules" / "task.json"
+    capsule.parent.mkdir()
+    key_file = tmp_path / "private" / "host.key"
+    key_file.parent.mkdir()
     key_file.write_bytes(b"host-owned-test-key-with-at-least-32-bytes")
     missing = subprocess.run(
         [sys.executable, "-m", "core.agent", "--contract", str(contract),

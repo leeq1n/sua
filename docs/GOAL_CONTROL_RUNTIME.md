@@ -49,12 +49,20 @@ where a later process can audit those links; it does not certify tool outcome.
 The daily command refuses to resume an older capsule without a trace field;
 its past action links cannot be reconstructed.
 The required `--capsule-key` file must contain at least 32 random bytes and
-be kept by the host outside the repository and capsule location. The capsule
-has an HMAC over its contents; changing an action, criterion, contract snapshot,
-or task state without that key causes resume to fail. A lost key prevents
-recovery; a copied or compromised key cannot establish independent provenance.
-Programmatic `ControlPlane` use without a key remains a structural reference
-contract and cannot claim authenticated persistence.
+be kept by the host outside the repository and capsule location. The command
+rejects a key in the capsule directory or one of its parent directories. It
+keeps a latest-state anchor in `.sua-capsule-state` beside the key; that
+directory must be host-owned and inaccessible to anyone who can replace the
+capsule. Each transition advances the anchor after writing the capsule. A
+missing or mismatched anchor fails closed, including after a crash between
+the two writes. This prevents an older signed SUSPENDED capsule from being
+replayed after a newer state, provided the host anchor cannot be rolled back
+with it. The capsule also has an HMAC over its contents; changing an action,
+criterion, contract snapshot, or task state without the key causes resume to
+fail. A lost key or anchor prevents recovery; a copied or compromised key
+cannot establish independent provenance. Programmatic signed `ControlPlane`
+use must supply `capsule_anchor_dir`. Use without a key remains a structural
+reference contract and cannot claim authenticated persistence.
 The runtime distinguishes `execution_succeeded` from `goal_complete`. A host
 can provide `verify_completion` to judge evidence against the current goal.
 The command accepts `--verifier path/to/check.py`; that host-owned file must

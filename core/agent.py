@@ -215,8 +215,19 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
             or goal.status != "ACTIVE" or linked_task.status != "ACTIVE"
             or linked_task.residency != "HOT"):
         raise DriftError("contract must bind this task to an active HOT goal")
-    key = Path(capsule_key_path).read_bytes() if capsule_key_path else None
-    control = ControlPlane(capsule_key=key)
+    key_file = Path(capsule_key_path).resolve(strict=True) if capsule_key_path else None
+    key = key_file.read_bytes() if key_file else None
+    if key_file and capsule_path is not None:
+        capsule_file = Path(capsule_path).resolve()
+        repo_root = Path(__file__).resolve().parents[1]
+        if (key_file.parent == capsule_file.parent
+                or key_file.parent in capsule_file.parents
+                or capsule_file.parent in key_file.parents
+                or key_file == repo_root or repo_root in key_file.parents):
+            raise DriftError("host key and state anchor must be outside capsule storage")
+    control = ControlPlane(capsule_key=key,
+                           capsule_anchor_dir=key_file.parent / ".sua-capsule-state"
+                           if key_file else None)
     control.add_goal(goal)
     control.add_task(linked_task, control.goal_checksum(goal.goal_id))
     if capsule_path is not None:

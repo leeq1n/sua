@@ -55,6 +55,10 @@ transition; without a durable destination, eviction fails closed.
 `pause_and_persist` writes a capsule before eviction; `resume_from_file`
 checks it against reconstructed current contracts and a named trigger. This is
 not automatic natural-language classification or a runtime-wide integration.
+In signed mode, a separate host-owned latest-state anchor must be supplied.
+The current capsule must match that anchor before resume or replan; a prior
+valid signature alone is insufficient after a newer transition. The anchor
+and key must be protected independently of the capsule store.
 For the existing v4 loop, `src/goal_control_v4.py` offers opt-in thinker and
 executor wrappers. A host review callback authorizes each exact planned Step
 plus criterion; each new plan review revokes the prior plan's authorizations.
