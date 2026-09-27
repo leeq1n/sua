@@ -16,8 +16,10 @@ adapter, not the general control plane.
 ## Current authority
 
 `main` contains the E2-M2 implementation baseline plus status documentation.
-Goal Control, E1.3-M1, E2-M3, E3-M4, E4-A, planner repair, filter retention,
-their integration, and Windows suite hygiene remain isolated candidates. See
+Goal Control, mechanism-space evaluation, E1.3-M1, E2-M3, E3-M4, E4-A,
+planner repair, filter retention, their integration, and Windows suite hygiene
+remain isolated candidates. Goal Control has independent acceptance for its
+exact structural candidate, but no valid held-out live behavior comparison. See
 [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) for exact snapshot identities and
 evidence limits; verify live refs before promotion. Tests or candidate docs do
 not themselves establish behavioral improvement or P30 acceptance.
