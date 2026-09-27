@@ -40,6 +40,8 @@ call, a separate model review must return an exact linked success criterion;
 the control plane checks the current goal checksum and action identity again
 before the tool executes. A missing or malformed review rejects the action.
 `ControlPlane.traces` records authorized **attempts**, not completed outcomes.
+The command reports failure if any planned step is rejected or a tool fails;
+a successful tool run is still not proof that the goal criterion was met.
 
 The host or user must provide the contract. This entrypoint does not infer a
 Goal Contract from natural language, classify later human feedback, prove the

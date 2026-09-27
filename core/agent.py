@@ -90,6 +90,7 @@ def run(
 
     # 2. 执行
     success_count = 0
+    controlled_failure = False
     for i, step in enumerate(plan[: max_turns]):
         if verbose:
             print(f"  Step {i+1}: {step[:60]}")
@@ -117,6 +118,7 @@ def run(
                             control.allow_action(bound_task_id, action, criterion)
                             control.record_action(action, bound_task_id, criterion)
                         except Exception as exc:
+                            controlled_failure = True
                             results.append({"step": step, "tool_used": None,
                                             "error": f"goal guard rejected action: {exc}"})
                             break
@@ -125,15 +127,27 @@ def run(
                         print(f"    Tool {name}: {str(result)[:60]}")
                     if "error" not in str(result).lower():
                         success_count += 1
+                    elif control is not None:
+                        controlled_failure = True
+                        results.append({"step": step, "tool_used": tool_result,
+                                        "error": str(result)})
+                        break
                 except Exception as e:
                     if verbose:
                         print(f"    Tool error: {e}")
+                    if control is not None:
+                        controlled_failure = True
+                        results.append({"step": step, "tool_used": tool_result,
+                                        "error": str(e)})
+                        break
 
             results.append({"step": step, "tool_used": tool_result if "tool_result" in dir() else None})
 
     elapsed = time.time() - t0
     return {
-        "success": success_count > 0,
+        "success": (success_count > 0 and
+                    (control is None or
+                     (not controlled_failure and len(results) == len(plan)))),
         "task": task,
         "steps_planned": len(plan),
         "steps_executed": len(results),

@@ -51,6 +51,22 @@ def test_controlled_agent_denies_tool_before_side_effect(monkeypatch):
     assert control.traces == []
 
 
+def test_later_guard_denial_cannot_report_an_earlier_tool_as_task_success(monkeypatch):
+    control = controlled_plane()
+    calls = []
+    monkeypatch.setattr(agent, "plan_task", lambda prompt, llm_call: SimpleNamespace(
+        steps=["Read source", "Build unrelated dashboard"]))
+    monkeypatch.setattr(agent, "call_tool",
+                        lambda name, **kwargs: calls.append(name) or "ok")
+    decisions = iter(["report delivered", None])
+    result = agent.run("ignored", lambda prompt: "read: source.txt",
+                       control=control,
+                       review_action=lambda action, context: next(decisions))
+    assert calls == ["read"]
+    assert result["success"] is False
+    assert "goal guard rejected" in result["logs"][-1]["error"]
+
+
 def test_controlled_agent_rejects_goal_mutation_between_plan_and_tool(monkeypatch):
     control = controlled_plane()
     calls = []
