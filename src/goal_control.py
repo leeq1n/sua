@@ -5,12 +5,14 @@ The caller must supply explicit action/criterion links and feedback categories.
 """
 
 from dataclasses import asdict, dataclass, field
+from contextlib import contextmanager
 from hashlib import sha256
 import hmac
 import json
 import os
 from pathlib import Path
 import tempfile
+import time
 from typing import Dict, Tuple
 
 
@@ -76,6 +78,7 @@ class ControlPlane:
     capsule_dir: Path | None = None
     capsule_key: bytes | None = field(default=None, repr=False)
     capsule_anchor_dir: Path | None = None
+    anchor_expectations: Dict[str, str] = field(default_factory=dict, repr=False)
 
     def __post_init__(self):
         if self.capsule_key is not None and (
@@ -104,14 +107,48 @@ class ControlPlane:
             raise DriftError("invalid host capsule state anchor")
         return data
 
-    def _require_latest_capsule(self, task_id: str, path):
+    def _require_latest_capsule(self, task_id: str, path, content: bytes | None = None):
         if self.capsule_key is None:
             return
         anchor = self._read_anchor(task_id, path)
         if anchor is None or not Path(path).is_file():
             raise DriftError("stale capsule: host state anchor missing")
-        if sha256(Path(path).read_bytes()).hexdigest() != anchor["digest"]:
+        if sha256(content if content is not None else Path(path).read_bytes()).hexdigest() != anchor["digest"]:
             raise DriftError("stale capsule: host state anchor mismatch")
+
+    @contextmanager
+    def _task_anchor_lock(self, task_id: str, path):
+        """Serialize one task's capsule and anchor writes across processes."""
+        lock_path = self._anchor_path(task_id, path).with_suffix(".lock")
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with lock_path.open("a+b") as stream:
+            stream.seek(0, os.SEEK_END)
+            if stream.tell() == 0:
+                stream.write(b"\0")
+                stream.flush()
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    stream.seek(0)
+                    if os.name == "nt":
+                        import msvcrt
+                        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                    else:
+                        import fcntl
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except OSError as exc:
+                    if time.monotonic() >= deadline:
+                        raise DriftError("capsule state is busy") from exc
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                stream.seek(0)
+                if os.name == "nt":
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
     def _authenticate_capsule(self, envelope):
         """Require host-keyed integrity for capsules created in keyed mode."""
@@ -343,10 +380,10 @@ class ControlPlane:
                                         next_action: str, trigger: str,
                                         dependencies=(), expected_title=None):
         """Rebuild a corrected cold task against a newer Goal Contract."""
-        with Path(path).open("r", encoding="utf-8") as stream:
-            envelope = json.load(stream)
+        content = Path(path).read_bytes()
+        envelope = json.loads(content)
         envelope = self._authenticate_capsule(envelope)
-        self._require_latest_capsule(task_id, path)
+        self._require_latest_capsule(task_id, path, content)
         if (not isinstance(envelope, dict) or envelope.get("schema") != 1
                 or envelope.get("status") != "SUSPENDED"
                 or "traces" not in envelope
@@ -399,6 +436,8 @@ class ControlPlane:
         previous_trace_contracts = self.trace_contracts
         self.traces = old_traces
         self.trace_contracts = old_trace_contracts
+        if self.capsule_key is not None:
+            self.anchor_expectations[task_id] = sha256(content).hexdigest()
         try:
             self.feedback_routes = [FeedbackRoute(**item) for item in routes]
             return self.replan_suspended_task(
@@ -490,6 +529,16 @@ class ControlPlane:
         return self.transition_task(task_id, status, trigger, path)
 
     def _persist_capsule(self, task_id: str, capsule: tuple, path=None, *, status: str):
+        if self.capsule_key is not None:
+            if path is None:
+                if self.capsule_dir is None:
+                    raise DriftError("durable capsule destination required before eviction")
+                path = Path(self.capsule_dir) / (sha256(task_id.encode()).hexdigest() + ".json")
+            with self._task_anchor_lock(task_id, path):
+                return self._persist_capsule_unlocked(task_id, capsule, path, status=status)
+        return self._persist_capsule_unlocked(task_id, capsule, path, status=status)
+
+    def _persist_capsule_unlocked(self, task_id: str, capsule: tuple, path=None, *, status: str):
         if path is None:
             if self.capsule_dir is None:
                 raise DriftError("durable capsule destination required before eviction")
@@ -499,6 +548,9 @@ class ControlPlane:
         previous_anchor = None
         if self.capsule_key is not None:
             previous_anchor = self._read_anchor(task_id, destination)
+            actual = previous_anchor["digest"] if previous_anchor else None
+            if self.anchor_expectations.get(task_id) != actual:
+                raise DriftError("stale capsule: task state changed in another process")
             if previous_anchor is not None:
                 self._require_latest_capsule(task_id, destination)
             elif destination.exists():
@@ -546,6 +598,7 @@ class ControlPlane:
                     state_stream.flush()
                     os.fsync(state_stream.fileno())
                 os.replace(temporary, anchor)
+                self.anchor_expectations[task_id] = sha256(destination.read_bytes()).hexdigest()
         except Exception:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
@@ -553,10 +606,10 @@ class ControlPlane:
 
     def resume_from_file(self, task_id: str, path, trigger: str):
         """Re-admit a capsule against the current goal, rebuilding a missing task."""
-        with Path(path).open("r", encoding="utf-8") as stream:
-            raw = json.load(stream)
+        content = Path(path).read_bytes()
+        raw = json.loads(content)
         raw = self._authenticate_capsule(raw)
-        self._require_latest_capsule(task_id, path)
+        self._require_latest_capsule(task_id, path, content)
         persisted_status = None
         if isinstance(raw, dict):
             if (raw.get("schema") != 1 or raw.get("status") not in TASK_STATUSES):
@@ -617,6 +670,8 @@ class ControlPlane:
             self.resume(task_id, capsule, trigger)
             self.traces = persisted_traces
             self.trace_contracts = persisted_trace_contracts
+        if self.capsule_key is not None:
+            self.anchor_expectations[task_id] = sha256(content).hexdigest()
 
     def resume(self, task_id: str, capsule, trigger: str):
         task = self.tasks[task_id]

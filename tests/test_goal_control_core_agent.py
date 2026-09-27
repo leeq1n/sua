@@ -3,12 +3,14 @@
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from core import agent
+from src import goal_control
 from src.goal_control import ControlPlane, DriftError, Goal, Task
 
 
@@ -442,6 +444,118 @@ def test_old_valid_signed_capsule_cannot_reenter_after_newer_state(tmp_path, new
     with pytest.raises(DriftError, match="stale capsule"):
         fresh.resume_from_file("T1", capsule, "continue")
     assert fresh.tasks == {}
+
+
+def test_stale_process_cannot_overwrite_newer_terminal_capsule(tmp_path):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    initial = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    initial.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    initial.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     initial.goal_checksum("G1"))
+    initial.transition_task("T1", "SUSPENDED", "continue", capsule)
+
+    processes = []
+    for _ in range(2):
+        control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+        control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+        control.resume_from_file("T1", capsule, "continue")
+        processes.append(control)
+    processes[0].transition_task("T1", "DONE", "verified", capsule)
+    with pytest.raises(DriftError, match="another process"):
+        processes[1].transition_task("T1", "SUSPENDED", "later", capsule)
+    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "DONE"
+
+
+def test_two_fresh_writers_cannot_replace_each_other(tmp_path):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    writers = []
+    for _ in range(2):
+        control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+        control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+        control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                         control.goal_checksum("G1"))
+        writers.append(control)
+    writers[0].transition_task("T1", "DONE", "verified", capsule)
+    with pytest.raises(DriftError, match="another process"):
+        writers[1].transition_task("T1", "SUSPENDED", "later", capsule)
+
+
+def test_two_processes_cannot_both_commit_same_task_state(tmp_path):
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    go = tmp_path / "go"
+    script = (
+        "import sys, time\n"
+        "from pathlib import Path\n"
+        "from src.goal_control import ControlPlane, DriftError, Goal, Task\n"
+        "anchor, capsule, ready, go, status = map(Path, sys.argv[1:])\n"
+        "control = ControlPlane(capsule_key=b'host-owned-test-key-with-at-least-32-bytes', capsule_anchor_dir=anchor)\n"
+        "control.add_goal(Goal('G1', 'Deliver report', ('report delivered',)))\n"
+        "control.add_task(Task('T1', 'Write report', 'G1', ('report delivered',)), control.goal_checksum('G1'))\n"
+        "ready.write_text('ready')\n"
+        "until = time.monotonic() + 10\n"
+        "while not go.exists() and time.monotonic() < until: time.sleep(0.01)\n"
+        "if not go.exists(): sys.exit(4)\n"
+        "try:\n"
+        "    control.transition_task('T1', str(status), 'reviewed', capsule)\n"
+        "    print('COMMITTED', flush=True)\n"
+        "except DriftError:\n"
+        "    print('REJECTED', flush=True)\n"
+    )
+    processes = []
+    try:
+        for status in ("DONE", "SUSPENDED"):
+            ready = tmp_path / f"{status}.ready"
+            processes.append(subprocess.Popen(
+                [sys.executable, "-c", script, str(anchor), str(capsule),
+                 str(ready), str(go), status],
+                cwd=Path(__file__).resolve().parents[1], stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, text=True, encoding="utf-8"))
+        deadline = time.monotonic() + 10
+        while not all((tmp_path / f"{status}.ready").exists()
+                      for status in ("DONE", "SUSPENDED")):
+            assert time.monotonic() < deadline, "worker did not reach the race barrier"
+            time.sleep(0.01)
+        go.write_text("go")
+        results = [process.communicate(timeout=15) for process in processes]
+        assert all(process.returncode == 0 for process in processes), results
+        assert sorted(stdout.strip() for stdout, _ in results) == ["COMMITTED", "REJECTED"]
+        winner = ("DONE" if results[0][0].strip() == "COMMITTED" else "SUSPENDED")
+        assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == winner
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+
+
+def test_anchor_write_failure_leaves_capsule_unrecoverable(tmp_path, monkeypatch):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    original_replace = goal_control.os.replace
+
+    def fail_anchor_replace(source, destination):
+        if Path(destination).parent == anchor:
+            raise OSError("host anchor unavailable")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(goal_control.os, "replace", fail_anchor_replace)
+    with pytest.raises(OSError, match="anchor unavailable"):
+        control.transition_task("T1", "SUSPENDED", "continue", capsule)
+    assert control.tasks["T1"].status == "ACTIVE"
+    fresh = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    fresh.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    with pytest.raises(DriftError, match="stale capsule"):
+        fresh.resume_from_file("T1", capsule, "continue")
 
 
 def test_daily_cli_routes_feedback_without_model_call(tmp_path):

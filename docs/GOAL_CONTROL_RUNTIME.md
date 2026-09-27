@@ -53,7 +53,10 @@ be kept by the host outside the repository and capsule location. The command
 rejects a key in the capsule directory or one of its parent directories. It
 keeps a latest-state anchor in `.sua-capsule-state` beside the key; that
 directory must be host-owned and inaccessible to anyone who can replace the
-capsule. Each transition advances the anchor after writing the capsule. A
+capsule. Each transition holds a per-task operating-system file lock and
+checks that the anchor still matches the state read by this process before
+writing. A competing stale process cannot overwrite a newer terminal state.
+Each transition advances the anchor after writing the capsule. A
 missing or mismatched anchor fails closed, including after a crash between
 the two writes. This prevents an older signed SUSPENDED capsule from being
 replayed after a newer state, provided the host anchor cannot be rolled back
@@ -108,8 +111,11 @@ feedback correctly and check that the named resume event really occurred.
 The host or user must provide the contract. This entrypoint does not infer a
 Goal Contract from natural language, classify human feedback, prove the
 model's semantic review is correct, or show reduced drift in a live agent.
-Those claims require a held-out behavioral comparison. The self-upgrade
-pipeline and other agent runtimes need their own explicit host adapters.
+Those claims require a held-out behavioral comparison.
+The state lock covers persistence, not a whole task run: hosts sharing one
+task must also serialize tool execution to prevent concurrent side effects.
+The self-upgrade pipeline and other agent runtimes need their own explicit
+host adapters.
 
 For deterministic drift and resume scenarios, see
 [`GOAL_CONTROL_REGRESSION.md`](GOAL_CONTROL_REGRESSION.md).
