@@ -130,7 +130,7 @@ descends from.  Per P22 步骤 3: 找 rule 之间的共性.
 
 ## Detail (L2)
 
-For per-P-n full text (P19, P20, P20细则, P21, P25, P26, P27, P30), P-n vs M-* boundary段, and L2 实操段, see [`PRINCIPLES_FULL.md`](PRINCIPLES_FULL.md).  (P24 merged into P3.)  Per R6, this companion is required for files > 7KB.
+For per-P-n full text (P19, P20, P20细则, P21, P25, P26, P27, P30), P-n vs M-* boundary段, and L2 实操段, see [`PRINCIPLES_FULL.md`](PRINCIPLES_FULL.md).  (P24 merged into P3.) This long L0/L1 summary has its linked companion per R5/R6.
 
 ## Principle protection
 

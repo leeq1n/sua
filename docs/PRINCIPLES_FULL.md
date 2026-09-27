@@ -1,8 +1,8 @@
 # PRINCIPLES.md — Detail (L2)
-Last P20-verified: 2026-09-28 (R1/R3 navigation contract aligned with current index)
+Last P20-verified: 2026-09-28 (R1/R3/R4/R5 aligned with current document roles)
 
 > L0: L2 detail for PRINCIPLES.md.  Per P11 摘要+引用,
-> the summary file is the L0/L1 layer (≤ 7KB); this file
+> the summary file is the L0/L1 layer with a linked companion; this file
 > is the L2 layer (per-P-n full text + boundary + 实操).
 > Per R6, this detail file is referenced from the summary.
 
@@ -104,8 +104,8 @@ Failure mode P20 guards against:
 | R1 | `INDEX.md` must keep a numbered fresh-agent reading order separate from categorized lookup tables. Keep the numbered M-n companion map in linked `INDEX_DETAIL.md`, outside the default reading path. | A new doc is inserted into the default reading order or an unstructured list, so agents load unrelated detail. |
 | R2 | The "Reading order" section must number its links 1..N contiguously (no gaps, no duplicates). | Renumbering accident or skipped step that confuses the reader. |
 | R3 | Every categorized lookup row in `INDEX.md` must name the document's role in its TL;DR. A catalog link does not make its target always-loaded; choose conditional reads by matching the current task to `HOW_TO_READ_GRAPH.md` routes or the index category and role. | An inventory link is treated as a default load, or a document has no discoverable role. |
-| R4 | `EXTENSIONS.md` must be ≤ 500 bytes AND contain only a table (no prose paragraphs before/after). | The pointer file becomes a narrative — now the agent reads it to "understand" instead of to "look up". |
-| R5 | Every `docs/*.md` file ≤ 7KB is "self-contained summary".  Every file > 7KB must have a `*_DETAIL.md` companion whose name starts with the summary's filename minus `.md`. | A long doc that doesn't split — agent reads 12KB to get the 2KB it needed. |
+| R4 | `EXTENSIONS.md` must be ≤ 500 bytes. Its only substantive content is the pointer table; a title, L0 line, verification date, and linked detail pointer are allowed. | The pointer file becomes a narrative that agents read for understanding instead of lookup. |
+| R5 | `docs/*.md` files used as active entries or L0/L1 summaries target ≤ 7 KiB (7168 bytes). A longer summary links to a `*_DETAIL.md` companion. Detailed companions and self-contained validation/evidence records may be longer when they are conditionally indexed, state their role and decision up front, and keep the decision with its provenance; they are not default loads. | An agent must read a long mixed-purpose file to find a short instruction, or a length-only split severs an audit record from its evidence. |
 | R6 | `_DETAIL.md` companions must be referenced (linked) from their summary file.  A `_DETAIL.md` with no inbound link is an "orphan detail" and must be deleted or referenced. | Dead file that future agents trip over. |
 | R7 | Principles (P-n) are defined in EITHER `PRINCIPLES.md` (summary, brief) OR `PRINCIPLES_DETAIL.md` (full text), per the P11 split in commit `f753ec3`.  Any other `docs/*.md` may REFERENCE a P-n but must NOT redefine it.  Redefinition is a hard violation.  **Exception**: meta-rules (P22, P23) live in `_DETAIL.md` because their full text is in the same file as the P-n list. | Drift: parent says P7 is X, child says P7 is Y — system collapses. |
 | R8 | Cross-project links use relative paths (`../other-project/...`).  Absolute paths or `https://` (except for external sources) are not allowed in `docs/`. | A doc breaks when the project is moved or cloned. |
@@ -405,8 +405,9 @@ Per M_RULE_AUTHORING 3-condition gate + P25 6-step:
    per P14 doc ordering.
 4. **Cross-ref check**: every new doc has parent
    (per P13).
-5. **Cap check**: every doc ≤ 7KB / 300 lines
-   (per R5/R8).
+5. **Cap check**: entry/summary docs stay ≤ 7 KiB or link a detail
+   companion; conditionally indexed evidence records retain their decision
+   and provenance together (per R5).
 6. **L0 + R10 check**: L0 line present,
    Last P20-verified stamped (per R9/R10).
 7. **Inductive check**: per P22 step 3, find
