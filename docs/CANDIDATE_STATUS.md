@@ -42,10 +42,14 @@ canonical development and exact-artifact review.
 
 1. Goal Control daily integration has independent P30 structural acceptance
    for `6e53851`, including signed-state replay and concurrent-write review.
-   Its 1075 offline passes support regression only. A valid held-out behavior
-   comparison, and review of the exact proposed `main` promotion identity,
-   remain required before promotion. Keep its structural acceptance separate
-   from a claim that live agents drift less.
+   Its 1075 offline passes support regression only. It separately commits the
+   planner/filter repairs from `7f3fe1e`; the two heads have no ancestry
+   relationship. Their planner/filter and suite-hygiene test files are identical,
+   so the tracked-file mutation and unscoped environment changes identified in
+   the `7f3fe1e` MODIFY review must be resolved or explicitly cleared in a
+   review of the exact proposed promotion artifact. A valid held-out behavior
+   comparison also remains required. Keep structural acceptance separate from
+   a claim that live agents drift less.
 2. Keep the mechanism-space evaluation baseline separate from the paper's
    Authority/Science experiment. Freeze its discriminator and duplicate-search
    metrics before any held-out model run; its draft scenarios are not evidence
