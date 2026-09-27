@@ -1,6 +1,9 @@
 """Execution boundary for the daily agent's explicit Goal Contract path."""
 
 import json
+import subprocess
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -252,6 +255,32 @@ def test_daily_criterion_correction_cannot_resume_stale_goal(tmp_path):
     with pytest.raises(DriftError, match="explicit replan"):
         agent._load_control_contract(contract, "Write report", capsule_path=capsule,
                                      resume_trigger="criterion_correction reviewed")
+    with pytest.raises(DriftError, match="newer authorized goal"):
+        agent.replan_daily_corrected_task(
+            "Write report", contract, capsule, "cite sources", "replan reviewed")
+    revised = json.loads(contract.read_text(encoding="utf-8"))
+    revised["goal"]["version"] = 2
+    revised["goal"]["success_criteria"] = ["report delivered with citations"]
+    revised["task"]["criteria"] = ["report delivered with citations"]
+    revised["goal"]["objective"] = "Build a dashboard"
+    contract.write_text(json.dumps(revised), encoding="utf-8")
+    with pytest.raises(DriftError, match="newer authorized goal"):
+        agent.replan_daily_corrected_task(
+            "Write report", contract, capsule, "cite sources", "replan reviewed")
+    revised["goal"]["objective"] = "Deliver report"
+    contract.write_text(json.dumps(revised), encoding="utf-8")
+    result = agent.replan_daily_corrected_task(
+        "Write report", contract, capsule, "cite sources", "replan reviewed")
+    assert result["task_status"] == "SUSPENDED"
+    stored = json.loads(capsule.read_text(encoding="utf-8"))
+    assert stored["capsule"][2] == 2
+    assert stored["capsule"][6] == ["report delivered with citations"]
+    assert stored["capsule"][8] == "cite sources"
+    resumed = agent._load_control_contract(
+        contract, "Write report", capsule_path=capsule,
+        resume_trigger="replan reviewed")
+    assert resumed.active_task_id == "T1"
+    assert resumed.tasks["T1"].criteria == ("report delivered with citations",)
 
 
 def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
@@ -287,6 +316,60 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
     with pytest.raises(DriftError):
         agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
                                      resume_trigger="verified completion")
+
+
+def test_daily_unverified_run_can_resume_only_on_named_trigger(tmp_path, monkeypatch):
+    pytest.importorskip("httpx")
+    from src import llm
+
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Calculate answer",
+                 "success_criteria": ["answer is 4"]},
+        "task": {"task_id": "T1", "title": "Calculate", "goal_id": "G1",
+                 "criteria": ["answer is 4"]},
+    }), encoding="utf-8")
+    monkeypatch.setattr(llm.LLMConfig, "from_env",
+                        lambda: SimpleNamespace(ready=True, timeout=1))
+    monkeypatch.setattr(llm, "chat_simple", lambda prompt, **kwargs: (
+        '{"allow": true, "criterion": "answer is 4"}'
+        if prompt.startswith("Review this proposed tool action") else "calc: 2+2"))
+    monkeypatch.setattr(agent, "plan_task",
+                        lambda prompt, llm_call: SimpleNamespace(steps=["Calculate"]))
+    monkeypatch.setattr(agent, "call_tool", lambda name, *args, **kwargs: "4")
+    capsule = tmp_path / "task.json"
+    result = agent.quick_test("Calculate", stream=False, goal_contract_path=contract,
+                              capsule_path=capsule)
+    assert result["execution_succeeded"] is True
+    assert result["goal_complete"] is None
+    assert result["task_status"] == "SUSPENDED"
+    with pytest.raises(DriftError):
+        agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
+                                     resume_trigger="unrelated event")
+    resumed = agent._load_control_contract(
+        contract, "Calculate", capsule_path=capsule,
+        resume_trigger="continue with evidence")
+    assert resumed.active_task_id == "T1"
+
+
+def test_daily_cli_routes_feedback_without_model_call(tmp_path):
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Deliver report",
+                 "success_criteria": ["report delivered"]},
+        "task": {"task_id": "T1", "title": "Write report", "goal_id": "G1",
+                 "criteria": ["report delivered"]},
+    }), encoding="utf-8")
+    capsule = tmp_path / "task.json"
+    completed = subprocess.run(
+        [sys.executable, "-m", "core.agent", "--contract", str(contract),
+         "--capsule", str(capsule), "--feedback-kind", "method_feedback",
+         "--feedback-message", "try a shorter method", "Write report"],
+        cwd=Path(__file__).resolve().parents[1], capture_output=True,
+        text=True, encoding="utf-8", check=False)
+    assert completed.returncode == 0, completed.stderr
+    assert '"contract_action": "REPLAN_METHOD"' in completed.stdout
+    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "SUSPENDED"
 
 
 def test_controlled_agent_calls_builtin_tools_with_their_real_signatures(monkeypatch, tmp_path):

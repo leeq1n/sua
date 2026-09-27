@@ -71,11 +71,15 @@ model: `--contract goal.json --capsule task-state.json --feedback-kind
 method_feedback --feedback-message "try another method" "Write report"`.
 The allowed categories are `method_feedback`, `criterion_correction`,
 `goal_mutation`, and `new_task`. The route persists before the task leaves HOT.
-Criterion correction currently remains suspended and cannot resume through
-this command until an explicit revised-goal replan path is implemented.
-Goal mutation archives the old task; the user must supply a new Goal Contract.
-These boundaries prevent stale work from silently continuing, but the daily
-feedback and recovery workflow is not yet complete.
+After `criterion_correction`, the old task cannot resume. Supply a revised
+contract with the same objective, a higher goal version, and criteria linked
+to that goal; then run `--contract revised.json --capsule task-state.json
+--replan-next-action "cite sources" --replan-trigger "replan reviewed"
+"Write report"`. The command persists the revised cold task before it may
+resume with `--resume-trigger "replan reviewed"`. An objective change under
+the same goal identity is rejected. `goal_mutation` archives the old task;
+the user must supply a new Goal Contract. The host still has to classify
+feedback correctly and check that the named resume event really occurred.
 
 The host or user must provide the contract. This entrypoint does not infer a
 Goal Contract from natural language, classify human feedback, prove the

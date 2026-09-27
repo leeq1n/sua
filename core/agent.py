@@ -225,9 +225,13 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
                 raise DriftError("persisted task needs its named resume trigger")
             envelope = json.loads(capsule_file.read_text(encoding="utf-8"))
             routes = envelope.get("feedback_routes", []) if isinstance(envelope, dict) else []
+            raw_capsule = envelope.get("capsule") if isinstance(envelope, dict) else None
+            if not isinstance(raw_capsule, list) or len(raw_capsule) != 11:
+                raise DriftError("invalid persisted task capsule")
             if not isinstance(routes, list) or any(not isinstance(item, dict) for item in routes):
                 raise DriftError("invalid persisted feedback routes")
-            if routes and routes[-1].get("kind") == "criterion_correction":
+            if (routes and routes[-1].get("kind") == "criterion_correction"
+                    and raw_capsule[10] == "criterion_correction reviewed"):
                 raise DriftError("criterion correction needs a revised goal and explicit replan")
             control.tasks.pop(linked_task.task_id)
             control.active_task_id = ""
@@ -241,10 +245,12 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
             for raw in routes:
                 route = FeedbackRoute(**raw)
                 if (route.task_id != resumed.task_id or route.goal_id != goal.goal_id
-                        or route.goal_checksum != control.goal_checksum(goal.goal_id)):
-                    raise DriftError("persisted feedback targets another goal or version")
+                        or not route.goal_checksum):
+                    raise DriftError("persisted feedback targets another goal or task")
                 control.feedback_routes.append(route)
-            if routes and control.feedback_routes[-1].kind == "method_feedback":
+            if (routes and control.feedback_routes[-1].kind == "method_feedback"
+                    and control.feedback_routes[-1].goal_checksum
+                    == control.goal_checksum(goal.goal_id)):
                 key = f"feedback:{resumed.task_id}:{resumed.version}"
                 control.durable_knowledge[key] = control.feedback_routes[-1].message
                 control.retrieve_knowledge(resumed.task_id, key)
@@ -269,6 +275,20 @@ def route_daily_feedback(task: str, contract_path, capsule_path, kind: str,
     return {"kind": route.kind, "contract_action": route.contract_action,
             "task_status": status, "resume_trigger": trigger,
             "goal_checksum": route.goal_checksum}
+
+
+def replan_daily_corrected_task(task: str, contract_path, capsule_path,
+                                next_action: str, trigger: str) -> Dict:
+    """Rebind a persisted criterion correction to an explicit revised goal."""
+    control = _load_control_contract(contract_path, task)
+    linked = control.tasks.pop(control.active_task_id)
+    control.active_task_id = ""
+    capsule = control.replan_corrected_task_from_file(
+        linked.task_id, capsule_path, criteria=linked.criteria,
+        next_action=next_action, trigger=trigger,
+        dependencies=linked.dependencies, expected_title=linked.title)
+    return {"task_status": "SUSPENDED", "resume_trigger": trigger,
+            "task_version": capsule[4], "goal_version": capsule[2]}
 
 
 def _load_completion_verifier(path):
@@ -475,6 +495,8 @@ if __name__ == "__main__":
     parser.add_argument("--feedback-kind", choices=("method_feedback", "criterion_correction",
                                                      "goal_mutation", "new_task"))
     parser.add_argument("--feedback-message", help="Explicit human feedback to route")
+    parser.add_argument("--replan-next-action", help="Next action under a corrected goal")
+    parser.add_argument("--replan-trigger", help="Named trigger for the revised task")
     parser.add_argument("task", nargs="+", help="Task title matching the contract")
     args = parser.parse_args()
     task = " ".join(args.task)
@@ -490,6 +512,18 @@ if __name__ == "__main__":
         except (OSError, ValueError, KeyError) as exc:
             parser.error(str(exc))
         print(json.dumps(route, ensure_ascii=False, sort_keys=True))
+        raise SystemExit(0)
+    if args.replan_next_action or args.replan_trigger:
+        if not (args.replan_next_action and args.replan_trigger and args.capsule
+                and args.contract):
+            parser.error("replan needs --replan-next-action, --replan-trigger, --capsule, and --contract")
+        try:
+            replanned = replan_daily_corrected_task(
+                task, args.contract, args.capsule, args.replan_next_action,
+                args.replan_trigger)
+        except (OSError, ValueError, KeyError) as exc:
+            parser.error(str(exc))
+        print(json.dumps(replanned, ensure_ascii=False, sort_keys=True))
         raise SystemExit(0)
     result = quick_test(task, goal_contract_path=args.contract,
                         verifier_path=args.verifier, capsule_path=args.capsule,

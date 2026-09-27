@@ -246,6 +246,70 @@ class ControlPlane:
         self.retrieved_knowledge.pop(task_id, None)
         return capsule
 
+    def replan_corrected_task_from_file(self, task_id: str, path, *,
+                                        criteria: Tuple[str, ...],
+                                        next_action: str, trigger: str,
+                                        dependencies=(), expected_title=None):
+        """Rebuild a corrected cold task against a newer Goal Contract."""
+        with Path(path).open("r", encoding="utf-8") as stream:
+            envelope = json.load(stream)
+        if (not isinstance(envelope, dict) or envelope.get("schema") != 1
+                or envelope.get("status") != "SUSPENDED"
+                or task_id in self.tasks or self.active_task_id):
+            raise DriftError("replan needs a suspended persisted task")
+        raw = envelope.get("capsule")
+        routes = envelope.get("feedback_routes", [])
+        old_goal = envelope.get("goal_contract")
+        if (not isinstance(raw, list) or len(raw) != 11
+                or not isinstance(raw[6], list) or not isinstance(raw[7], list)
+                or not isinstance(raw[2], int) or not isinstance(raw[4], int)
+                or any(not isinstance(item, str) for item in
+                       (*raw[:2], raw[3], raw[5], *raw[6], *raw[7], *raw[8:]))
+                or not isinstance(old_goal, dict)
+                or not isinstance(routes, list) or not routes
+                or any(not isinstance(item, dict) for item in routes)
+                or routes[-1].get("kind") != "criterion_correction"):
+            raise DriftError("invalid criterion-correction capsule")
+        (stored_id, goal_id, old_version, old_checksum, task_version,
+         title, old_criteria, old_dependencies, old_next, blocker,
+         old_trigger) = raw
+        goal = self.goals.get(goal_id)
+        if (stored_id != task_id or not title
+                or (expected_title is not None and title != expected_title)
+                or task_version < 1
+                or old_version < 1 or not old_checksum or not old_criteria
+                or old_trigger != "criterion_correction reviewed"
+                or goal is None or goal.status != "ACTIVE"
+                or goal.version <= old_version
+                or old_goal.get("goal_id") != goal_id
+                or old_goal.get("version") != old_version
+                or old_goal.get("objective") != goal.objective
+                or self.goal_checksum(goal_id) != self.goal_baselines[goal_id]
+                or routes[-1].get("task_id") != task_id
+                or routes[-1].get("goal_id") != goal_id
+                or routes[-1].get("goal_checksum") != old_checksum):
+            raise DriftError("corrected task needs a newer authorized goal")
+        from_file = tuple(raw[:6]) + (tuple(old_criteria),
+                                       tuple(old_dependencies), *raw[8:])
+        task = Task(task_id, title, goal_id, tuple(old_criteria),
+                    status="SUSPENDED", version=task_version,
+                    dependencies=tuple(old_dependencies), residency="COLD",
+                    resume_trigger=old_trigger, next_action=old_next,
+                    blocker=blocker)
+        self.tasks[task_id] = task
+        self.capsules[task_id] = from_file
+        try:
+            self.feedback_routes = [FeedbackRoute(**item) for item in routes]
+            return self.replan_suspended_task(
+                task_id, self.goal_checksum(goal_id), criteria=tuple(criteria),
+                next_action=next_action, trigger=trigger,
+                dependencies=tuple(dependencies), path=path)
+        except Exception:
+            self.tasks.pop(task_id, None)
+            self.capsules.pop(task_id, None)
+            self.feedback_routes.clear()
+            raise
+
     def supersede_goal(self, old_id: str, new_id: str, expected_checksum: str):
         if old_id not in self.goals or new_id not in self.goals:
             raise KeyError("goal not found")
@@ -336,6 +400,7 @@ class ControlPlane:
                                              delete=False) as stream:
                 temporary = Path(stream.name)
                 json.dump({"schema": 1, "status": status, "capsule": capsule,
+                           "goal_contract": asdict(self.goals[self.tasks[task_id].goal_id]),
                            "feedback_routes": [asdict(route) for route in self.feedback_routes
                                                if route.task_id == task_id]},
                           stream, ensure_ascii=False)
