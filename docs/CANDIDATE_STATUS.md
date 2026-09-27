@@ -2,11 +2,11 @@
 
 > L0: `main` is the canonical implemented baseline; isolated branches are retained candidates, not current SUA capability.
 
-Snapshot: 2026-09-27. The last promoted implementation baseline before this
-status-only inventory is `a45de1b73ca4a959da0b7abf78e703f293a74427`
-(E2-M2). This inventory is a routing aid, not an independent acceptance record. Before acting on it,
-verify the live branch head and its current evidence. Preserve frozen packages
-and untracked audit material without adding them to `main` by default.
+Snapshot: 2026-09-27. The last promoted implementation baseline is
+`a45de1b73ca4a959da0b7abf78e703f293a74427`
+(E2-M2). This is a routing aid, not independent acceptance. Verify live branch
+heads and evidence before acting. Preserve frozen and untracked evidence; do not
+add it to `main` by default.
 
 | Candidate | Exact head at this snapshot | What to retain | Current boundary |
 |---|---|---|---|
@@ -66,18 +66,4 @@ canonical development and exact-artifact review.
    integration branch; any later revised promotion artifact needs a fresh
    exact-identity review.
 
-The canonical planner mismatch has a separate repair candidate: legacy
-`tests/auto/test_planner_harness.py` expects a `list`, while the current
-`core.planner.plan_task` returns a persisted `RoundResult`. The filter defect
-was independently reproduced: `node_filter` cleared `scored_papers` after
-the memory write, ending a qualified run before patch generation. The
-integration candidate demonstrates both paths together without changing
-their separate provenance.
-
-The final integration run used `SUA_SKIP_NETWORK=1`, `SUA_FAST=1`, and
-`PYTHONIOENCODING=utf-8` with `uv run pytest tests/ -q --maxfail=5
---tb=short`: 987 passed, 15 skipped, zero failed in 99.17 seconds. Earlier
-non-fast runs exposed five test-environment/order failures and a slow test
-that inserts over 10,000 rows; the separate hygiene branch retains their
-fixes. The non-fast suite was not completed. The fast-suite result is code
-regression evidence, not live-agent drift reduction or P30 acceptance.
+Last P20-verified: 2026-09-28
