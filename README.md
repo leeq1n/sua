@@ -57,23 +57,11 @@ its behavior.
 
 
 
-1. Read `core-layer/AGENTS_CORE.md`, then `AGENTS.md` (operating rules)
+1. Read `core-layer/AGENTS_CORE.md`, then `AGENTS.md`. Follow the core file's
+   "Read first" sequence and its conditional routes for the current task.
 
-2. Read `docs/HOW_TO_READ_GRAPH.md` (3-step read pattern)
-
-3. Read `docs/HANDOFF.md` (project-specific onboarding)
-
-4. Read `docs/PROJECT_STATE.md` Goal section (current state)
-
-5. Read `docs/PRINCIPLES.md` (L0 + L1 layer only)
-
-6. Optional: `docs/SKILL_DESIGN.md` (if designing or
-
-   incubating a new skill)
-
-
-
-Total: ~30 min onboarding.
+2. Read `docs/HANDOFF.md` for the current project boundary and links to
+   `docs/PROJECT_STATE.md`. Retrieve candidate history only when relevant.
 
 
 
@@ -85,7 +73,7 @@ sessions that need a one-line entry point), see
 
 [`docs/CROSS_RUNTIME_SKILL_BRIDGE.md`](docs/CROSS_RUNTIME_SKILL_BRIDGE.md).
 
-The bridge is a convenience layer; the 6-step workflow above is
+The bridge is a convenience layer; the core reading sequence above is
 
 the canonical SUA onboarding.
 
