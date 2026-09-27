@@ -224,6 +224,8 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
             if not resume_trigger:
                 raise DriftError("persisted task needs its named resume trigger")
             envelope = json.loads(capsule_file.read_text(encoding="utf-8"))
+            if not isinstance(envelope, dict) or "traces" not in envelope:
+                raise DriftError("persisted task lacks an auditable action trace field")
             routes = envelope.get("feedback_routes", []) if isinstance(envelope, dict) else []
             raw_capsule = envelope.get("capsule") if isinstance(envelope, dict) else None
             if not isinstance(raw_capsule, list) or len(raw_capsule) != 11:
@@ -434,6 +436,7 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None,
         else:
             result["task_status"] = status
             result["resume_trigger"] = trigger
+            result["capsule_path"] = str(Path(capsule_path).resolve())
     return result
 
 
@@ -448,6 +451,8 @@ def report_cli_result(result: Dict) -> int:
     print(f"Time:          {result['elapsed']}s")
     print(f"Execution:     {result['execution_succeeded']}")
     print(f"Goal verified: {result['goal_complete']}")
+    if result.get("capsule_path"):
+        print(f"Task record:   {result['capsule_path']}")
     print("\nPlan:")
     for i, log in enumerate(result.get("logs", [])):
         print(f"  {i+1}. {log.get('step', '?')[:80]}")
@@ -490,7 +495,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the daily agent with a Goal Contract")
     parser.add_argument("--contract", help="JSON file containing the active goal and task")
     parser.add_argument("--verifier", help="Host-owned Python evidence checker for goal completion")
-    parser.add_argument("--capsule", help="Durable task state file for pause and resume")
+    parser.add_argument("--capsule", required=True,
+                        help="Durable task state file for pause and resume")
     parser.add_argument("--resume-trigger", help="Named trigger matching a persisted task")
     parser.add_argument("--feedback-kind", choices=("method_feedback", "criterion_correction",
                                                      "goal_mutation", "new_task"))

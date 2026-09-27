@@ -212,6 +212,35 @@ def test_replanned_capsule_resumes_in_fresh_controller(tmp_path):
     assert fresh.working_context()["tasks"]["T1"].version == 2
 
 
+def test_corrected_goal_replan_keeps_prior_action_trace(tmp_path):
+    original = plane()
+    original.allow_action("T1", "read: source.txt", "report delivered")
+    trace = original.record_action("read: source.txt", "T1", "report delivered")
+    original.route_feedback("T1", "add citations", "criterion_correction")
+    path = tmp_path / "task.json"
+    original.transition_task("T1", "SUSPENDED",
+                             "criterion_correction reviewed", path)
+
+    revised = ControlPlane()
+    revised.add_goal(Goal("G1", "Deliver the user report",
+                          ("report delivered with citations",),
+                          ("build a dashboard",), ("use cited evidence",),
+                          version=2))
+    revised.replan_corrected_task_from_file(
+        "T1", path, criteria=("report delivered with citations",),
+        next_action="cite sources", trigger="replan reviewed")
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["traces"] == [list(trace)]
+
+    fresh = ControlPlane()
+    fresh.add_goal(Goal("G1", "Deliver the user report",
+                        ("report delivered with citations",),
+                        ("build a dashboard",), ("use cited evidence",),
+                        version=2))
+    fresh.resume_from_file("T1", path, "replan reviewed")
+    assert fresh.traces == [trace]
+
+
 def test_replan_updates_dependencies_and_blocker_durably(tmp_path):
     p = plane(tmp_path)
     p.tasks["T1"].dependencies = ("OLD_DEP",)

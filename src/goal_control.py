@@ -73,6 +73,21 @@ class ControlPlane:
     capsules: Dict[str, tuple] = field(default_factory=dict)
     capsule_dir: Path | None = None
 
+    @staticmethod
+    def _validated_traces(envelope, task_id: str, goal_id: str):
+        """Read task-local action links before admitting persisted state."""
+        if not isinstance(envelope, dict):
+            return []
+        raw = envelope.get("traces", [])
+        if (not isinstance(raw, list)
+                or any(not isinstance(item, list) or len(item) != 4
+                       or any(not isinstance(value, str) or not value
+                              for value in item)
+                       or item[1] != task_id or item[3] != goal_id
+                       for item in raw)):
+            raise DriftError("invalid persisted action trace")
+        return [tuple(item) for item in raw]
+
     def goal_checksum(self, goal_id: str):
         goal = self.goals[goal_id]
         payload = (goal.goal_id, goal.objective, goal.success_criteria,
@@ -255,6 +270,7 @@ class ControlPlane:
             envelope = json.load(stream)
         if (not isinstance(envelope, dict) or envelope.get("schema") != 1
                 or envelope.get("status") != "SUSPENDED"
+                or "traces" not in envelope
                 or task_id in self.tasks or self.active_task_id):
             raise DriftError("replan needs a suspended persisted task")
         raw = envelope.get("capsule")
@@ -273,6 +289,7 @@ class ControlPlane:
         (stored_id, goal_id, old_version, old_checksum, task_version,
          title, old_criteria, old_dependencies, old_next, blocker,
          old_trigger) = raw
+        old_traces = self._validated_traces(envelope, task_id, goal_id)
         goal = self.goals.get(goal_id)
         if (stored_id != task_id or not title
                 or (expected_title is not None and title != expected_title)
@@ -298,6 +315,8 @@ class ControlPlane:
                     blocker=blocker)
         self.tasks[task_id] = task
         self.capsules[task_id] = from_file
+        previous_traces = self.traces
+        self.traces = old_traces
         try:
             self.feedback_routes = [FeedbackRoute(**item) for item in routes]
             return self.replan_suspended_task(
@@ -308,6 +327,7 @@ class ControlPlane:
             self.tasks.pop(task_id, None)
             self.capsules.pop(task_id, None)
             self.feedback_routes.clear()
+            self.traces = previous_traces
             raise
 
     def supersede_goal(self, old_id: str, new_id: str, expected_checksum: str):
@@ -401,6 +421,8 @@ class ControlPlane:
                 temporary = Path(stream.name)
                 json.dump({"schema": 1, "status": status, "capsule": capsule,
                            "goal_contract": asdict(self.goals[self.tasks[task_id].goal_id]),
+                           "traces": [list(trace) for trace in self.traces
+                                      if trace[1] == task_id],
                            "feedback_routes": [asdict(route) for route in self.feedback_routes
                                                if route.task_id == task_id]},
                           stream, ensure_ascii=False)
@@ -421,7 +443,14 @@ class ControlPlane:
             if (raw.get("schema") != 1 or raw.get("status") not in TASK_STATUSES):
                 raise DriftError("invalid capsule envelope")
             persisted_status = raw["status"]
+            raw_capsule = raw.get("capsule")
+            persisted_goal_id = (raw_capsule[1] if isinstance(raw_capsule, list)
+                                 and len(raw_capsule) >= 2 else "")
+            persisted_traces = self._validated_traces(raw, task_id,
+                                                       persisted_goal_id)
             raw = raw.get("capsule")
+        else:
+            persisted_traces = []
         if (not isinstance(raw, list) or len(raw) != 11
                 or not isinstance(raw[6], list) or not isinstance(raw[7], list)
                 or any(not isinstance(value, str) for value in
@@ -457,6 +486,7 @@ class ControlPlane:
                 self.capsules.pop(task_id, None)
                 self.tasks.pop(task_id, None)
                 raise
+            self.traces = persisted_traces
         else:
             if (capsule != self.capture(task_id)
                     or (persisted_status is not None
@@ -464,6 +494,7 @@ class ControlPlane:
                 raise DriftError("persisted capsule does not match current contracts")
             self.capsules[task_id] = capsule
             self.resume(task_id, capsule, trigger)
+            self.traces = persisted_traces
 
     def resume(self, task_id: str, capsule, trigger: str):
         task = self.tasks[task_id]

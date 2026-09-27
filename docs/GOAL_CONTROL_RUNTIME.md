@@ -30,7 +30,8 @@ Task. The task title on the command line must match the file. For example:
 ```
 
 After installing `requirements.txt` and configuring the LLM as described in
-`.env.example`, run `python -m core.agent --contract goal.json "Write report"`.
+`.env.example`, run `python -m core.agent --contract goal.json --capsule
+task-state.json "Write report"`.
 `SUA_GOAL_CONTRACT` can supply the file path instead. Without a contract, the
 entrypoint returns an error before contacting the model or executing a tool.
 
@@ -41,6 +42,12 @@ call, a separate model review must return an exact linked success criterion;
 the control plane checks the current goal checksum and action identity again
 before the tool executes. A missing or malformed review rejects the action.
 `ControlPlane.traces` records authorized **attempts**, not completed outcomes.
+The daily command writes each task's Action→Task→Criterion→Goal links into
+the durable capsule and restores them before a resumed task proceeds. The
+capsule path is mandatory for the command. The returned task record path is
+where a later process can audit those links; it does not certify tool outcome.
+The daily command refuses to resume an older capsule without a trace field;
+its past action links cannot be reconstructed.
 The runtime distinguishes `execution_succeeded` from `goal_complete`. A host
 can provide `verify_completion` to judge evidence against the current goal.
 The command accepts `--verifier path/to/check.py`; that host-owned file must
@@ -56,8 +63,8 @@ goal. A successful tool run is not proof that the goal criterion was met.
 The built-in shell tool treats a nonzero process exit code as a failed tool
 invocation, even when the command prints no output.
 
-`--capsule task-state.json` opts the command into durable task state. After a
-run, the task becomes `DONE` only after host evidence verification, `BLOCKED`
+With the required `--capsule task-state.json`, after a run the task becomes
+`DONE` only after host evidence verification, `BLOCKED`
 after execution failure, or `SUSPENDED` while completion remains unverified.
 The command returns a named resume trigger; a later invocation must supply
 the same `--capsule` and `--resume-trigger` before the task can become HOT.

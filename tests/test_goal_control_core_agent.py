@@ -312,7 +312,10 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
                               verifier_path=verifier, capsule_path=capsule)
     assert result["success"] is True
     assert result["task_status"] == "DONE"
-    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "DONE"
+    saved = json.loads(capsule.read_text(encoding="utf-8"))
+    assert saved["status"] == "DONE"
+    assert len(saved["traces"]) == 1
+    assert saved["traces"][0][1:] == ["T1", "answer is 4", "G1"]
     with pytest.raises(DriftError):
         agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
                                      resume_trigger="verified completion")
@@ -343,6 +346,7 @@ def test_daily_unverified_run_can_resume_only_on_named_trigger(tmp_path, monkeyp
     assert result["execution_succeeded"] is True
     assert result["goal_complete"] is None
     assert result["task_status"] == "SUSPENDED"
+    assert result["capsule_path"] == str(capsule.resolve())
     with pytest.raises(DriftError):
         agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
                                      resume_trigger="unrelated event")
@@ -350,6 +354,31 @@ def test_daily_unverified_run_can_resume_only_on_named_trigger(tmp_path, monkeyp
         contract, "Calculate", capsule_path=capsule,
         resume_trigger="continue with evidence")
     assert resumed.active_task_id == "T1"
+    assert len(resumed.traces) == 1
+    assert resumed.traces[0][1:] == ("T1", "answer is 4", "G1")
+    saved = json.loads(capsule.read_text(encoding="utf-8"))
+    del saved["traces"]
+    capsule.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(DriftError, match="auditable action trace"):
+        agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
+                                     resume_trigger="continue with evidence")
+
+
+def test_invalid_persisted_trace_cannot_resume_a_task(tmp_path):
+    control = controlled_plane()
+    control.allow_action("T1", "calc: 2+2", "report delivered")
+    control.record_action("calc: 2+2", "T1", "report delivered")
+    capsule = tmp_path / "task.json"
+    control.transition_task("T1", "SUSPENDED", "continue", capsule)
+    saved = json.loads(capsule.read_text(encoding="utf-8"))
+    saved["traces"][0][3] = "another-goal"
+    capsule.write_text(json.dumps(saved), encoding="utf-8")
+    fresh = ControlPlane()
+    fresh.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
+    with pytest.raises(DriftError, match="action trace"):
+        fresh.resume_from_file("T1", capsule, "continue")
+    assert fresh.tasks == {}
+    assert fresh.traces == []
 
 
 def test_daily_cli_routes_feedback_without_model_call(tmp_path):
@@ -361,6 +390,12 @@ def test_daily_cli_routes_feedback_without_model_call(tmp_path):
                  "criteria": ["report delivered"]},
     }), encoding="utf-8")
     capsule = tmp_path / "task.json"
+    missing = subprocess.run(
+        [sys.executable, "-m", "core.agent", "--contract", str(contract),
+         "Write report"], cwd=Path(__file__).resolve().parents[1],
+        capture_output=True, text=True, encoding="utf-8", check=False)
+    assert missing.returncode == 2
+    assert "--capsule" in missing.stderr
     completed = subprocess.run(
         [sys.executable, "-m", "core.agent", "--contract", str(contract),
          "--capsule", str(capsule), "--feedback-kind", "method_feedback",
