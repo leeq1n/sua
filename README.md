@@ -16,9 +16,7 @@
 
 > SUA aims to be a **cross-runtime, long-term Agent Control Plane**. Its current
 > canonical delivery is an agent discipline knowledge library — agent
-
 > behavior rules, reasoning primitives, and operating principles
-
 > that you can carry into any agent runtime.
 
 The control-plane work is being developed in isolated candidates. See
@@ -59,7 +57,7 @@ its behavior.
 
 
 
-1. Read `AGENTS.md` (operating rules)
+1. Read `core-layer/AGENTS_CORE.md`, then `AGENTS.md` (operating rules)
 
 2. Read `docs/HOW_TO_READ_GRAPH.md` (3-step read pattern)
 
@@ -97,9 +95,9 @@ the canonical SUA onboarding.
 
 
 
-- `AGENTS.md` — operating rules (always-loaded contract)
+- `core-layer/AGENTS_CORE.md` — cache-stable, always-loaded rules
 
-- `core-layer/AGENTS_CORE.md` — cache-stable subset (~10 KB)
+- `AGENTS.md` — per-task operating-rule index
 
 - `agent-tools/scripts/` — self-audit + verification tooling
 
@@ -109,9 +107,8 @@ the canonical SUA onboarding.
 
 
 
-The agent reads these on session start. You only need to point
-
-it at the directory once.
+The agent loads the core and relevant project rules at session start;
+scripts are used when verification is needed.
 
 
 
@@ -218,10 +215,8 @@ This project is licensed under the [MIT License](LICENSE)
 
 
 This repo is the default direct-use path: clone it into your
-
-project, point your agent at `AGENTS.md`, and the agent absorbs
-
-the operating contract on session start.
+project, point your agent at `core-layer/AGENTS_CORE.md`, and load
+`AGENTS.md` for the task-specific contract.
 
 
 
@@ -245,7 +240,7 @@ git clone https://github.com/leeq1n/sua.git .sua/
 
 # 对 agent 说：用 .sua/ 约束你的行为
 
-# agent 自动读 .sua/AGENTS.md + core-layer/AGENTS_CORE.md
+# 先读 .sua/core-layer/AGENTS_CORE.md，再按任务读 .sua/AGENTS.md
 
 ```
 
@@ -274,7 +269,7 @@ migration does not require destructive replacement of local history.
 
 |---|---|
 
-| **Hermes / Cursor** | 项目内 clone `.sua/`，agent 自动读 AGENTS.md（本 README Quick start 6-step） |
+| **Hermes / Cursor** | 项目内 clone `.sua/`，按本 README Quick start 读取 core 与项目规则 |
 
 | **Codex / Claude Code / Antigravity** | 见 [`docs/CROSS_RUNTIME_SKILL_BRIDGE.md`](docs/CROSS_RUNTIME_SKILL_BRIDGE.md)（Agent Skills `SKILL.md` 格式桥接） |
 
