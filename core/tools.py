@@ -1,8 +1,8 @@
 """Built-in tools for the self-upgrade agent.
 
-[FROZEN v1.1.0] — stable, tested, do not modify.
+v1.1.1 preserves the v1.1.0 call surface and reports failed shell exit codes.
 """
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 import subprocess, os, math as _math
 
 
@@ -10,7 +10,10 @@ def tool_shell(command: str) -> str:
     """Run a shell command and return output."""
     try:
         r = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
-        return (r.stdout or r.stderr or "(no output)")[:500]
+        output = (r.stdout or r.stderr or "(no output)")[:500]
+        if r.returncode != 0:
+            return f"Shell error: exit code {r.returncode}: {output}"
+        return output
     except Exception as e:
         return f"Shell error: {e}"
 

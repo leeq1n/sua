@@ -45,6 +45,8 @@ can provide `verify_completion` to judge evidence against the current goal;
 without that verifier, `goal_complete` is unknown and `success` remains false.
 The command exits nonzero on a rejected action, failed tool, or unverified
 goal. A successful tool run is not proof that the goal criterion was met.
+The built-in shell tool treats a nonzero process exit code as a failed tool
+invocation, even when the command prints no output.
 
 The host or user must provide the contract. This entrypoint does not infer a
 Goal Contract from natural language, classify later human feedback, prove the

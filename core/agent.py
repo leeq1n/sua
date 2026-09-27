@@ -311,6 +311,23 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None) -> Dict:
         return run(task, _call, control=control, review_action=_review_action)
 
 
+def report_cli_result(result: Dict) -> int:
+    """Print a daily run and return its process status without masking failure."""
+    print(f"\n{'='*50}")
+    if result.get("error"):
+        print(f"Error: {result['error']}")
+        return 2
+    print(f"Steps planned: {result['steps_planned']}")
+    print(f"Tools used:    {result['tools_used']}")
+    print(f"Time:          {result['elapsed']}s")
+    print(f"Execution:     {result['execution_succeeded']}")
+    print(f"Goal verified: {result['goal_complete']}")
+    print("\nPlan:")
+    for i, log in enumerate(result.get("logs", [])):
+        print(f"  {i+1}. {log.get('step', '?')[:80]}")
+    return 0 if result["success"] else 3
+
+
 if __name__ == "__main__":
     """使用入口：python -m core.agent --contract goal.json "任务标题"
 
@@ -351,18 +368,4 @@ if __name__ == "__main__":
     task = " ".join(args.task)
     print(f"\nTask: {task}\n{'='*50}")
     result = quick_test(task, goal_contract_path=args.contract)
-    print(f"\n{'='*50}")
-    if result.get("error"):
-        print(f"Error: {result['error']}")
-        raise SystemExit(2)
-    else:
-        print(f"Steps planned: {result['steps_planned']}")
-        print(f"Tools used:    {result['tools_used']}")
-        print(f"Time:          {result['elapsed']}s")
-        print(f"Execution:     {result['execution_succeeded']}")
-        print(f"Goal verified: {result['goal_complete']}")
-        print(f"\nPlan:")
-        for i, log in enumerate(result.get('logs', [])):
-            print(f"  {i+1}. {log.get('step', '?')[:80]}")
-        if not result["success"]:
-            raise SystemExit(3)
+    raise SystemExit(report_cli_result(result))

@@ -64,6 +64,11 @@ def test_tools_module():
     assert "4" in result
 
 
+def test_shell_nonzero_exit_is_reported_as_failure():
+    from core.tools import tool_shell
+    assert tool_shell("exit 7").startswith("Shell error: exit code 7")
+
+
 def test_agent_quick_test_streaming_default():
     """quick_test(stream=True) is the v1.8.1 default."""
     import inspect

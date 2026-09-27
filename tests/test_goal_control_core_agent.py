@@ -192,6 +192,29 @@ def test_unknown_tool_cannot_count_as_execution_or_goal_success(monkeypatch):
     assert control.traces == []
 
 
+def test_failed_shell_command_is_not_execution_success(monkeypatch):
+    control = controlled_plane()
+    monkeypatch.setattr(agent, "plan_task",
+                        lambda prompt, llm_call: SimpleNamespace(steps=["Run failing command"]))
+    result = agent.run("ignored", lambda prompt: "shell: exit 7", control=control,
+                       review_action=lambda action, context: "report delivered",
+                       verify_completion=lambda context, logs: True)
+    assert result["tools_used"] == 0
+    assert result["execution_succeeded"] is False
+    assert result["goal_complete"] is None
+    assert result["success"] is False
+
+
+def test_cli_reports_failure_or_unverified_goal_with_nonzero_status(capsys):
+    assert agent.report_cli_result({"error": "tool failed"}) == 2
+    assert "tool failed" in capsys.readouterr().out
+    unverified = {"steps_planned": 1, "tools_used": 0, "elapsed": 0.1,
+                  "execution_succeeded": False, "goal_complete": None,
+                  "success": False, "logs": [{"step": "blocked"}]}
+    assert agent.report_cli_result(unverified) == 3
+    assert "Goal verified: None" in capsys.readouterr().out
+
+
 def test_controlled_goal_completion_requires_explicit_evidence_verifier(monkeypatch):
     control = controlled_plane()
     monkeypatch.setattr(agent, "plan_task", lambda prompt, llm_call: SimpleNamespace(
