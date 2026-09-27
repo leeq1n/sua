@@ -1,5 +1,5 @@
 # M-self-audit (full text)
-Last P20-verified: 2026-07-13
+Last P20-verified: 2026-09-28
 
 > L0: Self-audit rule for new-agent discoverability.
 > Load when: ending a task, before declaring "all pass",
@@ -46,13 +46,13 @@ current + M-add-then-reduce's "fix in same task" rule).
    next?" in those files?
 2. **Audit ALL docs/*.md for L0 line** (P20 R9 ≤120 chars).
    Any doc missing L0 is a discoverability gap.
-3. **Check AGENTS.md read-order references ALL non-trivial
-   docs** (P20 R2 + R3 + L0 brief principle).  Any doc
-   referenced in PRINCIPLES.md or OPERATING_RULES.md should
-   be in AGENTS.md See-also.
-4. **Verify "conditional vs always-on" split** (per
-   P20 R3).  Conditional docs need trigger annotations
-   ≥ 3 words.
+3. **Check fresh-agent reachability** (P20 R1-R3): from
+   `core-layer/AGENTS_CORE.md` and `AGENTS.md`, can the agent
+   reach the relevant `INDEX.md` category or task route?
+   Keep the full document inventory out of `AGENTS.md`.
+4. **Verify "conditional vs always-on" split** (P20 R3):
+   use `HOW_TO_READ_GRAPH.md` task routes and `INDEX.md` roles
+   to select relevant docs; catalog links alone do not load them.
 5. **Cap check**: AGENTS.md ≤ 300 lines, SKILL.md ≤ 100 lines.
    If over, extract to dedicated docs (per M_RULE_AUTHORING
    "split pattern").

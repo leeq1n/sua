@@ -1,5 +1,5 @@
 # PRINCIPLES.md — Detail (L2)
-Last P20-verified: 2026-09-10 (split from summary per R5+R6)
+Last P20-verified: 2026-09-28 (R1/R3 navigation contract aligned with current index)
 
 > L0: L2 detail for PRINCIPLES.md.  Per P11 摘要+引用,
 > the summary file is the L0/L1 layer (≤ 7KB); this file
@@ -101,9 +101,9 @@ Failure mode P20 guards against:
 
 | # | Rule | Failure mode it catches |
 |---|---|---|
-| R1 | `INDEX.md` must contain exactly two top-level sections after the intro: "Reading order for a new agent" and "Conditional loads".  No third category. | A new doc created and added to INDEX as "Helpful resources" or "Other" — bypasses the layer contract. |
+| R1 | `INDEX.md` must keep a numbered fresh-agent reading order separate from categorized lookup tables. Keep the numbered M-n companion map in linked `INDEX_DETAIL.md`, outside the default reading path. | A new doc is inserted into the default reading order or an unstructured list, so agents load unrelated detail. |
 | R2 | The "Reading order" section must number its links 1..N contiguously (no gaps, no duplicates). | Renumbering accident or skipped step that confuses the reader. |
-| R3 | Every link in "Conditional loads" must have a `trigger:` annotation (one line, ≥ 5 words) describing when to read it. | Stealth doc with no clear "when to read" — defeats the purpose of being conditional. |
+| R3 | Every categorized lookup row in `INDEX.md` must name the document's role in its TL;DR. A catalog link does not make its target always-loaded; choose conditional reads by matching the current task to `HOW_TO_READ_GRAPH.md` routes or the index category and role. | An inventory link is treated as a default load, or a document has no discoverable role. |
 | R4 | `EXTENSIONS.md` must be ≤ 500 bytes AND contain only a table (no prose paragraphs before/after). | The pointer file becomes a narrative — now the agent reads it to "understand" instead of to "look up". |
 | R5 | Every `docs/*.md` file ≤ 7KB is "self-contained summary".  Every file > 7KB must have a `*_DETAIL.md` companion whose name starts with the summary's filename minus `.md`. | A long doc that doesn't split — agent reads 12KB to get the 2KB it needed. |
 | R6 | `_DETAIL.md` companions must be referenced (linked) from their summary file.  A `_DETAIL.md` with no inbound link is an "orphan detail" and must be deleted or referenced. | Dead file that future agents trip over. |
