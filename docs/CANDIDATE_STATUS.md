@@ -14,7 +14,7 @@ and untracked audit material without adding them to `main` by default.
 | E2-M3 sandbox evidence | `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` on `codex/e2-m3-preserve-sandbox-evidence` | Small diagnostic-preservation patch and regression | Local construction verified; autonomous-repair comparison remains inconclusive. |
 | E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` on `codex/e3-m4-isolated` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the older mixed `codex/e3-m4-authority-separation` branch is historical, not a single-feature promotion unit. |
 | E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` on `codex/e4-a-grounded-experience-anchor` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
-| Goal Control operational integration | `6e1155a724a9ccf06422a5d68e62bf5313dc137e` on `codex/goal-control-operational` | Goal/Task contracts, durable task recovery, guarded daily entrypoint, and planner/filter repair | Clean offline suite: 1051 passed, 15 skipped; no failures. Live drift/resume effect and P30 acceptance pending. Prior `0fedfb7`: MODIFY. |
+| Goal Control operational integration | `e88e7cdcc140386aceb72959c2a4e889dc465f12` on `codex/goal-control-operational` | Goal/Task contracts, durable task recovery, guarded daily entrypoint, and planner/filter repair | Clean offline suite: 1054 passed, 15 skipped; no failures. Earlier P30 review found tool/claim defects on `6e1155a`; this head fixes them and awaits review. Live effect and acceptance pending. |
 | Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed; independent review remains open. |
 | Pipeline filter retention | `d2e9da9` on `codex/pipeline-filter-retention` | Keep qualified papers available after the memory write; clear stale scores on a failed filter; isolate the offline end-to-end fixture | Five memory/filter tests and the no-qualified-papers route passed. Its full-flow end-to-end test still reaches the separate planner contract failure on this branch. |
 | Planner + pipeline integration | `7f3fe1e7fd647f5159fe6323fc12dac70097d616` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above, with suite hygiene cherry-picked for order-independent offline verification | 57 focused tests and the repository's offline fast suite passed: 987 passed, 15 skipped, zero failures. This is an integration candidate, not independently accepted capability. |
@@ -40,7 +40,7 @@ canonical development and exact-artifact review.
 ## Promotion order and stop conditions
 
 1. Review Goal Control operational integration first because it serves the
-   project objective and now guards the daily agent's tool path. The 1051
+   project objective and now guards the daily agent's tool path. The 1054
    offline passes support regression only. A valid held-out behavior comparison
    and P30 acceptance of this exact artifact remain required for promotion.
 2. Evaluate E2-M3 and E3-M4 in their own frozen task families. Missing
