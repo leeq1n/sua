@@ -620,9 +620,12 @@ This rule applies to itself:
   meta-application of recursive test-verify
   (verify the verification-suggestion itself).
 
-## Operating rules (M-n 1-34)
+## Historical operating-rule inventory (M-n 1-34)
 
-**34 M-n** in `docs/OPERATING_RULES.md` (per Phase 3 audit
+This is the Phase 3 snapshot from 2026-07-16, not the current rule count.
+For current routes, including M-n 35 and 36, see `docs/INDEX_DETAIL.md`.
+
+**34 M-n** were counted in `docs/OPERATING_RULES.md` (per Phase 3 audit
 2026-07-16: 28 M-n codified with L1段, 22 with L2 _DETAIL.md
 companion.  M-n 1, 5, 6, 9, 10 not in L1 (P-layer principles,
 not operational).):

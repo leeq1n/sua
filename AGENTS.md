@@ -137,14 +137,13 @@ report MUST include:
 **Live detail**: see AGENTS_DETAIL.md § Post-completion verification.
 
 
-### Operating rules (M-n 1-34)
+### Operating rules (M-*)
 
-**34 M-n** in `docs/OPERATING_RULES.md`. Per Phase 3 audit:
-- 28 M-n codified with L1 段
-- 22 M-n with L2 _DETAIL.md companion
-- M-n 1, 5, 6, 9, 10 not in L1 (P-layer principles, not operational)
+Use `docs/OPERATING_RULES.md` for the current workflow rules and
+`docs/INDEX_DETAIL.md` for numbered M-n detail routes. The historical
+M-n 1–34 inventory is in `AGENTS_DETAIL.md`.
 
-**Live detail**: see AGENTS_DETAIL.md § Operating rules.
+**Historical detail**: see AGENTS_DETAIL.md § Historical operating-rule inventory.
 
 
 ### Cross-project sync
