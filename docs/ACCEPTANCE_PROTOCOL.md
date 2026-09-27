@@ -38,6 +38,13 @@ Per **P30**, the constructor also cannot be the final acceptor. Distinguish:
 `CHECKER PASS != INDEPENDENT ACCEPTANCE PASS`.
 
 The IMPLEMENTER may not issue final acceptance of its own modified artifact.
+Its handoff is `IMPLEMENTATION COMPLETE / READY FOR INDEPENDENT AUDIT`.
+For final promotion of an externally consumed artifact, see
+[Artifact Finalization](ARTIFACT_FINALIZATION.md).
+The handoff records `ARTIFACT_IDENTITY`, `CURRENT_ROLE`,
+`MATERIAL_MODIFICATION_SINCE_LAST_ACCEPTANCE`, `PRIOR_ACCEPTANCE_STATE`,
+`EVALUATOR_MATERIAL_EDIT`, `EVALUATOR_AUTHORITY_VALID`, and
+`TERMINAL_ACCEPTANCE_STATUS`; the report template is in the detail file.
 
 P30-A3 clarifies the trust boundary: repository tooling can compute the
 current artifact identity and verify an already-existing external record, but
