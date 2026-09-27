@@ -1,20 +1,21 @@
 # README — Detail (L2)
 
 > L0: L2 detail for `README.md`.  Per P11 摘要+引用,
-> the README file is the L0/L1 layer (≤ 7KB); this
+> the README file is the L0/L1 layer; this
 > file is the L2 layer (code legacy + CLI + history).
 > Per R6, this companion is referenced from the README.
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-28
 
 ---
 
 ## Code legacy (v1.x-v3.x)
 
 This project was originally a self-improving agent that modifies
-`core/planner.py`.  The code still exists and is functional, but is
-no longer the project's focus.  It is kept because 74 tests and 5
-CLI scripts exercise `src/` (removing it would break CI).
+`core/planner.py`. The legacy code remains, but `core.agent.run()` on
+`main` has a known planner result contract mismatch. It is not a verified
+daily path. Candidate repairs are tracked in
+[`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md).
 
 ### 工作流程
 

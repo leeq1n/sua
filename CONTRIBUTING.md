@@ -90,5 +90,5 @@ internal identifiers:
 - `README.md` — project orientation
 - `AGENTS.md` — operating rules
 - `core-layer/AGENTS_CORE.md` — always-loaded subset
-- `docs/OPERATING_RULES.md` — M-n 1-27 operating rules
-- `docs/PRINCIPLES.md` — P-n 1-30 principles
+- `docs/OPERATING_RULES.md` — M-* operating rules
+- `docs/PRINCIPLES.md` — P-n principle index

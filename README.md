@@ -171,11 +171,9 @@ this companion is required when the README exceeds 7 KB.
 
 
 This project was originally a self-improving agent that modifies
-
-`core/planner.py`. The code still exists and is functional, but
-
-is no longer the project's focus. For code documentation and CLI
-
+`core/planner.py`. The legacy code remains, but `core.agent.run()` on
+`main` has a known planner result contract mismatch and is not a verified
+daily path. For code documentation and CLI
 usage, see `README_DETAIL.md` § Code legacy.
 
 
