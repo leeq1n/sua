@@ -183,9 +183,10 @@ def run(
 
 # ── 快捷入口 ────────────────────────────────────────
 
-def _load_control_contract(path, task_title: str):
+def _load_control_contract(path, task_title: str, *, capsule_path=None,
+                           resume_trigger=None):
     """Load an explicit current Goal/Task contract for the daily entrypoint."""
-    from src.goal_control import ControlPlane, Goal, Task, DriftError
+    from src.goal_control import ControlPlane, FeedbackRoute, Goal, Task, DriftError
 
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -217,7 +218,57 @@ def _load_control_contract(path, task_title: str):
     control = ControlPlane()
     control.add_goal(goal)
     control.add_task(linked_task, control.goal_checksum(goal.goal_id))
+    if capsule_path is not None:
+        capsule_file = Path(capsule_path)
+        if capsule_file.exists():
+            if not resume_trigger:
+                raise DriftError("persisted task needs its named resume trigger")
+            envelope = json.loads(capsule_file.read_text(encoding="utf-8"))
+            routes = envelope.get("feedback_routes", []) if isinstance(envelope, dict) else []
+            if not isinstance(routes, list) or any(not isinstance(item, dict) for item in routes):
+                raise DriftError("invalid persisted feedback routes")
+            if routes and routes[-1].get("kind") == "criterion_correction":
+                raise DriftError("criterion correction needs a revised goal and explicit replan")
+            control.tasks.pop(linked_task.task_id)
+            control.active_task_id = ""
+            control.resume_from_file(linked_task.task_id, capsule_file,
+                                     resume_trigger)
+            resumed = control.tasks[linked_task.task_id]
+            if (resumed.title != linked_task.title
+                    or resumed.goal_id != linked_task.goal_id
+                    or resumed.criteria != linked_task.criteria):
+                raise DriftError("resumed task differs from the current contract")
+            for raw in routes:
+                route = FeedbackRoute(**raw)
+                if (route.task_id != resumed.task_id or route.goal_id != goal.goal_id
+                        or route.goal_checksum != control.goal_checksum(goal.goal_id)):
+                    raise DriftError("persisted feedback targets another goal or version")
+                control.feedback_routes.append(route)
+            if routes and control.feedback_routes[-1].kind == "method_feedback":
+                key = f"feedback:{resumed.task_id}:{resumed.version}"
+                control.durable_knowledge[key] = control.feedback_routes[-1].message
+                control.retrieve_knowledge(resumed.task_id, key)
+        elif resume_trigger:
+            raise DriftError("no persisted task matches the resume trigger")
     return control
+
+
+def route_daily_feedback(task: str, contract_path, capsule_path, kind: str,
+                         message: str, *, resume_trigger=None) -> Dict:
+    """Route explicit human feedback and persist task state before eviction."""
+    if not capsule_path:
+        raise ValueError("feedback needs a durable capsule path")
+    control = _load_control_contract(contract_path, task,
+                                     capsule_path=capsule_path,
+                                     resume_trigger=resume_trigger)
+    task_id = control.active_task_id
+    route = control.route_feedback(task_id, message, kind)
+    status = "SUPERSEDED" if kind == "goal_mutation" else "SUSPENDED"
+    trigger = f"{kind} reviewed"
+    control.transition_task(task_id, status, trigger, capsule_path)
+    return {"kind": route.kind, "contract_action": route.contract_action,
+            "task_status": status, "resume_trigger": trigger,
+            "goal_checksum": route.goal_checksum}
 
 
 def _load_completion_verifier(path):
@@ -246,7 +297,7 @@ def _load_completion_verifier(path):
 
 
 def quick_test(task: str, stream: bool = True, goal_contract_path=None,
-               verifier_path=None) -> Dict:
+               verifier_path=None, capsule_path=None, resume_trigger=None) -> Dict:
     """使用默认 LLM 快速测试 agent。
 
     v1.8.1: 默认 stream=True (本地模型慢,streaming 让用户看到进度)。
@@ -260,7 +311,9 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None,
             "logs": [], "error": "Goal Contract required: pass --contract <JSON file> or set SUA_GOAL_CONTRACT."
         }
     try:
-        control = _load_control_contract(contract_path, task)
+        control = _load_control_contract(contract_path, task,
+                                         capsule_path=capsule_path,
+                                         resume_trigger=resume_trigger)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         return {
             "success": False, "task": task, "steps_planned": 0,
@@ -336,15 +389,32 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None,
                 print(f"\n    [llm error: {e}]")
                 return ""
 
-        return run(task, _stream_call, verbose=True, control=control,
-                   review_action=_review_action, verify_completion=verifier)
+        result = run(task, _stream_call, verbose=True, control=control,
+                     review_action=_review_action, verify_completion=verifier)
     else:
         # Non-streaming path (faster for benchmarks)
         def _call(prompt):
             return chat_simple(prompt, config=lc) or ""
 
-        return run(task, _call, control=control, review_action=_review_action,
-                   verify_completion=verifier)
+        result = run(task, _call, control=control, review_action=_review_action,
+                     verify_completion=verifier)
+
+    if capsule_path is not None:
+        status = ("DONE" if result["goal_complete"] is True else
+                  "BLOCKED" if not result["execution_succeeded"] else "SUSPENDED")
+        trigger = ("verified completion" if status == "DONE" else
+                   "execution repaired" if status == "BLOCKED" else
+                   "continue with evidence")
+        try:
+            control.transition_task(control.active_task_id, status, trigger,
+                                    capsule_path)
+        except (OSError, ValueError) as exc:
+            result["success"] = False
+            result["error"] = f"Task state could not be persisted: {exc}"
+        else:
+            result["task_status"] = status
+            result["resume_trigger"] = trigger
+    return result
 
 
 def report_cli_result(result: Dict) -> int:
@@ -400,10 +470,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the daily agent with a Goal Contract")
     parser.add_argument("--contract", help="JSON file containing the active goal and task")
     parser.add_argument("--verifier", help="Host-owned Python evidence checker for goal completion")
+    parser.add_argument("--capsule", help="Durable task state file for pause and resume")
+    parser.add_argument("--resume-trigger", help="Named trigger matching a persisted task")
+    parser.add_argument("--feedback-kind", choices=("method_feedback", "criterion_correction",
+                                                     "goal_mutation", "new_task"))
+    parser.add_argument("--feedback-message", help="Explicit human feedback to route")
     parser.add_argument("task", nargs="+", help="Task title matching the contract")
     args = parser.parse_args()
     task = " ".join(args.task)
     print(f"\nTask: {task}\n{'='*50}")
+    if args.feedback_kind or args.feedback_message:
+        if not (args.feedback_kind and args.feedback_message and args.capsule
+                and args.contract):
+            parser.error("feedback needs --feedback-kind, --feedback-message, --capsule, and --contract")
+        try:
+            route = route_daily_feedback(task, args.contract, args.capsule,
+                                         args.feedback_kind, args.feedback_message,
+                                         resume_trigger=args.resume_trigger)
+        except (OSError, ValueError, KeyError) as exc:
+            parser.error(str(exc))
+        print(json.dumps(route, ensure_ascii=False, sort_keys=True))
+        raise SystemExit(0)
     result = quick_test(task, goal_contract_path=args.contract,
-                        verifier_path=args.verifier)
+                        verifier_path=args.verifier, capsule_path=args.capsule,
+                        resume_trigger=args.resume_trigger)
     raise SystemExit(report_cli_result(result))

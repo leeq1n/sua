@@ -56,8 +56,29 @@ goal. A successful tool run is not proof that the goal criterion was met.
 The built-in shell tool treats a nonzero process exit code as a failed tool
 invocation, even when the command prints no output.
 
+`--capsule task-state.json` opts the command into durable task state. After a
+run, the task becomes `DONE` only after host evidence verification, `BLOCKED`
+after execution failure, or `SUSPENDED` while completion remains unverified.
+The command returns a named resume trigger; a later invocation must supply
+the same `--capsule` and `--resume-trigger` before the task can become HOT.
+Terminal capsules cannot be resumed. The capsule stores explicit feedback
+routes as well as task identity, version, dependencies, next action, and
+blocker. After method feedback, only that task's latest message is explicitly
+retrieved into its working context on resume.
+
+The daily command can route a user's explicit category without contacting the
+model: `--contract goal.json --capsule task-state.json --feedback-kind
+method_feedback --feedback-message "try another method" "Write report"`.
+The allowed categories are `method_feedback`, `criterion_correction`,
+`goal_mutation`, and `new_task`. The route persists before the task leaves HOT.
+Criterion correction currently remains suspended and cannot resume through
+this command until an explicit revised-goal replan path is implemented.
+Goal mutation archives the old task; the user must supply a new Goal Contract.
+These boundaries prevent stale work from silently continuing, but the daily
+feedback and recovery workflow is not yet complete.
+
 The host or user must provide the contract. This entrypoint does not infer a
-Goal Contract from natural language, classify later human feedback, prove the
+Goal Contract from natural language, classify human feedback, prove the
 model's semantic review is correct, or show reduced drift in a live agent.
 Those claims require a held-out behavioral comparison. The self-upgrade
 pipeline and other agent runtimes need their own explicit host adapters.

@@ -4,7 +4,7 @@ This is a deterministic control surface, not a classifier of natural language.
 The caller must supply explicit action/criterion links and feedback categories.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from hashlib import sha256
 import json
 import os
@@ -335,7 +335,9 @@ class ControlPlane:
                                              prefix=destination.name + ".", suffix=".tmp",
                                              delete=False) as stream:
                 temporary = Path(stream.name)
-                json.dump({"schema": 1, "status": status, "capsule": capsule},
+                json.dump({"schema": 1, "status": status, "capsule": capsule,
+                           "feedback_routes": [asdict(route) for route in self.feedback_routes
+                                               if route.task_id == task_id]},
                           stream, ensure_ascii=False)
                 stream.flush()
                 os.fsync(stream.fileno())

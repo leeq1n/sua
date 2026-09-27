@@ -212,6 +212,83 @@ def test_host_verifier_cannot_claim_completion_without_criterion_evidence(tmp_pa
     assert check(controlled_plane().working_context(), []) is False
 
 
+def test_daily_feedback_is_durable_and_method_can_resume(tmp_path):
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Deliver report",
+                 "success_criteria": ["report delivered"]},
+        "task": {"task_id": "T1", "title": "Write report", "goal_id": "G1",
+                 "criteria": ["report delivered"]},
+    }), encoding="utf-8")
+    capsule = tmp_path / "task.json"
+    routed = agent.route_daily_feedback("Write report", contract, capsule,
+                                        "method_feedback", "use a shorter method")
+    stored = json.loads(capsule.read_text(encoding="utf-8"))
+    assert routed["contract_action"] == "REPLAN_METHOD"
+    assert stored["status"] == "SUSPENDED"
+    assert stored["feedback_routes"][-1]["message"] == "use a shorter method"
+    assert stored["capsule"][4] == 2
+    with pytest.raises(DriftError, match="resume trigger"):
+        agent._load_control_contract(contract, "Write report", capsule_path=capsule)
+    resumed = agent._load_control_contract(
+        contract, "Write report", capsule_path=capsule,
+        resume_trigger="method_feedback reviewed")
+    assert resumed.active_task_id == "T1"
+    assert resumed.tasks["T1"].version == 2
+    assert list(resumed.working_context()["knowledge"].values()) == ["use a shorter method"]
+
+
+def test_daily_criterion_correction_cannot_resume_stale_goal(tmp_path):
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Deliver report",
+                 "success_criteria": ["report delivered"]},
+        "task": {"task_id": "T1", "title": "Write report", "goal_id": "G1",
+                 "criteria": ["report delivered"]},
+    }), encoding="utf-8")
+    capsule = tmp_path / "task.json"
+    agent.route_daily_feedback("Write report", contract, capsule,
+                               "criterion_correction", "add source citations")
+    with pytest.raises(DriftError, match="explicit replan"):
+        agent._load_control_contract(contract, "Write report", capsule_path=capsule,
+                                     resume_trigger="criterion_correction reviewed")
+
+
+def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
+    pytest.importorskip("httpx")
+    from src import llm
+
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Calculate answer",
+                 "success_criteria": ["answer is 4"]},
+        "task": {"task_id": "T1", "title": "Calculate", "goal_id": "G1",
+                 "criteria": ["answer is 4"]},
+    }), encoding="utf-8")
+    verifier = tmp_path / "verify.py"
+    verifier.write_text(
+        "def verify_completion(context, logs):\n"
+        "    return {'passed': True, 'evidence': {'answer is 4': 'artifact: answer.txt'}}\n",
+        encoding="utf-8")
+    monkeypatch.setattr(llm.LLMConfig, "from_env",
+                        lambda: SimpleNamespace(ready=True, timeout=1))
+    monkeypatch.setattr(llm, "chat_simple", lambda prompt, **kwargs: (
+        '{"allow": true, "criterion": "answer is 4"}'
+        if prompt.startswith("Review this proposed tool action") else "calc: 2+2"))
+    monkeypatch.setattr(agent, "plan_task",
+                        lambda prompt, llm_call: SimpleNamespace(steps=["Calculate"]))
+    monkeypatch.setattr(agent, "call_tool", lambda name, *args, **kwargs: "4")
+    capsule = tmp_path / "task.json"
+    result = agent.quick_test("Calculate", stream=False, goal_contract_path=contract,
+                              verifier_path=verifier, capsule_path=capsule)
+    assert result["success"] is True
+    assert result["task_status"] == "DONE"
+    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "DONE"
+    with pytest.raises(DriftError):
+        agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
+                                     resume_trigger="verified completion")
+
+
 def test_controlled_agent_calls_builtin_tools_with_their_real_signatures(monkeypatch, tmp_path):
     source = tmp_path / "source.txt"
     source.write_text("source text", encoding="utf-8")
