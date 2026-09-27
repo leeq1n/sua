@@ -26,11 +26,13 @@ def test_controlled_agent_uses_resident_context_and_traces_tool_attempt(monkeypa
         return SimpleNamespace(steps=["Calculate total"])
 
     monkeypatch.setattr(agent, "plan_task", plan)
-    monkeypatch.setattr(agent, "call_tool", lambda name, **kwargs: "4")
+    monkeypatch.setattr(agent, "call_tool", lambda name, *args, **kwargs: "4")
     result = agent.run("unbound historical instruction", lambda prompt: "calc: 2+2",
                        control=control,
                        review_action=lambda action, context: "report delivered")
-    assert result["success"] is True
+    assert result["execution_succeeded"] is True
+    assert result["goal_complete"] is None
+    assert result["success"] is False
     assert "unbound historical instruction" not in seen["prompt"]
     assert "Deliver the report" in seen["prompt"]
     assert control.traces[0][1:] == ("T1", "report delivered", "G1")
@@ -42,7 +44,7 @@ def test_controlled_agent_denies_tool_before_side_effect(monkeypatch):
     monkeypatch.setattr(agent, "plan_task",
                         lambda prompt, llm_call: SimpleNamespace(steps=["Unrelated work"]))
     monkeypatch.setattr(agent, "call_tool",
-                        lambda name, **kwargs: calls.append(name))
+                        lambda name, *args, **kwargs: calls.append(name))
     result = agent.run("ignored", lambda prompt: "shell: erase files",
                        control=control, review_action=lambda action, context: None)
     assert calls == []
@@ -57,7 +59,7 @@ def test_later_guard_denial_cannot_report_an_earlier_tool_as_task_success(monkey
     monkeypatch.setattr(agent, "plan_task", lambda prompt, llm_call: SimpleNamespace(
         steps=["Read source", "Build unrelated dashboard"]))
     monkeypatch.setattr(agent, "call_tool",
-                        lambda name, **kwargs: calls.append(name) or "ok")
+                        lambda name, *args, **kwargs: calls.append(name) or "ok")
     decisions = iter(["report delivered", None])
     result = agent.run("ignored", lambda prompt: "read: source.txt",
                        control=control,
@@ -73,7 +75,7 @@ def test_controlled_agent_rejects_goal_mutation_between_plan_and_tool(monkeypatc
     monkeypatch.setattr(agent, "plan_task",
                         lambda prompt, llm_call: SimpleNamespace(steps=["Write report"]))
     monkeypatch.setattr(agent, "call_tool",
-                        lambda name, **kwargs: calls.append(name))
+                        lambda name, *args, **kwargs: calls.append(name))
 
     def review(action, context):
         control.goals["G1"].objective = "Different objective"
@@ -150,8 +152,62 @@ def test_daily_entrypoint_guarded_run_with_model_review(tmp_path, monkeypatch):
                         lambda prompt, llm_call: SimpleNamespace(steps=["Calculate total"]))
     calls = []
     monkeypatch.setattr(agent, "call_tool",
-                        lambda name, **kwargs: calls.append((name, kwargs)) or "4")
+                        lambda name, *args, **kwargs: calls.append((name, args, kwargs)) or "4")
     result = agent.quick_test("Write report", stream=False,
                               goal_contract_path=path)
-    assert result["success"] is True
-    assert calls == [("calc", {"query": "2+2"})]
+    assert result["execution_succeeded"] is True
+    assert result["goal_complete"] is None
+    assert result["success"] is False
+    assert calls == [("calc", ("2+2",), {})]
+
+
+def test_controlled_agent_calls_builtin_tools_with_their_real_signatures(monkeypatch, tmp_path):
+    source = tmp_path / "source.txt"
+    source.write_text("source text", encoding="utf-8")
+    monkeypatch.setattr(agent, "plan_task",
+                        lambda prompt, llm_call: SimpleNamespace(steps=["Use tool"]))
+    for tool, argument in (("calc", "1+1"), ("read", str(source)),
+                           ("shell", "echo SUA_TOOL_OK")):
+        result = agent.run("ignored", lambda prompt: f"{tool}: {argument}",
+                           control=controlled_plane(),
+                           review_action=lambda action, context: "report delivered")
+        assert result["tools_used"] == 1, tool
+        assert result["execution_succeeded"] is True, tool
+        assert result["goal_complete"] is None
+        assert result["success"] is False
+
+
+def test_unknown_tool_cannot_count_as_execution_or_goal_success(monkeypatch):
+    control = controlled_plane()
+    monkeypatch.setattr(agent, "plan_task", lambda prompt, llm_call: SimpleNamespace(
+        steps=["First", "Second"]))
+    choices = iter(["missing: x", "none"])
+    result = agent.run("ignored", lambda prompt: next(choices), control=control,
+                       review_action=lambda action, context: "report delivered",
+                       verify_completion=lambda context, logs: True)
+    assert result["tools_used"] == 0
+    assert result["execution_succeeded"] is False
+    assert result["goal_complete"] is None
+    assert result["success"] is False
+    assert control.traces == []
+
+
+def test_controlled_goal_completion_requires_explicit_evidence_verifier(monkeypatch):
+    control = controlled_plane()
+    monkeypatch.setattr(agent, "plan_task", lambda prompt, llm_call: SimpleNamespace(
+        steps=["Calculate", "No more tools needed"]))
+    choices = iter(["calc: 1+1", "none"])
+    result = agent.run("ignored", lambda prompt: next(choices), control=control,
+                       review_action=lambda action, context: "report delivered")
+    assert result["execution_succeeded"] is True
+    assert result["goal_complete"] is None
+    assert result["success"] is False
+
+    accepted = agent.run(
+        "ignored", lambda prompt: "calc: 1+1", control=controlled_plane(),
+        review_action=lambda action, context: "report delivered",
+        verify_completion=lambda context, logs: True,
+    )
+    assert accepted["execution_succeeded"] is True
+    assert accepted["goal_complete"] is True
+    assert accepted["success"] is True

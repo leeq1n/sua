@@ -31,11 +31,11 @@ def register_tool(name: str, fn, description: str = ""):
 def list_tools():
     return [{"name": n, "description": getattr(f, "__tool_description__", "")} for n, f in _TOOLS.items()]
 
-def call_tool(name: str, **kwargs):
+def call_tool(name: str, *args, **kwargs):
     if name not in _TOOLS:
         return f"Tool '{name}' not registered. Available: {list(_TOOLS.keys())}"
     try:
-        return str(_TOOLS[name](**kwargs))
+        return str(_TOOLS[name](*args, **kwargs))
     except Exception as e:
         return f"Tool error: {e}"
 
@@ -50,6 +50,7 @@ def run(
     *,
     control=None,
     review_action: Optional[Callable] = None,
+    verify_completion: Optional[Callable] = None,
 ) -> Dict:
     """
     主推理循环：规划 → 执行 → 反思。
@@ -90,7 +91,7 @@ def run(
 
     # 2. 执行
     success_count = 0
-    controlled_failure = False
+    execution_failure = False
     for i, step in enumerate(plan[: max_turns]):
         if verbose:
             print(f"  Step {i+1}: {step[:60]}")
@@ -110,6 +111,11 @@ def run(
                     parts = tool_result.split(":", 1)
                     name = parts[0].strip()
                     body = parts[1].strip() if len(parts) > 1 else ""
+                    if name not in _TOOLS:
+                        execution_failure = True
+                        results.append({"step": step, "tool_used": None,
+                                        "error": f"unknown tool: {name}"})
+                        break
                     if control is not None:
                         action = json.dumps({"step": step, "tool": name, "query": body},
                                             ensure_ascii=False, sort_keys=True)
@@ -118,36 +124,53 @@ def run(
                             control.allow_action(bound_task_id, action, criterion)
                             control.record_action(action, bound_task_id, criterion)
                         except Exception as exc:
-                            controlled_failure = True
+                            execution_failure = True
                             results.append({"step": step, "tool_used": None,
                                             "error": f"goal guard rejected action: {exc}"})
                             break
-                    result = call_tool(name, query=body)
+                    result = call_tool(name, body)
                     if verbose:
                         print(f"    Tool {name}: {str(result)[:60]}")
-                    if "error" not in str(result).lower():
+                    error_prefixes = ("Tool error:", "Shell error:", "Read error:",
+                                      "Calc error:", "Write error:")
+                    tool_failed = (str(result).startswith(error_prefixes)
+                                   if control is not None else
+                                   "error" in str(result).lower())
+                    if not tool_failed:
                         success_count += 1
-                    elif control is not None:
-                        controlled_failure = True
+                    else:
+                        execution_failure = True
                         results.append({"step": step, "tool_used": tool_result,
                                         "error": str(result)})
                         break
                 except Exception as e:
                     if verbose:
                         print(f"    Tool error: {e}")
-                    if control is not None:
-                        controlled_failure = True
-                        results.append({"step": step, "tool_used": tool_result,
-                                        "error": str(e)})
-                        break
+                    execution_failure = True
+                    results.append({"step": step, "tool_used": tool_result,
+                                    "error": str(e)})
+                    break
 
             results.append({"step": step, "tool_used": tool_result if "tool_result" in dir() else None})
 
+    execution_succeeded = (success_count > 0 and not execution_failure
+                           and len(results) == len(plan))
+    goal_complete = None
+    if control is not None:
+        current = control.working_context()
+        if current["goal"] is None or bound_task_id not in current["tasks"]:
+            execution_succeeded = False
+        if execution_succeeded and verify_completion is not None:
+            try:
+                goal_complete = bool(verify_completion(current, results))
+            except Exception:
+                goal_complete = False
     elapsed = time.time() - t0
     return {
-        "success": (success_count > 0 and
-                    (control is None or
-                     (not controlled_failure and len(results) == len(plan)))),
+        "success": (execution_succeeded if control is None
+                    else goal_complete is True),
+        "execution_succeeded": execution_succeeded,
+        "goal_complete": goal_complete,
         "task": task,
         "steps_planned": len(plan),
         "steps_executed": len(results),
@@ -336,7 +359,10 @@ if __name__ == "__main__":
         print(f"Steps planned: {result['steps_planned']}")
         print(f"Tools used:    {result['tools_used']}")
         print(f"Time:          {result['elapsed']}s")
-        print(f"Success:       {result['success']}")
+        print(f"Execution:     {result['execution_succeeded']}")
+        print(f"Goal verified: {result['goal_complete']}")
         print(f"\nPlan:")
         for i, log in enumerate(result.get('logs', [])):
             print(f"  {i+1}. {log.get('step', '?')[:80]}")
+        if not result["success"]:
+            raise SystemExit(3)
