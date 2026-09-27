@@ -8,24 +8,23 @@
 
 ## Reading order for a fresh agent
 
-1. **AGENTS.md** (root) — operating rules, L0 entry
-2. **PROJECT_STATE.md** — current goal + next step
-3. **HOW_TO_READ_GRAPH.md** — 3-step read pattern
-4. **PRINCIPLES.md** — working principles (L0 + L1 layer)
-5. **OPERATING_RULES.md** — M-n operating rules
-6. **../TODO.md** — pending work (stub → `PLANS/`)
+1. **core-layer/AGENTS_CORE.md** — always-loaded contract and authoritative
+   "Read first" sequence.
+2. **AGENTS.md** (root) — project-specific operating-rule index.
+3. Follow the "Read first" sequence in `core-layer/AGENTS_CORE.md`; use the
+   map below to locate each document when needed.
 
 ## L0: Entry / orientation
 
 | Doc | Companion | TL;DR |
 |---|---|---|
 | [../AGENTS.md](../AGENTS.md) | [../AGENTS_DETAIL.md](../AGENTS_DETAIL.md) | Operating rules for AI agents in this repo |
-| [INDEX.md](INDEX.md) | (this file) | Full navigation map |
+| [INDEX.md](INDEX.md) | [INDEX_DETAIL.md](INDEX_DETAIL.md) | Full navigation map |
 | [PROJECT_STATE.md](PROJECT_STATE.md) | [PROJECT_STATE_DETAIL.md](PROJECT_STATE_DETAIL.md) | Goal + current state + next step |
 | [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) | (self-contained) | Canonical baseline and isolated candidate boundaries |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | [CONSTRAINTS_DETAIL.md](CONSTRAINTS_DETAIL.md) | Invariants the system must preserve |
 | [USER_INSIGHTS.md](USER_INSIGHTS.md) | [USER_INSIGHTS_DETAIL.md](USER_INSIGHTS_DETAIL.md) | Paraphrased user rules + verbatim quotes |
-| [HOW_TO_READ_GRAPH.md](HOW_TO_READ_GRAPH.md) | (within file) | Read pattern for new agents (L0 → L1 → L2) |
+| [HOW_TO_READ_GRAPH.md](HOW_TO_READ_GRAPH.md) | [HOW_TO_READ_GRAPH_DETAIL.md](HOW_TO_READ_GRAPH_DETAIL.md) | Read pattern for new agents (L0 → L1 → L2) |
 | [SWITCH_SIGNALS.md](SWITCH_SIGNALS.md) | (within file) | Switch signals + action protocol |
 
 ## L1: Principles / rules
@@ -46,43 +45,8 @@
 
 ## L2: M-n detail files
 
-Per `OPERATING_RULES.md` M-n numbering.  Load the relevant file when
-applying that M-rule.  (M-n 1-10 are concept/principle-layer, no L1
-file.)
-
-| M-n | Doc | TL;DR |
-|---|---|---|
-| M-n 11 | [M_EXPERIMENT_IN_SUBPROJECT.md](M_EXPERIMENT_IN_SUBPROJECT.md) (+ [DETAIL](M_EXPERIMENT_IN_SUBPROJECT_DETAIL.md)) | Sub-project experimental pattern |
-| M-n 12 | [M_TERMINOLOGY_CLARITY.md](M_TERMINOLOGY_CLARITY.md) (+ [DETAIL](M_TERMINOLOGY_CLARITY_DETAIL.md)) | Terminology refinement rules |
-| M-n 13 | [M_LAYER_EXTENSION.md](M_LAYER_EXTENSION.md) | L0/L1/L2 + extensions rules |
-| M-n 14 | [M_TWO_TRACK_REASONING_DETAIL.md](M_TWO_TRACK_REASONING_DETAIL.md) | 类比+逻辑, 6-stage distribution |
-| M-n 15 | [M_PRINCIPLE_REORDERING_DETAIL.md](M_PRINCIPLE_REORDERING_DETAIL.md) | 6-step after 原则 混乱 |
-| M-n 16 | [M_OBSERVE_THINK_EXECUTE_DETAIL.md](M_OBSERVE_THINK_EXECUTE_DETAIL.md) | 6-stage + top-down 分治 |
-| M-n 17 | [M_CONTEXT_FRESHNESS_CHECK_DETAIL.md](M_CONTEXT_FRESHNESS_CHECK_DETAIL.md) | Intra-agent + inter-domain freshness |
-| M-n 18 | [M_RECURSIVE_SUMMARY_PROTOCOL_DETAIL.md](M_RECURSIVE_SUMMARY_PROTOCOL_DETAIL.md) | 6 sub-steps + 节点 生命周期 |
-| M-n 19 | [M_FILE_NAMING_CONVENTION_DETAIL.md](M_FILE_NAMING_CONVENTION_DETAIL.md) | File naming conventions |
-| M-n 20 | [M_AGENT_DISCOVERABILITY_CHECK_DETAIL.md](M_AGENT_DISCOVERABILITY_CHECK_DETAIL.md) | Cross-framework discoverability |
-| M-n 21 | [M_ASK_OR_INFER_MARK_GUESS_DETAIL.md](M_ASK_OR_INFER_MARK_GUESS_DETAIL.md) | 3 sub-steps + top-down default |
-| M-n 22 | [M_3W1H_THINK_FIRST_DETAIL.md](M_3W1H_THINK_FIRST_DETAIL.md) | 3W1H 分析法 BEFORE top-down |
-| M-n 23 | [M_PERIODIC_RE_ANALYSIS_DETAIL.md](M_PERIODIC_RE_ANALYSIS_DETAIL.md) | re-分析 at 最终目标 |
-| M-n 24 | [M_PACE_CONTINUITY_DETAIL.md](M_PACE_CONTINUITY_DETAIL.md) | commit + continue, no verbose ending |
-| M-n 25 | [M_MESSAGE_PATTERN_RECOGNITION_DETAIL.md](M_MESSAGE_PATTERN_RECOGNITION_DETAIL.md) | Parse user message + patterns |
-| M-n 26 | [M_CONTEXT_DECAY_MANAGEMENT_DETAIL.md](M_CONTEXT_DECAY_MANAGEMENT_DETAIL.md) | Detection + classification + compression |
-| M-n 27 | [M_KNOWLEDGE_LAYER_ARCHITECTURE_DETAIL.md](M_KNOWLEDGE_LAYER_ARCHITECTURE_DETAIL.md) | 3-layer core/knowledge/project taxonomy |
-| M-n 28 | [M_PLAN_CONDITIONAL_DETAIL.md](M_PLAN_CONDITIONAL_DETAIL.md) | 4-condition check (uncertain→plan, clear→continue) |
-| M-n 29 | [M_ACCEPTANCE_PROTOCOL_DETAIL.md](M_ACCEPTANCE_PROTOCOL_DETAIL.md) | 5-step protocol + cold-start sim |
-| M-n 30 | [M_KNOWLEDGE_CONTEXT_TRADE_OFF_DETAIL.md](M_KNOWLEDGE_CONTEXT_TRADE_OFF_DETAIL.md) | 4-priority: knowledge 充足 > ... |
-| M-n 31 | [M_TASK_LIFECYCLE_DETAIL.md](M_TASK_LIFECYCLE_DETAIL.md) | 4-phase: init + execute + done-notify + retrospective |
-| M-n 32 | [M_SELF_LEARNING_GUARDRAIL_DETAIL.md](M_SELF_LEARNING_GUARDRAIL_DETAIL.md) | 5 modification guardrails + auto-learning |
-| M-n 33 | [M_NARRATIVE_AS_SPEC_DETAIL.md](M_NARRATIVE_AS_SPEC_DETAIL.md) | 3-primitive: parse + structure + codify |
-| M-n 34 | [M_PRE_TASK_SCAN_DETAIL.md](M_PRE_TASK_SCAN_DETAIL.md) | Pre-task scan (4 sub-steps) |
-| M-n 35 | [M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md](M_CRITICAL_THINKING_PRIMITIVES_DETAIL.md) | 4 adversarial primitives (质疑/逆向/预演失败/对立论证) |
-| M-n 36 | [M_PRE_RELEASE_AUDIT_DETAIL.md](M_PRE_RELEASE_AUDIT_DETAIL.md) | Release prep (5 checks) |
-
-Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
-[M_SELF_APPLICATION.md](M_SELF_APPLICATION.md),
-[M_SKILL_SYNCHRONIZE.md](M_SKILL_SYNCHRONIZE.md),
-[M_TURN_PATTERN_RECOGNITION_DETAIL.md](M_TURN_PATTERN_RECOGNITION_DETAIL.md) (stub; real content under M-n 25).
+The complete M-n detail-file map is in [INDEX_DETAIL.md](INDEX_DETAIL.md).
+Load it only when an M-n rule needs its L2 companion.
 
 ## L1: Operational patterns / knowledge
 
@@ -127,7 +91,7 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 
 | Doc | TL;DR |
 |---|---|
-| [PLANS/PLAN_2026-07-30.md](PLANS/PLAN_2026-07-30.md) | Active work plan (ATDD: plan → ship → accept → fix) |
+| [PLANS/PLAN_2026-07-30.md](PLANS/PLAN_2026-07-30.md) | Historical ATDD plan from 2026-07-30 |
 
 ## See also
 
@@ -135,4 +99,4 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 - **core-layer/README.md** — 3-layer governance (核心/用户/项目)
 - **core-layer/AGENTS_CORE.md** — always-loaded contract
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-28

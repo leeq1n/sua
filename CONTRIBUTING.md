@@ -6,7 +6,7 @@
 
 ## Before you start
 
-1. **Read** `AGENTS.md` and `core-layer/AGENTS_CORE.md` to understand
+1. **Read** `core-layer/AGENTS_CORE.md` and then `AGENTS.md` to understand
    the operating contract. SUA is a knowledge library for agent
    self-discipline; every contribution is evaluated against the
    existing P-n principles.
