@@ -18,7 +18,7 @@ and untracked audit material without adding them to `main` by default.
 | Mechanism-space evaluation baseline | `639367dfa6a2b9f2ceabcff6da3a204470139114` on `codex/mechanism-space-baseline` | Eight draft large-search-space scenarios and evaluation plan | Structural tests and validators passed; no model behavior, independent acceptance, or claim of innovation-search convergence. Separate from the Authority/Science paper experiment. |
 | Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed; independent review remains open. |
 | Pipeline filter retention | `d2e9da9` on `codex/pipeline-filter-retention` | Keep qualified papers available after the memory write; clear stale scores on a failed filter; isolate the offline end-to-end fixture | Five memory/filter tests and the no-qualified-papers route passed. Its full-flow end-to-end test still reaches the separate planner contract failure on this branch. |
-| Planner + pipeline integration | `7f3fe1e7fd647f5159fe6323fc12dac70097d616` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above, with suite hygiene cherry-picked for order-independent offline verification | 57 focused tests and the repository's offline fast suite passed: 987 passed, 15 skipped, zero failures. This is an integration candidate, not independently accepted capability. |
+| Planner + pipeline integration | `7f3fe1e7fd647f5159fe6323fc12dac70097d616` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above, with suite hygiene cherry-picked for order-independent offline verification | 57 focused tests and the repository's offline fast suite passed: 987 passed, 15 skipped, zero failures. Independent P30 decision for this exact head: MODIFY. Keep the runtime repairs as candidate material; do not promote this branch. |
 | Suite hygiene | `3df9ffadbec1e12be294594ae684f8b9b0eba6df` on `codex/windows-suite-hygiene` | Windows subprocess decoding, planner test isolation, bounded memory-ceiling fixture, and context tests isolated from developer memory | Targeted failures and the v1.8.1 feature file pass. Full-suite evidence is on the integration branch, which also contains this branch's changes; independent review remains open. |
 
 Keep these candidates and their evidence reachable, but do not count them as
@@ -58,11 +58,13 @@ canonical development and exact-artifact review.
    measure and promote separately. Neither an old-base merge that removes
    E2-M2 coverage nor a silent combination of the two candidate state models
    is acceptable.
-5. Review planner, filter, and suite hygiene as separate diagnoses, then use
-   the integration branch for their end-to-end interaction. Preserve
-   `RoundResult` persistence and qualified-paper routing. Obtain a P30
-   independent decision on the exact clean integration artifact before any
-   promotion.
+5. The independent P30 audit of integration head `7f3fe1e` found the planner
+   and filter runtime repairs structurally valid, but returned MODIFY: some
+   end-to-end tests mutate tracked files, and the offline fixture changes
+   process environment without scoped restoration. Preserve `RoundResult`
+   persistence and qualified-paper routing as candidate material. Hold the
+   integration branch; any later revised promotion artifact needs a fresh
+   exact-identity review.
 
 The canonical planner mismatch has a separate repair candidate: legacy
 `tests/auto/test_planner_harness.py` expects a `list`, while the current
