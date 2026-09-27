@@ -59,8 +59,10 @@ In signed mode, a separate host-owned latest-state anchor must be supplied.
 The current capsule must match that anchor before resume or replan; a prior
 valid signature alone is insufficient after a newer transition. The anchor
 and key must be protected independently of the capsule store. Signed state
-writes hold a per-task OS lock and compare the host anchor with the process's
-last admitted state, so a stale process cannot overwrite a newer transition.
+writes hold a per-task OS lock and compare both anchor sequence and digest
+with the process's last admitted state, so a stale process cannot overwrite a
+newer transition even when both capsule payloads are identical. Signed paths
+are resolved before both locking and writing.
 For the existing v4 loop, `src/goal_control_v4.py` offers opt-in thinker and
 executor wrappers. A host review callback authorizes each exact planned Step
 plus criterion; each new plan review revokes the prior plan's authorizations.

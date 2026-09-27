@@ -55,7 +55,10 @@ keeps a latest-state anchor in `.sua-capsule-state` beside the key; that
 directory must be host-owned and inaccessible to anyone who can replace the
 capsule. Each transition holds a per-task operating-system file lock and
 checks that the anchor still matches the state read by this process before
-writing. A competing stale process cannot overwrite a newer terminal state.
+writing. Both the anchor sequence and content digest must match, so an
+identical second write still makes the old process stale. The capsule path is
+resolved before both locking and writing, including when a symlink names it.
+A competing stale process cannot overwrite a newer terminal state.
 Each transition advances the anchor after writing the capsule. A
 missing or mismatched anchor fails closed, including after a crash between
 the two writes. This prevents an older signed SUSPENDED capsule from being

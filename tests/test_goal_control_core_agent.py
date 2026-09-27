@@ -468,6 +468,50 @@ def test_stale_process_cannot_overwrite_newer_terminal_capsule(tmp_path):
     assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "DONE"
 
 
+def test_same_content_write_still_advances_state_sequence(tmp_path):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    initial = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    initial.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    initial.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     initial.goal_checksum("G1"))
+    initial.transition_task("T1", "SUSPENDED", "continue", capsule)
+    writers = []
+    for _ in range(2):
+        control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+        control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+        control.resume_from_file("T1", capsule, "continue")
+        writers.append(control)
+    old_content = capsule.read_bytes()
+    writers[0].transition_task("T1", "SUSPENDED", "continue", capsule)
+    assert capsule.read_bytes() == old_content
+    with pytest.raises(DriftError, match="another process"):
+        writers[1].transition_task("T1", "SUSPENDED", "continue", capsule)
+
+
+def test_signed_capsule_alias_writes_canonical_target(tmp_path):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    anchor = tmp_path / "private-anchor"
+    capsule = tmp_path / "task.json"
+    alias = tmp_path / "alias.json"
+    try:
+        alias.symlink_to(capsule)
+    except OSError:
+        pytest.skip("file symlinks unavailable on this host")
+    control = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    control.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    control.transition_task("T1", "SUSPENDED", "continue", alias)
+    assert alias.is_symlink()
+    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "SUSPENDED"
+    fresh = ControlPlane(capsule_key=key, capsule_anchor_dir=anchor)
+    fresh.add_goal(Goal("G1", "Deliver report", ("report delivered",)))
+    fresh.resume_from_file("T1", alias, "continue")
+    assert fresh.active_task_id == "T1"
+
+
 def test_two_fresh_writers_cannot_replace_each_other(tmp_path):
     key = b"host-owned-test-key-with-at-least-32-bytes"
     anchor = tmp_path / "private-anchor"
