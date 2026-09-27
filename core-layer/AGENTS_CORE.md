@@ -6,8 +6,7 @@
 > for cache-stable prefix + minimal input tokens.
 >
 > Per cache optimization protocol (per docs/PRINCIPLES.md
-> + docs/OPERATING_RULES.md): this file = ~6.4K chars
-> (100% cache hit when stable).  Per-task 段s are in
+> + docs/OPERATING_RULES.md): keep this prefix stable. Per-task 段s are in
 > `AGENTS.md` as references (per P11 摘要+引用).
 >
 > **Architecture note**: SUA is a self-contained
@@ -19,31 +18,6 @@
 > Cross-ref: full content here.  AGENTS.md has
 > references, not duplicates.
 
-## What's here vs full AGENTS.md
-
-| Here (always-loaded) | AGENTS.md (per-task) |
-|---|---|
-| Pre-task scan (M-n 34) | (P11 ref) |
-| Read first (in order) | (P11 ref) |
-| Hard rules (top 6 from PRINCIPLES.md, binding) | (P11 ref) |
-| What NOT TO DO | (P11 ref) |
-| Commit message contract | (P11 ref) |
-| When in doubt | (P11 ref) |
-| (P11 ref) | "继续" protocol |
-| (P11 ref) | "学习一下" protocol |
-| (P11 ref) | "主动修改 skill" protocol |
-| (P11 ref) | Iterative thinking protocol |
-| (P11 ref) | Recursive test-verify protocol |
-| (P11 ref) | Skill context cleanliness |
-| (P11 ref) | Multi-perspective audit angles |
-| (P11 ref) | Task-done-notify reminder |
-| (P11 ref) | Post-completion verification suggestion |
-| (P11 ref) | Operating rules (M-n 1-34) |
-| (P11 ref) | Recent cross-project sync |
-| (P11 ref) | Detail (L2) |
-
-## Sections (always-loaded content follows)
-
 ## Pre-task scan (M-n 34)
 
 **Per "自主阅读学习" protocol + M_RULE_AUTHORING
@@ -52,7 +26,7 @@ commit, before any "task done" message — agent MUST run
 **M-n 34 pre-task scan** (4 sub-steps per
 `docs/OPERATING_RULES.md` § M-pre-task-scan):
 
-1. Read this `AGENTS.md` (you are here — L0 entry doc).
+1. Read this core file, then `AGENTS.md` for the per-task index.
 2. Scan `docs/PRINCIPLES.md` L0 axioms + `docs/OPERATING_RULES.md`
    all M-n.  Mark YES / NO / MAYBE for current task.
 3. Apply 5 primitives (Analyze / Reason / 联想 / 归纳 / 总结).
@@ -71,14 +45,9 @@ or templated sections that no longer carry meaning. If any appear,
 discard the draft and rewrite it once in plain language. Do not diagnose
 a malformed draft inside that same draft.
 
-**Why this section is BEFORE "Read first"**: per M-n 13
-layer-extension, L0 surface must expose M-pre-task-scan
-so fresh agents pick it up **without** external instruction
-(per P7 Occam — avoid repetition in working memory).
-
 **Trigger** (per M-n 34): any user message (including "fix
 this" / "explain" / "commit" / "task done" / "verify") OR
-new session start.  Per AGENTS.md "Read first" 段 below
+new session start. Per "Read first" below
 + M-n 31 Phase 1 task-init + M-n 16 stage 1-2 观察+归纳.
 
 **Anti-pattern** (per M-n 32 self-learning-guardrail):
@@ -93,9 +62,8 @@ failure mode M-n 34 is designed to prevent.
    per docs/OPERATING_RULES.md version notes — see lift/demote history
    in PRINCIPLES_DETAIL.md).  Read the FULL file (~11 KB).
    Do not skim.
-2. `docs/INDEX.md` — orientation map (8-step reading order
-   + conditional stealth loads).  Follow the numbered steps
-   until you have a project overview.
+2. `docs/INDEX.md` — orientation map with conditional loads.
+   Follow this core sequence for the project overview.
 3. `docs/PROJECT_STATE.md` — current goal, version, next
    step (1-paragraph snapshot).
 4. `docs/PRINCIPLES_DETAIL.md` — L2 routing index for extended
@@ -109,7 +77,7 @@ failure mode M-n 34 is designed to prevent.
    with cross-ref traversal rules + 5 essence families
    + 7-check self-org).  Read when entering the project
    or when stuck on graph traversal.
-7. `docs/OPERATING_RULES.md` — M-n 1-34 operating rules
+7. `docs/OPERATING_RULES.md` — M-* operating rules
    (per M-n 34 pre-task scan: scan this file for M-n
    applicable to your current task).  Read when task
    needs M-rule application OR per M-n 34 step 2.
@@ -133,15 +101,6 @@ failure mode M-n 34 is designed to prevent.
     (commit cleanliness / tag at HEAD / CHANGELOG /
     artifact / docs) to prevent "github commit
     confusion" pattern.
-
-**Note**: items 5-7 added per M-n 34 so fresh agents can find
-all rules, not just P-n.  Per P21 cross-project, this list
-stays SUA-specific (sibling repos have their own entry docs).
-
-Item 8 added per 3-layer architecture — the core-layer/ directory
-has its own governance template separate from docs/ because
-modification rules differ (核心 = agent-only).
-
 
 ## Hard rules (binding P-n from PRINCIPLES.md)
 
@@ -234,5 +193,3 @@ list.
 State the ambiguity, list the options you considered, pick one,
 apply, and cite the principle in your commit message.  Same as
 if you were the maintainer reading your PR.
-
-

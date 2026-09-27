@@ -3,8 +3,8 @@
 > **LAYER**: project (L1 index — see "3-layer architecture" below)
 >
 > L0: AI agents entering this repo MUST read
-> `core-layer/AGENTS_CORE.md` FIRST (always-loaded
-> subset, ~6K chars, cache-stable), then this
+> `core-layer/AGENTS_CORE.md` FIRST (always-loaded,
+> cache-stable subset), then this
 > file (per-task 段s, load on demand).
 >
 > Per cache optimization (per docs/PRINCIPLES.md):
@@ -13,8 +13,7 @@
 > - This file = per-task (loaded when needed)
 > - Per P11 摘要+引用 + P14 docs current.
 >
-> Split design: ~30K → ~6K always-loaded + ~3K
-> per-task-index (summary + references).
+> Split design: stable core, per-task index, and conditional detail.
 
 ## Cross-references to always-loaded 段s
 
