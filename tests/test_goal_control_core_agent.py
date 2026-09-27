@@ -295,6 +295,8 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
                  "criteria": ["answer is 4"]},
     }), encoding="utf-8")
     verifier = tmp_path / "verify.py"
+    key_file = tmp_path / "host.key"
+    key_file.write_bytes(b"host-owned-test-key-with-at-least-32-bytes")
     verifier.write_text(
         "def verify_completion(context, logs):\n"
         "    return {'passed': True, 'evidence': {'answer is 4': 'artifact: answer.txt'}}\n",
@@ -309,16 +311,19 @@ def test_daily_verified_run_persists_terminal_task(tmp_path, monkeypatch):
     monkeypatch.setattr(agent, "call_tool", lambda name, *args, **kwargs: "4")
     capsule = tmp_path / "task.json"
     result = agent.quick_test("Calculate", stream=False, goal_contract_path=contract,
-                              verifier_path=verifier, capsule_path=capsule)
+                              verifier_path=verifier, capsule_path=capsule,
+                              capsule_key_path=key_file)
     assert result["success"] is True
     assert result["task_status"] == "DONE"
     saved = json.loads(capsule.read_text(encoding="utf-8"))
     assert saved["status"] == "DONE"
+    assert saved["auth"]["alg"] == "HMAC-SHA256"
     assert len(saved["traces"]) == 1
     assert saved["traces"][0][1:] == ["T1", "answer is 4", "G1"]
     with pytest.raises(DriftError):
         agent._load_control_contract(contract, "Calculate", capsule_path=capsule,
-                                     resume_trigger="verified completion")
+                                     resume_trigger="verified completion",
+                                     capsule_key_path=key_file)
 
 
 def test_daily_unverified_run_can_resume_only_on_named_trigger(tmp_path, monkeypatch):
@@ -379,6 +384,40 @@ def test_invalid_persisted_trace_cannot_resume_a_task(tmp_path):
         fresh.resume_from_file("T1", capsule, "continue")
     assert fresh.tasks == {}
     assert fresh.traces == []
+    saved["traces"] = [["forged action", "T1", "unlinked criterion", "G1"]]
+    capsule.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(DriftError, match="action trace"):
+        fresh.resume_from_file("T1", capsule, "continue")
+    assert fresh.tasks == {}
+    assert fresh.traces == []
+
+
+def test_signed_capsule_rejects_forged_linked_action(tmp_path):
+    key = b"host-owned-test-key-with-at-least-32-bytes"
+    control = ControlPlane(capsule_key=key)
+    control.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
+    control.add_task(Task("T1", "Write report", "G1", ("report delivered",)),
+                     control.goal_checksum("G1"))
+    control.allow_action("T1", "read: source.txt", "report delivered")
+    control.record_action("read: source.txt", "T1", "report delivered")
+    capsule = tmp_path / "task.json"
+    control.transition_task("T1", "SUSPENDED", "continue", capsule)
+    saved = json.loads(capsule.read_text(encoding="utf-8"))
+    assert saved["auth"]["alg"] == "HMAC-SHA256"
+    fresh = ControlPlane(capsule_key=key)
+    fresh.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
+    fresh.resume_from_file("T1", capsule, "continue")
+    assert fresh.traces == [("read: source.txt", "T1", "report delivered", "G1")]
+
+    saved["traces"][0][0] = "forged action"
+    capsule.write_text(json.dumps(saved), encoding="utf-8")
+    rejected = ControlPlane(capsule_key=key)
+    rejected.add_goal(Goal("G1", "Deliver the report", ("report delivered",)))
+    with pytest.raises(DriftError, match="authentication failed"):
+        rejected.resume_from_file("T1", capsule, "continue")
+    assert rejected.tasks == {}
+    with pytest.raises(DriftError, match="host capsule key required"):
+        ControlPlane().resume_from_file("T1", capsule, "continue")
 
 
 def test_daily_cli_routes_feedback_without_model_call(tmp_path):
@@ -390,6 +429,8 @@ def test_daily_cli_routes_feedback_without_model_call(tmp_path):
                  "criteria": ["report delivered"]},
     }), encoding="utf-8")
     capsule = tmp_path / "task.json"
+    key_file = tmp_path / "host.key"
+    key_file.write_bytes(b"host-owned-test-key-with-at-least-32-bytes")
     missing = subprocess.run(
         [sys.executable, "-m", "core.agent", "--contract", str(contract),
          "Write report"], cwd=Path(__file__).resolve().parents[1],
@@ -398,13 +439,16 @@ def test_daily_cli_routes_feedback_without_model_call(tmp_path):
     assert "--capsule" in missing.stderr
     completed = subprocess.run(
         [sys.executable, "-m", "core.agent", "--contract", str(contract),
-         "--capsule", str(capsule), "--feedback-kind", "method_feedback",
+         "--capsule", str(capsule), "--capsule-key", str(key_file),
+         "--feedback-kind", "method_feedback",
          "--feedback-message", "try a shorter method", "Write report"],
         cwd=Path(__file__).resolve().parents[1], capture_output=True,
         text=True, encoding="utf-8", check=False)
     assert completed.returncode == 0, completed.stderr
     assert '"contract_action": "REPLAN_METHOD"' in completed.stdout
-    assert json.loads(capsule.read_text(encoding="utf-8"))["status"] == "SUSPENDED"
+    saved = json.loads(capsule.read_text(encoding="utf-8"))
+    assert saved["status"] == "SUSPENDED"
+    assert saved["auth"]["alg"] == "HMAC-SHA256"
 
 
 def test_controlled_agent_calls_builtin_tools_with_their_real_signatures(monkeypatch, tmp_path):

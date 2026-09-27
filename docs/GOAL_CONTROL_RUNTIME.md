@@ -31,7 +31,7 @@ Task. The task title on the command line must match the file. For example:
 
 After installing `requirements.txt` and configuring the LLM as described in
 `.env.example`, run `python -m core.agent --contract goal.json --capsule
-task-state.json "Write report"`.
+task-state.json --capsule-key host-owned.key "Write report"`.
 `SUA_GOAL_CONTRACT` can supply the file path instead. Without a contract, the
 entrypoint returns an error before contacting the model or executing a tool.
 
@@ -48,6 +48,13 @@ capsule path is mandatory for the command. The returned task record path is
 where a later process can audit those links; it does not certify tool outcome.
 The daily command refuses to resume an older capsule without a trace field;
 its past action links cannot be reconstructed.
+The required `--capsule-key` file must contain at least 32 random bytes and
+be kept by the host outside the repository and capsule location. The capsule
+has an HMAC over its contents; changing an action, criterion, contract snapshot,
+or task state without that key causes resume to fail. A lost key prevents
+recovery; a copied or compromised key cannot establish independent provenance.
+Programmatic `ControlPlane` use without a key remains a structural reference
+contract and cannot claim authenticated persistence.
 The runtime distinguishes `execution_succeeded` from `goal_complete`. A host
 can provide `verify_completion` to judge evidence against the current goal.
 The command accepts `--verifier path/to/check.py`; that host-owned file must
@@ -75,12 +82,14 @@ retrieved into its working context on resume.
 
 The daily command can route a user's explicit category without contacting the
 model: `--contract goal.json --capsule task-state.json --feedback-kind
-method_feedback --feedback-message "try another method" "Write report"`.
+method_feedback --feedback-message "try another method" --capsule-key
+host-owned.key "Write report"`.
 The allowed categories are `method_feedback`, `criterion_correction`,
 `goal_mutation`, and `new_task`. The route persists before the task leaves HOT.
 After `criterion_correction`, the old task cannot resume. Supply a revised
 contract with the same objective, a higher goal version, and criteria linked
 to that goal; then run `--contract revised.json --capsule task-state.json
+--capsule-key host-owned.key
 --replan-next-action "cite sources" --replan-trigger "replan reviewed"
 "Write report"`. The command persists the revised cold task before it may
 resume with `--resume-trigger "replan reviewed"`. An objective change under

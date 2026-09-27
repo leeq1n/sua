@@ -184,7 +184,7 @@ def run(
 # ── 快捷入口 ────────────────────────────────────────
 
 def _load_control_contract(path, task_title: str, *, capsule_path=None,
-                           resume_trigger=None):
+                           resume_trigger=None, capsule_key_path=None):
     """Load an explicit current Goal/Task contract for the daily entrypoint."""
     from src.goal_control import ControlPlane, FeedbackRoute, Goal, Task, DriftError
 
@@ -215,7 +215,8 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
             or goal.status != "ACTIVE" or linked_task.status != "ACTIVE"
             or linked_task.residency != "HOT"):
         raise DriftError("contract must bind this task to an active HOT goal")
-    control = ControlPlane()
+    key = Path(capsule_key_path).read_bytes() if capsule_key_path else None
+    control = ControlPlane(capsule_key=key)
     control.add_goal(goal)
     control.add_task(linked_task, control.goal_checksum(goal.goal_id))
     if capsule_path is not None:
@@ -224,6 +225,7 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
             if not resume_trigger:
                 raise DriftError("persisted task needs its named resume trigger")
             envelope = json.loads(capsule_file.read_text(encoding="utf-8"))
+            control._authenticate_capsule(envelope)
             if not isinstance(envelope, dict) or "traces" not in envelope:
                 raise DriftError("persisted task lacks an auditable action trace field")
             routes = envelope.get("feedback_routes", []) if isinstance(envelope, dict) else []
@@ -262,13 +264,15 @@ def _load_control_contract(path, task_title: str, *, capsule_path=None,
 
 
 def route_daily_feedback(task: str, contract_path, capsule_path, kind: str,
-                         message: str, *, resume_trigger=None) -> Dict:
+                         message: str, *, resume_trigger=None,
+                         capsule_key_path=None) -> Dict:
     """Route explicit human feedback and persist task state before eviction."""
     if not capsule_path:
         raise ValueError("feedback needs a durable capsule path")
     control = _load_control_contract(contract_path, task,
                                      capsule_path=capsule_path,
-                                     resume_trigger=resume_trigger)
+                                     resume_trigger=resume_trigger,
+                                     capsule_key_path=capsule_key_path)
     task_id = control.active_task_id
     route = control.route_feedback(task_id, message, kind)
     status = "SUPERSEDED" if kind == "goal_mutation" else "SUSPENDED"
@@ -280,9 +284,11 @@ def route_daily_feedback(task: str, contract_path, capsule_path, kind: str,
 
 
 def replan_daily_corrected_task(task: str, contract_path, capsule_path,
-                                next_action: str, trigger: str) -> Dict:
+                                next_action: str, trigger: str,
+                                *, capsule_key_path=None) -> Dict:
     """Rebind a persisted criterion correction to an explicit revised goal."""
-    control = _load_control_contract(contract_path, task)
+    control = _load_control_contract(contract_path, task,
+                                     capsule_key_path=capsule_key_path)
     linked = control.tasks.pop(control.active_task_id)
     control.active_task_id = ""
     capsule = control.replan_corrected_task_from_file(
@@ -319,7 +325,8 @@ def _load_completion_verifier(path):
 
 
 def quick_test(task: str, stream: bool = True, goal_contract_path=None,
-               verifier_path=None, capsule_path=None, resume_trigger=None) -> Dict:
+               verifier_path=None, capsule_path=None, resume_trigger=None,
+               capsule_key_path=None) -> Dict:
     """使用默认 LLM 快速测试 agent。
 
     v1.8.1: 默认 stream=True (本地模型慢,streaming 让用户看到进度)。
@@ -335,7 +342,8 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None,
     try:
         control = _load_control_contract(contract_path, task,
                                          capsule_path=capsule_path,
-                                         resume_trigger=resume_trigger)
+                                         resume_trigger=resume_trigger,
+                                         capsule_key_path=capsule_key_path)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         return {
             "success": False, "task": task, "steps_planned": 0,
@@ -497,6 +505,8 @@ if __name__ == "__main__":
     parser.add_argument("--verifier", help="Host-owned Python evidence checker for goal completion")
     parser.add_argument("--capsule", required=True,
                         help="Durable task state file for pause and resume")
+    parser.add_argument("--capsule-key", required=True,
+                        help="Host-owned 32-byte minimum key file outside the capsule")
     parser.add_argument("--resume-trigger", help="Named trigger matching a persisted task")
     parser.add_argument("--feedback-kind", choices=("method_feedback", "criterion_correction",
                                                      "goal_mutation", "new_task"))
@@ -514,7 +524,8 @@ if __name__ == "__main__":
         try:
             route = route_daily_feedback(task, args.contract, args.capsule,
                                          args.feedback_kind, args.feedback_message,
-                                         resume_trigger=args.resume_trigger)
+                                         resume_trigger=args.resume_trigger,
+                                         capsule_key_path=args.capsule_key)
         except (OSError, ValueError, KeyError) as exc:
             parser.error(str(exc))
         print(json.dumps(route, ensure_ascii=False, sort_keys=True))
@@ -526,12 +537,13 @@ if __name__ == "__main__":
         try:
             replanned = replan_daily_corrected_task(
                 task, args.contract, args.capsule, args.replan_next_action,
-                args.replan_trigger)
+                args.replan_trigger, capsule_key_path=args.capsule_key)
         except (OSError, ValueError, KeyError) as exc:
             parser.error(str(exc))
         print(json.dumps(replanned, ensure_ascii=False, sort_keys=True))
         raise SystemExit(0)
     result = quick_test(task, goal_contract_path=args.contract,
                         verifier_path=args.verifier, capsule_path=args.capsule,
-                        resume_trigger=args.resume_trigger)
+                        resume_trigger=args.resume_trigger,
+                        capsule_key_path=args.capsule_key)
     raise SystemExit(report_cli_result(result))

@@ -6,6 +6,7 @@ The caller must supply explicit action/criterion links and feedback categories.
 
 from dataclasses import asdict, dataclass, field
 from hashlib import sha256
+import hmac
 import json
 import os
 from pathlib import Path
@@ -69,24 +70,68 @@ class ControlPlane:
     retrieved_knowledge: Dict[str, set] = field(default_factory=dict)
     allowed_actions: Dict[str, set] = field(default_factory=dict)
     traces: list = field(default_factory=list)
+    trace_contracts: list = field(default_factory=list)
     feedback_routes: list = field(default_factory=list)
     capsules: Dict[str, tuple] = field(default_factory=dict)
     capsule_dir: Path | None = None
+    capsule_key: bytes | None = field(default=None, repr=False)
+
+    def __post_init__(self):
+        if self.capsule_key is not None and (
+                not isinstance(self.capsule_key, bytes)
+                or len(self.capsule_key) < 32):
+            raise ValueError("capsule authentication key needs at least 32 bytes")
+
+    def _authenticate_capsule(self, envelope):
+        """Require host-keyed integrity for capsules created in keyed mode."""
+        if not isinstance(envelope, dict):
+            if self.capsule_key is not None:
+                raise DriftError("authenticated capsule envelope required")
+            return envelope
+        auth = envelope.get("auth")
+        if self.capsule_key is None:
+            if auth is not None:
+                raise DriftError("host capsule key required for signed state")
+            return envelope
+        if (not isinstance(auth, dict) or auth.get("alg") != "HMAC-SHA256"
+                or not isinstance(auth.get("tag"), str)):
+            raise DriftError("authenticated capsule required")
+        payload = {key: value for key, value in envelope.items() if key != "auth"}
+        encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":")).encode("utf-8")
+        expected = hmac.new(self.capsule_key, encoded, sha256).hexdigest()
+        if not hmac.compare_digest(auth["tag"], expected):
+            raise DriftError("capsule authentication failed")
+        return envelope
 
     @staticmethod
     def _validated_traces(envelope, task_id: str, goal_id: str):
         """Read task-local action links before admitting persisted state."""
         if not isinstance(envelope, dict):
-            return []
+            return [], []
         raw = envelope.get("traces", [])
+        contexts = envelope.get("trace_contracts", [])
         if (not isinstance(raw, list)
+                or not isinstance(contexts, list) or len(contexts) != len(raw)
                 or any(not isinstance(item, list) or len(item) != 4
                        or any(not isinstance(value, str) or not value
                               for value in item)
                        or item[1] != task_id or item[3] != goal_id
                        for item in raw)):
             raise DriftError("invalid persisted action trace")
-        return [tuple(item) for item in raw]
+        for trace, context in zip(raw, contexts):
+            if (not isinstance(context, dict)
+                    or context.get("goal_id") != goal_id
+                    or context.get("status") != "ACTIVE"
+                    or not isinstance(context.get("version"), int)
+                    or not isinstance(context.get("success_criteria"), list)
+                    or trace[2] not in context["success_criteria"]
+                    or not all(isinstance(context.get(key), str)
+                               for key in ("objective",))
+                    or not all(isinstance(context.get(key), list)
+                               for key in ("non_goals", "constraints"))):
+                raise DriftError("invalid persisted action trace contract")
+        return [tuple(item) for item in raw], contexts
 
     def goal_checksum(self, goal_id: str):
         goal = self.goals[goal_id]
@@ -178,6 +223,7 @@ class ControlPlane:
             raise DriftError("action is not authorized by task and criterion")
         trace = (action, task_id, criterion, goal.goal_id)
         self.traces.append(trace)
+        self.trace_contracts.append(asdict(goal))
         return trace
 
     def route_feedback(self, task_id: str, message: str, kind: str):
@@ -268,6 +314,7 @@ class ControlPlane:
         """Rebuild a corrected cold task against a newer Goal Contract."""
         with Path(path).open("r", encoding="utf-8") as stream:
             envelope = json.load(stream)
+        envelope = self._authenticate_capsule(envelope)
         if (not isinstance(envelope, dict) or envelope.get("schema") != 1
                 or envelope.get("status") != "SUSPENDED"
                 or "traces" not in envelope
@@ -289,7 +336,8 @@ class ControlPlane:
         (stored_id, goal_id, old_version, old_checksum, task_version,
          title, old_criteria, old_dependencies, old_next, blocker,
          old_trigger) = raw
-        old_traces = self._validated_traces(envelope, task_id, goal_id)
+        old_traces, old_trace_contracts = self._validated_traces(
+            envelope, task_id, goal_id)
         goal = self.goals.get(goal_id)
         if (stored_id != task_id or not title
                 or (expected_title is not None and title != expected_title)
@@ -316,7 +364,9 @@ class ControlPlane:
         self.tasks[task_id] = task
         self.capsules[task_id] = from_file
         previous_traces = self.traces
+        previous_trace_contracts = self.trace_contracts
         self.traces = old_traces
+        self.trace_contracts = old_trace_contracts
         try:
             self.feedback_routes = [FeedbackRoute(**item) for item in routes]
             return self.replan_suspended_task(
@@ -328,6 +378,7 @@ class ControlPlane:
             self.capsules.pop(task_id, None)
             self.feedback_routes.clear()
             self.traces = previous_traces
+            self.trace_contracts = previous_trace_contracts
             raise
 
     def supersede_goal(self, old_id: str, new_id: str, expected_checksum: str):
@@ -419,13 +470,25 @@ class ControlPlane:
                                              prefix=destination.name + ".", suffix=".tmp",
                                              delete=False) as stream:
                 temporary = Path(stream.name)
-                json.dump({"schema": 1, "status": status, "capsule": capsule,
-                           "goal_contract": asdict(self.goals[self.tasks[task_id].goal_id]),
-                           "traces": [list(trace) for trace in self.traces
-                                      if trace[1] == task_id],
-                           "feedback_routes": [asdict(route) for route in self.feedback_routes
-                                               if route.task_id == task_id]},
-                          stream, ensure_ascii=False)
+                envelope = {
+                    "schema": 1, "status": status, "capsule": capsule,
+                    "goal_contract": asdict(self.goals[self.tasks[task_id].goal_id]),
+                    "traces": [list(trace) for trace in self.traces
+                               if trace[1] == task_id],
+                    "trace_contracts": [context for trace, context in
+                                        zip(self.traces, self.trace_contracts)
+                                        if trace[1] == task_id],
+                    "feedback_routes": [asdict(route) for route in self.feedback_routes
+                                        if route.task_id == task_id],
+                }
+                if self.capsule_key is not None:
+                    encoded = json.dumps(envelope, ensure_ascii=False,
+                                         sort_keys=True, separators=(",", ":")).encode("utf-8")
+                    envelope["auth"] = {
+                        "alg": "HMAC-SHA256",
+                        "tag": hmac.new(self.capsule_key, encoded, sha256).hexdigest(),
+                    }
+                json.dump(envelope, stream, ensure_ascii=False)
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, destination)
@@ -438,6 +501,7 @@ class ControlPlane:
         """Re-admit a capsule against the current goal, rebuilding a missing task."""
         with Path(path).open("r", encoding="utf-8") as stream:
             raw = json.load(stream)
+        raw = self._authenticate_capsule(raw)
         persisted_status = None
         if isinstance(raw, dict):
             if (raw.get("schema") != 1 or raw.get("status") not in TASK_STATUSES):
@@ -446,11 +510,12 @@ class ControlPlane:
             raw_capsule = raw.get("capsule")
             persisted_goal_id = (raw_capsule[1] if isinstance(raw_capsule, list)
                                  and len(raw_capsule) >= 2 else "")
-            persisted_traces = self._validated_traces(raw, task_id,
-                                                       persisted_goal_id)
+            persisted_traces, persisted_trace_contracts = self._validated_traces(
+                raw, task_id, persisted_goal_id)
             raw = raw.get("capsule")
         else:
             persisted_traces = []
+            persisted_trace_contracts = []
         if (not isinstance(raw, list) or len(raw) != 11
                 or not isinstance(raw[6], list) or not isinstance(raw[7], list)
                 or any(not isinstance(value, str) for value in
@@ -487,6 +552,7 @@ class ControlPlane:
                 self.tasks.pop(task_id, None)
                 raise
             self.traces = persisted_traces
+            self.trace_contracts = persisted_trace_contracts
         else:
             if (capsule != self.capture(task_id)
                     or (persisted_status is not None
@@ -495,6 +561,7 @@ class ControlPlane:
             self.capsules[task_id] = capsule
             self.resume(task_id, capsule, trigger)
             self.traces = persisted_traces
+            self.trace_contracts = persisted_trace_contracts
 
     def resume(self, task_id: str, capsule, trigger: str):
         task = self.tasks[task_id]
