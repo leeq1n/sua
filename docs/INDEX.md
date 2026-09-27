@@ -128,6 +128,7 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 | Doc | TL;DR |
 |---|---|
 | [PLANS/PLAN_2026-07-30.md](PLANS/PLAN_2026-07-30.md) | Active work plan (ATDD: plan → ship → accept → fix) |
+| [PLANS/MECHANISM_SPACE_EVALUATION.md](PLANS/MECHANISM_SPACE_EVALUATION.md) | Conditional AI4S mechanism-search evaluation plan; unmeasured |
 
 ## See also
 
@@ -135,4 +136,4 @@ Unnumbered M-* docs (self-contained detail): [M_SELF_AUDIT.md](M_SELF_AUDIT.md),
 - **core-layer/README.md** — 3-layer governance (核心/用户/项目)
 - **core-layer/AGENTS_CORE.md** — always-loaded contract
 
-Last P20-verified: 2026-09-10
+Last P20-verified: 2026-09-27

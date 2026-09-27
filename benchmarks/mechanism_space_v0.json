@@ -1,0 +1,70 @@
+{
+  "version": "mechanism-space-v0",
+  "status": "draft-design-candidate; no model outcomes",
+  "cases": [
+    {
+      "id": "ms-01",
+      "kind": "pair",
+      "failure_mode": "surface_renaming",
+      "task": "Candidate A places a signed, expiring authorization record beside an agent's plan and checks it before acting. Candidate B calls the same record a decision passport and uses different application nouns, but checks the same signer, scope, expiry, and action boundary. Does B contribute a distinct mechanism? State the decisive comparison and next operation.",
+      "expected_decision": "SAME_MECHANISM",
+      "rubric": ["Compare causal checks instead of names", "Inherit prior status unless new discriminating evidence exists"]
+    },
+    {
+      "id": "ms-02",
+      "kind": "pair",
+      "failure_mode": "cross_domain_equivalence",
+      "task": "A robot controller gates an action on a fresh monitor-selected operating envelope. A research agent proposal gates an action on a fresh, scoped authority state. The proposal claims novelty because the application is scientific research. Given only these descriptions, decide whether they are the same mechanism, different mechanisms, or unresolved; identify the missing causal comparison before any novelty claim.",
+      "expected_decision": "UNCERTAIN",
+      "rubric": ["Search the generic gating mechanism across domains", "Do not merge or claim novelty from application labels", "Name the missing semantics or observable consequence"]
+    },
+    {
+      "id": "ms-03",
+      "kind": "pair",
+      "failure_mode": "false_merge_from_shared_vocabulary",
+      "task": "Candidate A changes which action is authorized when a goal version changes. Candidate B leaves authorization untouched and changes only which previously measured observation is allowed to support a scientific claim. Both use the words state, gate, and expiry. Do they have the same causal mechanism? State what observation would separate them.",
+      "expected_decision": "DIFFERENT_MECHANISM",
+      "rubric": ["Preserve action-authority versus evidence-validity distinction", "Give a discriminating test", "Do not merge on shared vocabulary"]
+    },
+    {
+      "id": "ms-04",
+      "kind": "pair",
+      "failure_mode": "missing_discriminator",
+      "task": "Two papers report fewer repeated proposals. One attributes this to a memory of rejected mechanisms; the other says only that its agent receives a compact history summary. The methods and ablations are unavailable. Classify the mechanism relationship and state the smallest additional evidence needed.",
+      "expected_decision": "UNCERTAIN",
+      "rubric": ["Do not infer mechanism from outcome alone", "Request method or ablation evidence", "Keep both candidates separately retrievable"]
+    },
+    {
+      "id": "ms-05",
+      "kind": "sequence",
+      "failure_mode": "family_saturation",
+      "task": "Across six attempts, changed names and target applications repeatedly lead to the same generic prior-art mechanism. The ledger records the common failure and no reopening evidence. A seventh proposal changes only the application noun. Decide the next search operation under a fixed budget, and say what must be recorded.",
+      "expected_decision": "STOP_LOCAL_LIFT_OR_RESET",
+      "rubric": ["Stop local variants", "Preserve the family-level negative result", "LIFT the failed assumption or RESET the mother space rather than random retry"]
+    },
+    {
+      "id": "ms-06",
+      "kind": "sequence",
+      "failure_mode": "novelty_proxy",
+      "task": "A search controller finds a candidate unlike every item in its embedding index. Mechanism-level comparison then finds a mature theory with the same causal checks and claimed property. The controller calls the candidate the core innovation because its similarity score is low. Decide K4 status and the next useful operation.",
+      "expected_decision": "KILL_OR_REDUCE",
+      "rubric": ["Treat embedding distance as retrieval aid only", "Use the mature mechanism as nearest prior", "Reject the unsupported core-innovation claim"]
+    },
+    {
+      "id": "ms-07",
+      "kind": "sequence",
+      "failure_mode": "irreducible_delta",
+      "task": "A candidate differs from the nearest known mechanism in three features: a renamed state field, a new dashboard, and a rule that invalidates a stale authority claim before choosing an action. Removing the first two leaves the predicted behavioral difference; removing the invalidation rule removes it. No native experiment has run. Identify the provisional kernel, the next cheap falsifier, and the claim boundary.",
+      "expected_decision": "PROVISIONAL_KERNEL_HOLD_K5",
+      "rubric": ["Isolate the invalidation rule as the provisional delta", "Specify a matched stale-versus-current cheap test", "Do not claim validated innovation before K5 and K6"]
+    },
+    {
+      "id": "ms-08",
+      "kind": "sequence",
+      "failure_mode": "goal_drift",
+      "task": "The authorized research goal is to test whether mechanism-family search reduces rediscovery at equal cost. After several failures, the team proposes optimizing the number of candidate names generated and reporting that as success. Decide whether this changes the goal, and specify the outcome measure that must remain primary.",
+      "expected_decision": "REJECT_PROXY_GOAL",
+      "rubric": ["Reject candidate count as a substitute objective", "Retain equal-cost rediscovery and distinct-valid-mechanism outcomes", "Require explicit goal change before switching the success criterion"]
+    }
+  ]
+}
