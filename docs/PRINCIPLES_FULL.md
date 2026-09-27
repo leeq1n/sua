@@ -1,5 +1,5 @@
 # PRINCIPLES.md — Detail (L2)
-Last P20-verified: 2026-09-28 (R1/R3/R4/R5 aligned with current document roles)
+Last P20-verified: 2026-09-28 (R1/R3/R4/R5/R7 aligned with current document roles)
 
 > L0: L2 detail for PRINCIPLES.md.  Per P11 摘要+引用,
 > the summary file is the L0/L1 layer with a linked companion; this file
@@ -7,7 +7,7 @@ Last P20-verified: 2026-09-28 (R1/R3/R4/R5 aligned with current document roles)
 > Per R6, this detail file is referenced from the summary.
 
 This file holds:
-1. Meta principles段 (P19, P20, P20细则, P21, P24, P25, P26, P30)
+1. Extended principles段 (P19-P21, P25-P30; P24 was merged into P3)
 2. P-n vs M-* boundary段
 3. L2 实操段
 
@@ -17,7 +17,7 @@ See `PRINCIPLES.md` for the summary.
 
 ## Meta principles
 
-## Data Flow (P19)
+## Data Flow (P19) {#p19-data-flow-observability}
 
 **P19: Data flow observability**
 
@@ -107,7 +107,7 @@ Failure mode P20 guards against:
 | R4 | `EXTENSIONS.md` must be ≤ 500 bytes. Its only substantive content is the pointer table; a title, L0 line, verification date, and linked detail pointer are allowed. | The pointer file becomes a narrative that agents read for understanding instead of lookup. |
 | R5 | `docs/*.md` files used as active entries or L0/L1 summaries target ≤ 7 KiB (7168 bytes). A longer summary links to a `*_DETAIL.md` companion. Detailed companions and self-contained validation/evidence records may be longer when they are conditionally indexed, state their role and decision up front, and keep the decision with its provenance; they are not default loads. | An agent must read a long mixed-purpose file to find a short instruction, or a length-only split severs an audit record from its evidence. |
 | R6 | `_DETAIL.md` companions must be referenced (linked) from their summary file.  A `_DETAIL.md` with no inbound link is an "orphan detail" and must be deleted or referenced. | Dead file that future agents trip over. |
-| R7 | Principles (P-n) are defined in EITHER `PRINCIPLES.md` (summary, brief) OR `PRINCIPLES_DETAIL.md` (full text), per the P11 split in commit `f753ec3`.  Any other `docs/*.md` may REFERENCE a P-n but must NOT redefine it.  Redefinition is a hard violation.  **Exception**: meta-rules (P22, P23) live in `_DETAIL.md` because their full text is in the same file as the P-n list. | Drift: parent says P7 is X, child says P7 is Y — system collapses. |
+| R7 | `PRINCIPLES.md` is the brief canonical summary; `PRINCIPLES_DETAIL.md` routes to full text without redefining it. Full operational text lives in `PRINCIPLES_DETAIL_DETAIL.md` for the active P1-P18 entries and P22/P23, and in `PRINCIPLES_FULL.md` for P19-P21 and P25-P30. Other `docs/*.md` may reference these principles but must not create competing definitions. | Two files define the same P-n differently, or a routing stub is mistaken for its full rule. |
 | R8 | Cross-project links use relative paths (`../other-project/...`).  Absolute paths or `https://` (except for external sources) are not allowed in `docs/`. | A doc breaks when the project is moved or cloned. |
 | R9 | Every `docs/*.md` must begin with a single-line `L0:` frontmatter (≤ 120 chars) describing what the file is, in plain language.  This line is the L0 layer; the rest is L1+. | Doc with no L0 = not findable by the L0-only reader. |
 | R10 | Every `docs/*.md` should end with a `Last P20-verified: YYYY-MM-DD` line, updated whenever the doc is meaningfully changed. | Stale doc — the L0/L1/L2 contract was true on date X but may have rotted. |

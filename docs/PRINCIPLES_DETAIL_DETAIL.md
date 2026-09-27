@@ -1,6 +1,6 @@
 # PRINCIPLES_DETAIL — Detail (L2)
 
-Last P20-verified: 2026-09-10 (P30-A3 active-path clarification)
+Last P20-verified: 2026-09-28 (R7 routing clarification)
 
 
 
@@ -14,13 +14,11 @@ Last P20-verified: 2026-09-10 (P30-A3 active-path clarification)
 
 
 
-This file holds the per-P-n full text (P1-P18 + P22, P23,
+This file holds full operational text for the active P1-P18 entries and
 
-excluding meta-rules P19, P20, P21, P24, P25, P26 which
+P22/P23. Other extended principles live in `PRINCIPLES_FULL.md` per R7.
 
-live in PRINCIPLES.md per R7).  See `PRINCIPLES_DETAIL.md`
-
-for the summary.
+See `PRINCIPLES_DETAIL.md` for the routing index.
 
 
 
