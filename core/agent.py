@@ -10,6 +10,7 @@ Self-Upgrade Agent 核心 —— 可被自主改进的推理引擎。
 """
 __version__ = "1.3.0"
 import os, json, time
+import importlib.util
 from dataclasses import asdict
 from pathlib import Path
 from core.planner import plan_task
@@ -219,7 +220,33 @@ def _load_control_contract(path, task_title: str):
     return control
 
 
-def quick_test(task: str, stream: bool = True, goal_contract_path=None) -> Dict:
+def _load_completion_verifier(path):
+    """Load a host-owned evidence checker; model text cannot certify completion."""
+    source = Path(path).resolve(strict=True)
+    spec = importlib.util.spec_from_file_location("sua_host_completion_verifier", source)
+    if spec is None or spec.loader is None:
+        raise ValueError("completion verifier must be a readable Python file")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    checker = getattr(module, "verify_completion", None)
+    if not callable(checker):
+        raise ValueError("completion verifier needs verify_completion(context, logs)")
+
+    def verified(context, logs):
+        verdict = checker(context, logs)
+        if not isinstance(verdict, dict) or verdict.get("passed") is not True:
+            return False
+        evidence = verdict.get("evidence")
+        criteria = context["goal"].success_criteria
+        return (isinstance(evidence, dict)
+                and all(isinstance(evidence.get(criterion), str)
+                        and evidence[criterion].strip() for criterion in criteria))
+
+    return verified
+
+
+def quick_test(task: str, stream: bool = True, goal_contract_path=None,
+               verifier_path=None) -> Dict:
     """使用默认 LLM 快速测试 agent。
 
     v1.8.1: 默认 stream=True (本地模型慢,streaming 让用户看到进度)。
@@ -239,6 +266,14 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None) -> Dict:
             "success": False, "task": task, "steps_planned": 0,
             "steps_executed": 0, "tools_used": 0, "elapsed": 0,
             "logs": [], "error": f"Invalid Goal Contract: {exc}"
+        }
+    try:
+        verifier = _load_completion_verifier(verifier_path) if verifier_path else None
+    except (OSError, ValueError, ImportError) as exc:
+        return {
+            "success": False, "task": task, "steps_planned": 0,
+            "steps_executed": 0, "tools_used": 0, "elapsed": 0,
+            "logs": [], "error": f"Invalid completion verifier: {exc}"
         }
 
     try:
@@ -302,13 +337,14 @@ def quick_test(task: str, stream: bool = True, goal_contract_path=None) -> Dict:
                 return ""
 
         return run(task, _stream_call, verbose=True, control=control,
-                   review_action=_review_action)
+                   review_action=_review_action, verify_completion=verifier)
     else:
         # Non-streaming path (faster for benchmarks)
         def _call(prompt):
             return chat_simple(prompt, config=lc) or ""
 
-        return run(task, _call, control=control, review_action=_review_action)
+        return run(task, _call, control=control, review_action=_review_action,
+                   verify_completion=verifier)
 
 
 def report_cli_result(result: Dict) -> int:
@@ -363,9 +399,11 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run the daily agent with a Goal Contract")
     parser.add_argument("--contract", help="JSON file containing the active goal and task")
+    parser.add_argument("--verifier", help="Host-owned Python evidence checker for goal completion")
     parser.add_argument("task", nargs="+", help="Task title matching the contract")
     args = parser.parse_args()
     task = " ".join(args.task)
     print(f"\nTask: {task}\n{'='*50}")
-    result = quick_test(task, goal_contract_path=args.contract)
+    result = quick_test(task, goal_contract_path=args.contract,
+                        verifier_path=args.verifier)
     raise SystemExit(report_cli_result(result))

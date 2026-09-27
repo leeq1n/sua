@@ -1,6 +1,7 @@
 # Daily agent Goal Control entrypoint
 
 > L0: The daily `core.agent` command requires an explicit active Goal/Task contract and reviews each tool action before execution.
+> Last P20-verified: 2026-09-27
 
 The command reads a JSON file with one active Goal Contract and one active
 Task. The task title on the command line must match the file. For example:
@@ -41,8 +42,15 @@ the control plane checks the current goal checksum and action identity again
 before the tool executes. A missing or malformed review rejects the action.
 `ControlPlane.traces` records authorized **attempts**, not completed outcomes.
 The runtime distinguishes `execution_succeeded` from `goal_complete`. A host
-can provide `verify_completion` to judge evidence against the current goal;
-without that verifier, `goal_complete` is unknown and `success` remains false.
+can provide `verify_completion` to judge evidence against the current goal.
+The command accepts `--verifier path/to/check.py`; that host-owned file must
+define `verify_completion(context, logs)` and return a dictionary with
+`passed: true` plus a nonempty `evidence` string for every current goal success
+criterion. The checker should inspect actual artifacts or external results;
+the model's answer and a tool's successful exit are insufficient. The command
+loads and executes this Python file with the user's privileges, so only a
+trusted host-owned checker should be supplied. Without a verifier,
+`goal_complete` is unknown and `success` remains false.
 The command exits nonzero on a rejected action, failed tool, or unverified
 goal. A successful tool run is not proof that the goal criterion was met.
 The built-in shell tool treats a nonzero process exit code as a failed tool

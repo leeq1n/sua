@@ -161,6 +161,57 @@ def test_daily_entrypoint_guarded_run_with_model_review(tmp_path, monkeypatch):
     assert calls == [("calc", ("2+2",), {})]
 
 
+def test_daily_entrypoint_can_verify_completion_with_host_evidence(tmp_path, monkeypatch):
+    pytest.importorskip("httpx")
+    from src import llm
+
+    contract = tmp_path / "goal.json"
+    contract.write_text(json.dumps({
+        "goal": {"goal_id": "G1", "objective": "Calculate the answer",
+                 "success_criteria": ["answer file contains 4"]},
+        "task": {"task_id": "T1", "title": "Calculate", "goal_id": "G1",
+                 "criteria": ["answer file contains 4"]},
+    }), encoding="utf-8")
+    answer = tmp_path / "answer.txt"
+    verifier = tmp_path / "verify.py"
+    verifier.write_text(
+        "from pathlib import Path\n"
+        f"ANSWER = Path({str(answer)!r})\n"
+        "def verify_completion(context, logs):\n"
+        "    passed = ANSWER.read_text(encoding='utf-8') == '4'\n"
+        "    return {'passed': passed, 'evidence': "
+        "{'answer file contains 4': str(ANSWER) if passed else ''}}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(llm.LLMConfig, "from_env",
+                        lambda: SimpleNamespace(ready=True, timeout=1))
+    monkeypatch.setattr(llm, "chat_simple", lambda prompt, **kwargs: (
+        '{"allow": true, "criterion": "answer file contains 4"}'
+        if prompt.startswith("Review this proposed tool action") else "calc: 2+2"))
+    monkeypatch.setattr(agent, "plan_task",
+                        lambda prompt, llm_call: SimpleNamespace(steps=["Calculate"]))
+
+    def execute(name, *args, **kwargs):
+        answer.write_text("4", encoding="utf-8")
+        return "4"
+
+    monkeypatch.setattr(agent, "call_tool", execute)
+    result = agent.quick_test("Calculate", stream=False,
+                              goal_contract_path=contract, verifier_path=verifier)
+    assert result["execution_succeeded"] is True
+    assert result["goal_complete"] is True
+    assert result["success"] is True
+
+
+def test_host_verifier_cannot_claim_completion_without_criterion_evidence(tmp_path):
+    verifier = tmp_path / "verify.py"
+    verifier.write_text(
+        "def verify_completion(context, logs):\n"
+        "    return {'passed': True, 'evidence': {}}\n", encoding="utf-8")
+    check = agent._load_completion_verifier(verifier)
+    assert check(controlled_plane().working_context(), []) is False
+
+
 def test_controlled_agent_calls_builtin_tools_with_their_real_signatures(monkeypatch, tmp_path):
     source = tmp_path / "source.txt"
     source.write_text("source text", encoding="utf-8")
