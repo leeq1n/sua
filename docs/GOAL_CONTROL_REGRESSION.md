@@ -50,7 +50,10 @@ prompt from the active Goal, active Task, HOT direct dependencies, and
 explicitly retrieved knowledge. It discards the raw Loop prompt; the host
 must first bind the current user intent into its Goal and Task contracts.
 It does not automatically classify feedback or judge semantic goal alignment.
-No production entrypoint constructs this adapter by default, so the tests
-demonstrate an execution boundary, not live agent drift reduction.
+The daily `core.agent` entrypoint now uses the same ControlPlane through its
+own guarded tool boundary when given an explicit contract; see
+[`GOAL_CONTROL_RUNTIME.md`](GOAL_CONTROL_RUNTIME.md). The v4 adapter itself
+remains opt-in. These tests demonstrate execution boundaries, not live agent
+drift reduction.
 Multi-task transitions prevent partial in-memory eviction after a write error;
 separate capsule files do not provide a cross-file transaction after a crash.

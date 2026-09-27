@@ -10,6 +10,8 @@ Self-Upgrade Agent 核心 —— 可被自主改进的推理引擎。
 """
 __version__ = "1.3.0"
 import os, json, time
+from dataclasses import asdict
+from pathlib import Path
 from core.planner import plan_task
 from typing import List, Dict, Optional, Callable
 
@@ -45,6 +47,9 @@ def run(
     llm_call: Callable,
     max_turns: int = MAX_TURNS,
     verbose: bool = False,
+    *,
+    control=None,
+    review_action: Optional[Callable] = None,
 ) -> Dict:
     """
     主推理循环：规划 → 执行 → 反思。
@@ -60,8 +65,25 @@ def run(
     t0 = time.time()
     results = []
 
+    # A controlled run plans from the active resident context, never from an
+    # unbound raw prompt. The host supplies the reviewed criterion per action.
+    planning_input = task
+    bound_task_id = None
+    if control is not None:
+        from src.goal_control import DriftError
+        context = control.working_context()
+        if (review_action is None or context["goal"] is None
+                or control.active_task_id not in context["tasks"]):
+            raise DriftError("controlled run needs a HOT task and action reviewer")
+        bound_task_id = control.active_task_id
+        planning_input = json.dumps({
+            "goal": asdict(context["goal"]),
+            "tasks": {key: asdict(value) for key, value in context["tasks"].items()},
+            "knowledge": context["knowledge"],
+        }, ensure_ascii=False, sort_keys=True)
+
     # 1. 规划
-    plan_result = plan_task(task, llm_call)
+    plan_result = plan_task(planning_input, llm_call)
     plan = plan_result.steps
     if verbose:
         print(f"  Plan: {len(plan)} steps")
@@ -87,6 +109,17 @@ def run(
                     parts = tool_result.split(":", 1)
                     name = parts[0].strip()
                     body = parts[1].strip() if len(parts) > 1 else ""
+                    if control is not None:
+                        action = json.dumps({"step": step, "tool": name, "query": body},
+                                            ensure_ascii=False, sort_keys=True)
+                        try:
+                            criterion = review_action(action, control.working_context())
+                            control.allow_action(bound_task_id, action, criterion)
+                            control.record_action(action, bound_task_id, criterion)
+                        except Exception as exc:
+                            results.append({"step": step, "tool_used": None,
+                                            "error": f"goal guard rejected action: {exc}"})
+                            break
                     result = call_tool(name, query=body)
                     if verbose:
                         print(f"    Tool {name}: {str(result)[:60]}")
@@ -112,13 +145,73 @@ def run(
 
 # ── 快捷入口 ────────────────────────────────────────
 
-def quick_test(task: str, stream: bool = True) -> Dict:
+def _load_control_contract(path, task_title: str):
+    """Load an explicit current Goal/Task contract for the daily entrypoint."""
+    from src.goal_control import ControlPlane, Goal, Task, DriftError
+
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("goal contract must be a JSON object")
+    goal_data, task_data = data["goal"], data["task"]
+    if not isinstance(goal_data, dict) or not isinstance(task_data, dict):
+        raise ValueError("goal and task must be JSON objects")
+    goal_data = dict(goal_data)
+    task_data = dict(task_data)
+    for key in ("success_criteria", "non_goals", "constraints"):
+        if key in goal_data:
+            if (not isinstance(goal_data[key], list)
+                    or any(not isinstance(item, str) for item in goal_data[key])):
+                raise ValueError(f"goal {key} must be a list of strings")
+            goal_data[key] = tuple(goal_data[key])
+    for key in ("criteria", "dependencies"):
+        if key in task_data:
+            if (not isinstance(task_data[key], list)
+                    or any(not isinstance(item, str) for item in task_data[key])):
+                raise ValueError(f"task {key} must be a list of strings")
+            task_data[key] = tuple(task_data[key])
+    goal, linked_task = Goal(**goal_data), Task(**task_data)
+    if (linked_task.title != task_title or not linked_task.task_id
+            or linked_task.goal_id != goal.goal_id
+            or not linked_task.criteria or goal.version < 1 or linked_task.version < 1
+            or goal.status != "ACTIVE" or linked_task.status != "ACTIVE"
+            or linked_task.residency != "HOT"):
+        raise DriftError("contract must bind this task to an active HOT goal")
+    control = ControlPlane()
+    control.add_goal(goal)
+    control.add_task(linked_task, control.goal_checksum(goal.goal_id))
+    return control
+
+
+def quick_test(task: str, stream: bool = True, goal_contract_path=None) -> Dict:
     """使用默认 LLM 快速测试 agent。
 
     v1.8.1: 默认 stream=True (本地模型慢,streaming 让用户看到进度)。
     流式输出直接 print 到 stdout,每行一步。
     """
-    from src.llm import LLMConfig
+    contract_path = goal_contract_path or os.environ.get("SUA_GOAL_CONTRACT")
+    if not contract_path:
+        return {
+            "success": False, "task": task, "steps_planned": 0,
+            "steps_executed": 0, "tools_used": 0, "elapsed": 0,
+            "logs": [], "error": "Goal Contract required: pass --contract <JSON file> or set SUA_GOAL_CONTRACT."
+        }
+    try:
+        control = _load_control_contract(contract_path, task)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        return {
+            "success": False, "task": task, "steps_planned": 0,
+            "steps_executed": 0, "tools_used": 0, "elapsed": 0,
+            "logs": [], "error": f"Invalid Goal Contract: {exc}"
+        }
+
+    try:
+        from src.llm import LLMConfig, chat_simple
+    except ImportError as exc:
+        return {
+            "success": False, "task": task, "steps_planned": 0,
+            "steps_executed": 0, "tools_used": 0, "elapsed": 0,
+            "logs": [], "error": f"LLM runtime unavailable; install requirements.txt: {exc}"
+        }
     lc = LLMConfig.from_env()
 
     if not lc.ready:
@@ -129,6 +222,25 @@ def quick_test(task: str, stream: bool = True) -> Dict:
             "error": "LLM 未配置。请创建 .env 文件并设置 LLM_API_KEY 和 LLM_MODEL。\n"
                      "参考 .env.example。"
         }
+
+    def _review_action(action, context):
+        review_prompt = (
+            "Review this proposed tool action against the current Goal Contract. "
+            "Return only JSON with allow (boolean) and criterion (an exact success "
+            "criterion, or empty string). Deny uncertain, unrelated, forbidden, or "
+            "constraint-violating actions.\n"
+            + json.dumps({"goal": asdict(context["goal"]),
+                          "task": asdict(context["tasks"][control.active_task_id]),
+                          "action": action}, ensure_ascii=False, sort_keys=True)
+        )
+        try:
+            response = chat_simple(review_prompt, config=lc)
+            decision = json.loads(response)
+        except (ValueError, TypeError):
+            return None
+        if isinstance(decision, dict) and decision.get("allow") is True:
+            return decision.get("criterion")
+        return None
 
     if stream:
         # v1.8.1: streaming path — prints tokens as they arrive
@@ -152,24 +264,21 @@ def quick_test(task: str, stream: bool = True) -> Dict:
                 print(f"\n    [llm error: {e}]")
                 return ""
 
-        return run(task, _stream_call, verbose=True)
+        return run(task, _stream_call, verbose=True, control=control,
+                   review_action=_review_action)
     else:
         # Non-streaming path (faster for benchmarks)
-        from src.llm import chat_simple
-
         def _call(prompt):
             return chat_simple(prompt, config=lc) or ""
 
-        return run(task, _call)
+        return run(task, _call, control=control, review_action=_review_action)
 
 
 if __name__ == "__main__":
-    """使用入口：python -m core.agent "你的任务"
+    """使用入口：python -m core.agent --contract goal.json "任务标题"
 
     这是 agent 的日常使用入口，与自我升级入口 (python -m self_upgrade) 分开。
-    示例：
-        python -m core.agent "帮我规划一个 3 天的东京旅行"
-        python -m core.agent "写一个检查回文的 Python 函数"
+    Goal Contract 的任务标题必须与命令参数相同。
     """
     # Load .env so users don't need to `export $(cat .env)` first.
     # Mirrors the loader in tests/conftest.py.
@@ -197,18 +306,18 @@ if __name__ == "__main__":
 
     _load_env_file(_ENV_PATH)
 
-    import sys
-    if len(sys.argv) < 2:
-        print("Usage: python -m core.agent \"<task>\"")
-        print("Example: python -m core.agent \"Plan a 3-day trip to Tokyo\"")
-        sys.exit(1)
-
-    task = " ".join(sys.argv[1:])
+    import argparse
+    parser = argparse.ArgumentParser(description="Run the daily agent with a Goal Contract")
+    parser.add_argument("--contract", help="JSON file containing the active goal and task")
+    parser.add_argument("task", nargs="+", help="Task title matching the contract")
+    args = parser.parse_args()
+    task = " ".join(args.task)
     print(f"\nTask: {task}\n{'='*50}")
-    result = quick_test(task)
+    result = quick_test(task, goal_contract_path=args.contract)
     print(f"\n{'='*50}")
     if result.get("error"):
         print(f"Error: {result['error']}")
+        raise SystemExit(2)
     else:
         print(f"Steps planned: {result['steps_planned']}")
         print(f"Tools used:    {result['tools_used']}")

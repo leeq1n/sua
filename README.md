@@ -24,6 +24,9 @@
 The control-plane work is being developed in isolated candidates. See
 [`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md) for the current `main`
 boundary and what remains unverified.
+The daily agent's explicit contract entrypoint is described in
+[`docs/GOAL_CONTROL_RUNTIME.md`](docs/GOAL_CONTROL_RUNTIME.md); it remains a
+candidate until independent acceptance and promotion.
 
 
 
