@@ -16,6 +16,9 @@ reading sequence. Load only the layer needed for the current task.
 
 ### Step 1: Read L0 first (per R10 + AGENTS_CORE.md)
 
+Follow `core-layer/AGENTS_CORE.md`'s binding "Read first" sequence. The category map
+below helps select conditional detail after that sequence.
+
 **What to read**:
 - `core-layer/AGENTS_CORE.md` — always-loaded entry contract
 - `AGENTS.md` (project root) — per-task rule index
@@ -35,11 +38,11 @@ task fits.
 
 ### Step 2: Read L1 for your specific task (per P20)
 
-**What to read** (pick ONE based on Step 1):
+**What to read** (select routes relevant to the current task):
 - Task is "organize work" → `docs/OPERATING_RULES.md`
-- Task is "modify principles" → `docs/PRINCIPLES_DETAIL.md` P25段
+- Task is "modify principles" → `docs/PRINCIPLES_DETAIL.md` P25 route
 - Task is "apply P30 acceptance authority" → `docs/PRINCIPLES_DETAIL.md` P30 route → `docs/PRINCIPLES_FULL.md#p30-separation-of-construction-and-acceptance`
-- Task is "add new docs" → `docs/PRINCIPLES_DETAIL.md` P11/P13段
+- Task is "add new docs" → `docs/PRINCIPLES_DETAIL.md` P11/P13 route
 - Task is "decide between options" → `docs/SWITCH_SIGNALS.md`
 - Task is "discover, establish, falsify, or claim new scientific knowledge"
   → `docs/AI4S_RESEARCH_MODE.md` before proposing implementation
@@ -61,10 +64,8 @@ type.
 ### Step 3: Read L2 only if L1 prompts question (per P20)
 
 **What to read**:
-- L1 says "see X段 in PRINCIPLES_DETAIL.md" → go
-  to that段 or follow the routing row for the named principle
-- L1 says "per P-n" → go to that P-n in
-  PRINCIPLES_DETAIL.md
+- L1 says "see X段 in PRINCIPLES_DETAIL.md" or "per P-n" → use
+  `PRINCIPLES_DETAIL.md` to locate that principle's full text
 - L1 says "see c## commit" → `git log` to find
   the commit
 
@@ -83,11 +84,11 @@ your task fits:
 
 | Family | Tasks | Key docs to read |
 |---|---|---|
-| **Plan-then-act** (P1, P2, P4, P15, P22) | Decompose big task, sequence work, plan | OPERATING_RULES.md, RECURSIVE_DECOMPOSITION.md |
-| **Verify-don't-guess** (P3, P5, P6, P16, P18, P19, P24) | Test, verify, regression | PRINCIPLES_DETAIL.md P3/P5/P6段 |
-| **Capture-in-writing** (P10, P11, P12, P14, P17, P20, P21) | Doc, cite, structure, cross-ref | PRINCIPLES_DETAIL.md P11/P14/P20段 |
-| **Minimum-viable** (P7, P8, P9, P13) | Simplify, don't over-build | PRINCIPLES_DETAIL.md P7段 |
-| **Meta-rules** (P22, P23, P25, P26, P27, P28, P30) | Modify principles, audit, accept | PRINCIPLES_DETAIL.md routing index; P30 → PRINCIPLES_FULL.md |
+| **Plan-then-act** (P1, P2, P4, P22) | Decompose big task, sequence work, plan | OPERATING_RULES.md, RECURSIVE_DECOMPOSITION.md |
+| **Verify-don't-guess** (P3, P5, P18, P19) | Test, verify, regression | PRINCIPLES_DETAIL.md routes for P3/P5/P18/P19 |
+| **Capture-in-writing** (P10, P11, P12, P14, P17, P20, P21) | Doc, cite, structure, cross-ref | PRINCIPLES_DETAIL.md routes for the relevant P-n |
+| **Minimum-viable** (P7, P8, P9, P13) | Simplify, don't over-build | PRINCIPLES_DETAIL.md route for the relevant P-n |
+| **Meta-rules** (P22, P23, P25, P26, P27, P28, P30) | Modify principles, audit, accept | PRINCIPLES_DETAIL.md routes to both full-text files |
 
 **Decision rule**: pick the family that **best
 describes your task**.  If multiple, pick the one
@@ -113,20 +114,21 @@ Per P11 摘要+引用 + P13 no orphan:
 "graph trap" — you end up reading the entire graph
 without finishing your task.
 
-## The 7-check self-organization pattern (per c50 + P27 candidate)
+## The 7-check self-organization pattern (per c50 + P27)
 
 If your task is **modify project structure** (add/
 reorg docs, modify principles, add cross-refs), apply
 these 7 checks BEFORE commit (per c50 audit + P27
-candidate in c52):
+first recorded in c52):
 
 1. **L0 line at top** (per P20 + R9): single-line
    summary, ≤ 120 chars
 2. **L1 summary段** (per P20): 1-3 paragraphs
 3. **L2 detail段** (per P20): full content
 4. **Last P20-verified** (per R10): at end of doc
-5. **Cap compliance** (per R5/R8): ≤ 7KB summary,
-   > 7KB has _DETAIL companion
+5. **Reading role and size** (per R5): active entries and L0/L1 summaries
+   target ≤ 7 KiB; longer summaries link to a `_DETAIL.md` companion.
+   Conditionally indexed evidence records keep decisions with provenance.
 6. **Cross-refs** (per P11 + P13): parent doc +
    sibling docs reachable
 7. **Inductive summary** (per P22 step 3 + c43):
@@ -185,7 +187,7 @@ document authoring check, not current artifact acceptance.
 
 - `docs/PRINCIPLES.md` 类比联想段 (5 families)
 - `docs/OPERATING_RULES.md` (M-rules for workflow)
-- `docs/PRINCIPLES_DETAIL.md` (P20 + P22 detail)
+- `docs/PRINCIPLES_DETAIL.md` (route to P20 and P22 full text)
 - `core-layer/AGENTS_CORE.md` "Read first" (parent reference)
 
 Last P20-verified: 2026-09-28

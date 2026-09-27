@@ -31,8 +31,8 @@
 
 | Doc | Companion | TL;DR |
 |---|---|---|
-| [PRINCIPLES.md](PRINCIPLES.md) | [PRINCIPLES_FULL.md](PRINCIPLES_FULL.md) | Working principles (L0/L1) + per-P-n 实操 (L2) |
-| [PRINCIPLES_DETAIL.md](PRINCIPLES_DETAIL.md) | [PRINCIPLES_FULL.md](PRINCIPLES_FULL.md) | L2 routing index; P30 routes to its canonical full section |
+| [PRINCIPLES.md](PRINCIPLES.md) | [PRINCIPLES_DETAIL.md](PRINCIPLES_DETAIL.md) | Working-principle summary; follow the routing index for the named P-n |
+| [PRINCIPLES_DETAIL.md](PRINCIPLES_DETAIL.md) | [PRINCIPLES_DETAIL_DETAIL.md](PRINCIPLES_DETAIL_DETAIL.md), [PRINCIPLES_FULL.md](PRINCIPLES_FULL.md) | L2 routing index for active and extended principle text |
 | [OPERATING_RULES.md](OPERATING_RULES.md) | [OPERATING_RULES_DETAIL.md](OPERATING_RULES_DETAIL.md) | M-n operating rules (workflow discipline) |
 | [EXTENSIONS.md](EXTENSIONS.md) | [EXTENSIONS_DETAIL.md](EXTENSIONS_DETAIL.md) | Extension rules (L0/L1/L2 + extensions) |
 | [RECURSIVE_DECOMPOSITION.md](RECURSIVE_DECOMPOSITION.md) | (within file) | Top-down decomposition rules |
