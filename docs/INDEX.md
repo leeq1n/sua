@@ -65,7 +65,7 @@ Load it only when an M-n rule needs its L2 companion.
 | [AI4S_PHASE_A_VALIDATION.md](AI4S_PHASE_A_VALIDATION.md) | (within file) | Phase A evidence, limitations, and layer decision |
 | [DOMAIN_SPECIALIZATION_BOOTSTRAP.md](DOMAIN_SPECIALIZATION_BOOTSTRAP.md) | [DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md](DOMAIN_SPECIALIZATION_BOOTSTRAP_DETAIL.md) | Detect recurring domain-methodology gaps before adapter incubation |
 | [HANDOFF.md](HANDOFF.md) | [HANDOFF_DETAIL.md](HANDOFF_DETAIL.md) | Project handoff template |
-| [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | (within file) | Acceptance protocol |
+| [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | [ACCEPTANCE_PROTOCOL_DETAIL.md](ACCEPTANCE_PROTOCOL_DETAIL.md) | Acceptance protocol |
 | [ARTIFACT_FINALIZATION.md](ARTIFACT_FINALIZATION.md) | (within file) | Bounded final-promotion gate for evidence-bearing artifacts |
 | [ARTIFACT_GOVERNANCE_VALIDATION.md](ARTIFACT_GOVERNANCE_VALIDATION.md) | (within file) | Tribunal evidence, reduction decision, and validation limits |
 | [ANALYSIS_PARENT_VERIFY.md](ANALYSIS_PARENT_VERIFY.md) | [ANALYSIS_PARENT_VERIFY_DETAIL.md](ANALYSIS_PARENT_VERIFY_DETAIL.md) | Parent verification analysis |
