@@ -54,7 +54,8 @@ SCORE_JSON = json.dumps({
 GOOD_TASK_RESPONSE = "1. Plan the trip\n2. Book hotels\n3. Pack bags"
 
 
-def _fake_chat(messages, system=None, config=None, response_format=None):
+def _fake_chat(messages, system=None, config=None, response_format=None,
+               enable_thinking=None, thinking_budget=None):
     """Mock LLM chat: returns scores for filter, patches for patchgen,
     task outputs for benchmark."""
     prompt = " ".join(m.get("content", "") for m in messages)
@@ -68,6 +69,11 @@ def _fake_chat(messages, system=None, config=None, response_format=None):
 @pytest.fixture
 def mocked_end_to_end_env(monkeypatch, tmp_path):
     """Set up: load .env, mock LLM, isolate upgrades/ to tmp_path."""
+    from src import learning
+    original_init_db = learning.init_db
+    test_db = str(tmp_path / "learning.db")
+    monkeypatch.setattr(learning, "init_db", lambda: original_init_db(test_db))
+
     # Load .env
     env_path = os.path.join(
         os.path.dirname(__file__), "..", ".env"
@@ -85,11 +91,13 @@ def mocked_end_to_end_env(monkeypatch, tmp_path):
                     v = v.split(" #", 1)[0].rstrip()
                 v = v.strip('"').strip("'")
                 if k and k not in os.environ:
-                    os.environ[k] = v
+                    monkeypatch.setenv(k, v)
 
     # Mock src.llm
     import src.llm
     monkeypatch.setattr(src.llm, "chat", _fake_chat)
+    from src import patchgen as patchgen_mod
+    monkeypatch.setattr(patchgen_mod, "chat", _fake_chat)
     monkeypatch.setattr(
         src.llm, "chat_simple",
         lambda prompt, system=None, **kw: _fake_chat(
@@ -97,12 +105,7 @@ def mocked_end_to_end_env(monkeypatch, tmp_path):
         ).content,
     )
 
-    # node_filter calls filter_papers(..., use_llm=True) without passing
-    # llm_config, so score_paper() short-circuits to keyword scoring and
-    # the mock chat() / chat_simple() above never gets invoked for the
-    # filter stage.  Replace score_paper() wholesale so all papers
-    # route through the LLM-mock path and qualify with deterministic
-    # high scores.
+    # Keep filtering deterministic while exercising the full pipeline.
     from src import filter as filter_mod
     monkeypatch.setattr(
         filter_mod, "score_paper",
@@ -280,7 +283,7 @@ class TestEndToEnd:
         ev = state.get("eval") or state.get("evaluation") or {}
         assert ev.get("baseline_rate", 0) > 0
 
-    def test_pipeline_handles_no_papers_qualified(self, monkeypatch):
+    def test_pipeline_handles_no_papers_qualified(self, mocked_end_to_end_env, monkeypatch):
         """If the filter rejects all papers, pipeline should end cleanly
         with empty patch (no promote, no crash)."""
         from src.llm import LLMConfig
@@ -295,9 +298,8 @@ class TestEndToEnd:
         monkeypatch.setattr(llm_mod, "chat", reject_all)
         monkeypatch.setattr(llm_mod, "chat_simple", lambda p, **kw: reject_all([{"role":"user","content":p}]).content)
 
-        # node_filter uses keyword scoring (no llm_config), so the chat
-        # mock above never affects filter.  Patch score_paper to return
-        # sub-threshold scores so the filter rejects every paper.
+        # Patch score_paper to return sub-threshold scores so the filter
+        # rejects every paper.
         from src import filter as filter_mod
         monkeypatch.setattr(
             filter_mod, "score_paper",
@@ -309,43 +311,16 @@ class TestEndToEnd:
             ),
         )
 
-        # Load .env so from_env works
-        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-        if os.path.exists(env_path):
-            with open(env_path, encoding="utf-8-sig") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    k, v = line.split("=", 1)
-                    k = k.strip()
-                    v = v.strip()
-                    if " #" in v:
-                        v = v.split(" #", 1)[0].rstrip()
-                    v = v.strip('"').strip("'")
-                    if k and k not in os.environ:
-                        os.environ[k] = v
-
         from src.pipeline_lg import run
         from src.config import load_config
         cfg = load_config("config.yaml")
 
-        # Snapshot planner to restore later
-        planner = os.path.join(os.path.dirname(__file__), "..", "core", "planner.py")
-        with open(planner, encoding="utf-8") as f:
-            original = f.read()
-        try:
-            state = run(cfg, dry_run=False)
-            # Pipeline exits cleanly when filter rejects all papers:
-            # _papers_qualified routes to END, and "done" stays False
-            # because node_decide is the only node that flips it.
-            assert state.get("done") is False, (
-                "expected early END (done=False), got done=True"
-            )
-            # No patch was generated (filter rejected all)
-            assert not state.get("patch"), "should not promote with no patch"
-            # No exceptions bubbled up
-            assert not state.get("errors"), f"pipeline errors: {state.get('errors')}"
-        finally:
-            with open(planner, "w", encoding="utf-8") as f:
-                f.write(original)
+        state = run(cfg, dry_run=False)
+        # Pipeline exits cleanly when filter rejects all papers:
+        # _papers_qualified routes to END, and "done" stays False
+        # because node_decide is the only node that flips it.
+        assert state.get("done") is False, (
+            "expected early END (done=False), got done=True"
+        )
+        assert not state.get("patch"), "should not promote with no patch"
+        assert not state.get("errors"), f"pipeline errors: {state.get('errors')}"

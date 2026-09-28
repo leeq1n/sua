@@ -8,15 +8,21 @@ Two paths:
 The second path is the REAL one — it proves the harness actually
 executes the 8 unit tests against a (trivially) patched planner.
 """
-import os, sys, shutil, hashlib, subprocess
+import os, sys, subprocess
 import pytest
 
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT)
 
 
-def _pre_md5():
-    return hashlib.md5(open(os.path.join(PROJECT, "core", "planner.py"), "rb").read()).hexdigest()
+@pytest.fixture
+def isolated_repo(tmp_path, monkeypatch):
+    """Run planner-swapping integration checks in a disposable local clone."""
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", PROJECT, str(repo)],
+                   check=True, capture_output=True)
+    monkeypatch.chdir(repo)
+    return repo
 
 
 def test_node_evaluate_dry_run_sets_harness():
@@ -35,7 +41,7 @@ def test_node_evaluate_dry_run_sets_harness():
     assert h["failed"] == 0
 
 
-def test_node_evaluate_real_calls_run_harness_mocked():
+def test_node_evaluate_real_calls_run_harness_mocked(isolated_repo):
     """Non-dry-run path with MOCKED benchmark: verify that the real
     run_harness() is called and the harness result is included in
     state['evaluation'].
@@ -65,18 +71,9 @@ def test_node_evaluate_real_calls_run_harness_mocked():
     }
     mock_load = lambda: [{"id": f"t{i}", "task": "x"} for i in range(21)]
 
-    pre_md5 = _pre_md5()
     with mock_patch("src.benchmark.run_all", mock_run_all), \
          mock_patch("src.benchmark.load_tasks", mock_load):
-        try:
-            result = plg.node_evaluate(state)
-        finally:
-            post_md5 = _pre_md5()
-            if pre_md5 != post_md5:
-                subprocess.run(
-                    ["git", "checkout", "HEAD", "--", "core/planner.py"],
-                    cwd=PROJECT, capture_output=True,
-                )
+        result = plg.node_evaluate(state)
 
     ev = result["evaluation"]
     assert "harness" in ev, f"harness missing from real path: {list(ev.keys())}"
@@ -99,19 +96,13 @@ def test_node_evaluate_real_no_patch_returns_early():
     assert result is state  # same dict, no copy
 
 
-def test_pipeline_lg_safety_net_works():
+def test_pipeline_lg_safety_net_works(isolated_repo):
     """Verify the v1.7.1 _safety_restore_planner works on a fake corruption."""
     import src.pipeline_lg as plg
-    pre_md5 = _pre_md5()
-    # Manually corrupt planner.py
-    p = os.path.join(PROJECT, "core", "planner.py")
-    with open(p, "r+b") as f:
-        f.write(b"# corrupted\n")
-    corrupted = hashlib.md5(open(p, "rb").read()).hexdigest()
-    assert corrupted != pre_md5
-    # Run safety restore
-    restored = plg._safety_restore_planner()
-    assert restored, "safety restore returned False"
-    # Verify restored
-    post_md5 = _pre_md5()
-    assert post_md5 == pre_md5, f"safety restore failed: {pre_md5} != {post_md5}"
+    p = isolated_repo / "core" / "planner.py"
+    committed = subprocess.check_output(
+        ["git", "show", "HEAD:core/planner.py"], cwd=isolated_repo
+    )
+    p.write_bytes(b"# corrupted\n")
+    assert plg._safety_restore_planner(), "safety restore returned False"
+    assert p.read_bytes() == committed

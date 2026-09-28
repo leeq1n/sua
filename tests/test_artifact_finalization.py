@@ -20,7 +20,9 @@ def markdown_targets(path: Path) -> set[str]:
 
 
 def test_fresh_agent_reaches_finalization_from_ordinary_acceptance_path():
-    assert "docs/HOW_TO_READ_GRAPH.md" in read(ROOT / "README.md")
+    assert "core-layer/AGENTS_CORE.md" in read(ROOT / "README.md")
+    assert "docs/INDEX.md" in read(ROOT / "core-layer" / "AGENTS_CORE.md")
+    assert "HOW_TO_READ_GRAPH.md" in markdown_targets(ROOT / "docs" / "INDEX.md")
     assert "ARTIFACT_FINALIZATION.md" in markdown_targets(
         ROOT / "docs" / "HOW_TO_READ_GRAPH.md"
     )

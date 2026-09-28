@@ -19,6 +19,7 @@ PROMPT_SURFACES = tuple(
     for path in ROOT.rglob("*")
     if path.is_file()
     and ".git" not in path.parts
+    and path.name != "CHANGELOG.md"
     and path.suffix.lower() in {".md", ".py", ".sh", ".bash", ".yaml", ".yml", ".toml"}
 )
 # Phrases banned from prompt surfaces (the test file itself is exempt
@@ -81,10 +82,11 @@ def test_agents_index_points_to_live_per_task_rule_source():
         "## Multi-perspective audit angles",
         "## Task-done-notify reminder",
         "## Post-completion verification suggestion",
-        "## Operating rules",
         "## Cross-project sync",
     ):
         assert heading in detail, f"Missing live rule source: {heading}"
+    assert "docs/OPERATING_RULES.md" in agents
+    assert "docs/INDEX_DETAIL.md" in agents
 
 
 SIBLING_PROJECTS = (

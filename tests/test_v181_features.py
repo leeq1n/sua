@@ -6,6 +6,15 @@ import pytest
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+@pytest.fixture
+def empty_learning_db(tmp_path, monkeypatch):
+    """Give context tests a fresh database instead of the developer's history."""
+    from src import learning
+    original_init_db = learning.init_db
+    path = str(tmp_path / "learning.db")
+    monkeypatch.setattr(learning, "init_db", lambda: original_init_db(path))
+
+
 def test_seen_papers_function_exists():
     """src/learning.py has mark_paper_seen, get_unseen_paper_ids, is_blacklisted."""
     sys.path.insert(0, PROJECT)
@@ -183,10 +192,12 @@ def test_apply_memory_policy_accepts_user_fn():
         os.unlink(path)
 
 
-def test_apply_memory_policy_hard_ceiling_fuse():
+def test_apply_memory_policy_hard_ceiling_fuse(monkeypatch):
     """Hard ceiling MAX_LEARNING_ROWS fires if user policy is too lax."""
     import tempfile
     sys.path.insert(0, PROJECT)
+    from src import learning as learning_mod
+    monkeypatch.setattr(learning_mod, "MAX_LEARNING_ROWS", 32)
     from src.learning import (
         init_db, mark_paper_seen, apply_memory_policy, MAX_LEARNING_ROWS
     )
@@ -401,7 +412,7 @@ def test_goals_describe_handles_all_cases():
 
 
 
-def test_build_research_context_returns_dict():
+def test_build_research_context_returns_dict(empty_learning_db):
     """_build_research_context always returns a dict with consistent shape."""
     sys.path.insert(0, PROJECT)
     from src.pipeline_lg import _build_research_context
@@ -563,7 +574,7 @@ def test_summarize_failures_groups_by_decision():
         os.unlink(path)
 
 
-def test_research_context_passes_recent_failures_through():
+def test_research_context_passes_recent_failures_through(empty_learning_db):
     """_build_research_context preserves recent_failures if already in state."""
     import sys
     sys.path.insert(0, PROJECT)
