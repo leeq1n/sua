@@ -12,35 +12,13 @@ passes'.  These tests verify:
 """
 import os
 import sys
-import json
 import shutil
 import tempfile
-import pytest
-from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-REPO = os.path.join(os.path.dirname(__file__), "..")
-PLANNER_PATH = os.path.join(REPO, "core", "planner.py")
-PLANNER_BAK = PLANNER_PATH + ".bench_bak"
-PLANNER_TMP = PLANNER_PATH + ".bench_tmp"
-
-
-@pytest.fixture
-def restore_planner():
-    """Snapshot and restore core/planner.py around the test."""
-    original = open(PLANNER_PATH, encoding="utf-8").read()
-    yield
-    # Restore (in case test changed it)
-    with open(PLANNER_PATH, "w", encoding="utf-8") as f:
-        f.write(original)
-    for p in (PLANNER_BAK, PLANNER_TMP):
-        if os.path.exists(p):
-            os.remove(p)
-
-
 class TestAtomicWrite:
-    def test_tmp_file_renamed_atomically(self, tmp_path, restore_planner):
+    def test_tmp_file_renamed_atomically(self, tmp_path):
         """The .tmp + os.replace pattern means a process killed
         between open(tmp) and os.replace leaves the original untouched."""
         target = str(tmp_path / "target.py")
@@ -62,7 +40,7 @@ class TestAtomicWrite:
         with open(target) as f:
             assert f.read() == "patched\n"
 
-    def test_partial_write_does_not_corrupt(self, tmp_path, restore_planner):
+    def test_partial_write_does_not_corrupt(self, tmp_path):
         """If we crash BEFORE the os.replace, original is preserved."""
         target = str(tmp_path / "target.py")
         backup = target + ".bak"
@@ -96,7 +74,7 @@ class TestNodeEvaluateAtomicity:
        4. Clean up .bench_bak and .bench_tmp after restore
     """
 
-    def test_core_modules_evicted_from_sys_modules(self, restore_planner):
+    def test_core_modules_evicted_from_sys_modules(self):
         """Before benchmarking the patched version, sys.modules must
         be cleared of core.* so the new file is actually loaded."""
         from src import pipeline_lg
@@ -111,7 +89,7 @@ class TestNodeEvaluateAtomicity:
         assert "del sys.modules[mod_name]" in src
         assert 'k.startswith("core")' in src
 
-    def test_bench_write_uses_tmp_and_replace(self, restore_planner):
+    def test_bench_write_uses_tmp_and_replace(self):
         """node_evaluate must use the .tmp + os.replace pattern, not
         a direct open() + write() to the target."""
         from src import pipeline_lg
@@ -130,7 +108,7 @@ class TestNodeEvaluateAtomicity:
             "use .tmp + os.replace for atomicity"
         )
 
-    def test_restore_uses_atomic_move(self, restore_planner):
+    def test_restore_uses_atomic_move(self):
         """The finally-block restore must use atomic shutil.move (or
         copy+delete fallback), not a non-atomic overwrite."""
         from src import pipeline_lg
@@ -144,7 +122,7 @@ class TestNodeEvaluateAtomicity:
         # move fails (e.g. cross-device).
         assert "shutil.copy2" in evaluate_body
 
-    def test_bench_files_cleaned_up(self, restore_planner):
+    def test_bench_files_cleaned_up(self):
         """After node_evaluate (success OR failure), the .bench_bak
         and .bench_tmp files should not be left in core/."""
         from src import pipeline_lg

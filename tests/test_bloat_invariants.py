@@ -23,6 +23,16 @@ sys.path.insert(0, PROJECT)
 PLANNER = "core/planner.py"
 
 
+@pytest.fixture
+def isolated_repo(tmp_path, monkeypatch):
+    """Exercise Git restoration without changing this checkout's planner."""
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", PROJECT, str(repo)],
+                   check=True, capture_output=True)
+    monkeypatch.chdir(repo)
+    return repo
+
+
 def md5_lf(path):
     with open(path, "rb") as f:
         return hashlib.md5(f.read().replace(b"\r\n", b"\n")).hexdigest()
@@ -123,40 +133,18 @@ def test_apply_patch_to_module_idempotent():
     # Pretend patch: just append a comment
     pre = md5_lf(PLANNER)
 
-    # Make a backup and apply a no-op patch
-    bak = PLANNER + ".test_bak"
-    import shutil
-    shutil.copy2(PLANNER, bak)
-
-    try:
-        # Read original content
-        with open(PLANNER, encoding="utf-8") as f:
-            orig_content = f.read()
-
-        # Apply a real patch (valid Python function)
-        patch_fn = (
-            "def plan_task(task, llm_call):\n"
-            "    return [f\"Do: {task}\"]\n"
-        )
-        merged = _apply_patch_to_module(PLANNER, patch_fn)
-        # _apply_patch_to_module replaces plan_task in the merged output.
-        # It SHOULD differ from the original.
-        assert merged != orig_content, (
-            f"_apply_patch_to_module should modify output\n"
-            f"  orig len: {len(orig_content)}\n"
-            f"  merged len: {len(merged)}"
-        )
-
-        # Now restore and verify MD5 stable
-        shutil.copy2(bak, PLANNER)
-        post = md5_lf(PLANNER)
-        assert post == pre, f"planner.py MD5 changed: {pre} → {post}"
-    finally:
-        if os.path.exists(bak):
-            os.remove(bak)
+    with open(PLANNER, encoding="utf-8") as f:
+        orig_content = f.read()
+    patch_fn = (
+        "def plan_task(task, llm_call):\n"
+        "    return [f\"Do: {task}\"]\n"
+    )
+    merged = _apply_patch_to_module(PLANNER, patch_fn)
+    assert merged != orig_content
+    assert md5_lf(PLANNER) == pre
 
 
-def test_safety_restore_planner_idempotent():
+def test_safety_restore_planner_idempotent(isolated_repo):
     """Verify _safety_restore_planner returns core/planner.py to HEAD."""
     from src.pipeline_lg import _safety_restore_planner
     head = head_md5()
