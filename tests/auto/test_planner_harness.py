@@ -1,4 +1,4 @@
-"""v1.8.0: real unit tests for core/planner.py.
+"""Deterministic planner harness for the persisted RoundResult contract.
 
 These are the HARNESS — independent Python tests that verify
 plan_task behavior.  They do NOT call any LLM.  They use a
@@ -10,7 +10,7 @@ the FIRST independent signal.  should_promote in src/evaluate.py
 will be updated to weight harness >= LLM benchmark.
 
 Tests are simple, fast, and cover the documented contract:
-  - plan_task returns a list of strings
+  - plan_task returns a persisted RoundResult with list[str] steps
   - plan_task handles empty/short/long/unicode input
   - plan_task handles llm_call returning various formats
   - plan_task doesn't crash on edge inputs
@@ -28,11 +28,12 @@ def fake_llm(prompt: str) -> str:
 
 
 def test_plan_task_returns_list_of_strings():
-    """The contract: plan_task returns a list[str]."""
-    from core.planner import plan_task
+    """The current contract keeps the step list in RoundResult."""
+    from core.planner import plan_task, RoundResult
     result = plan_task("Plan a trip", fake_llm)
-    assert isinstance(result, list), f"expected list, got {type(result)}"
-    for s in result:
+    assert isinstance(result, RoundResult)
+    assert result.round_id is not None
+    for s in result.steps:
         assert isinstance(s, str), f"each item must be str, got {type(s)}"
 
 
@@ -40,9 +41,9 @@ def test_plan_task_handles_empty_task():
     """Empty string task must not crash, must return a list."""
     from core.planner import plan_task
     result = plan_task("", fake_llm)
-    assert isinstance(result, list)
+    assert isinstance(result.steps, list)
     # When the input is empty, we still expect a fallback (e.g. "Do: ")
-    assert len(result) >= 1
+    assert len(result.steps) >= 1
 
 
 def test_plan_task_handles_very_long_input():
@@ -55,7 +56,7 @@ def test_plan_task_handles_very_long_input():
     result = plan_task(long_task[:10000], fake_llm)
     elapsed = time.time() - t0
     assert elapsed < 2.0, f"too slow on 10K input: {elapsed:.2f}s"
-    assert isinstance(result, list)
+    assert isinstance(result.steps, list)
 
 
 def test_plan_task_handles_unicode():
@@ -63,7 +64,7 @@ def test_plan_task_handles_unicode():
     from core.planner import plan_task
     unicode_task = "计划一次东京之旅 🗼 で Tokyo に行く"
     result = plan_task(unicode_task, fake_llm)
-    assert isinstance(result, list)
+    assert isinstance(result.steps, list)
 
 
 def test_plan_task_handles_llm_returning_nonsense():
@@ -75,10 +76,10 @@ def test_plan_task_handles_llm_returning_nonsense():
 
     result = plan_task("do the thing", empty_llm)
     # Should fall back to "Do: <task>" (per current implementation)
-    assert isinstance(result, list)
-    assert len(result) >= 1
+    assert isinstance(result.steps, list)
+    assert len(result.steps) >= 1
     # The fallback is a string starting with "Do: "
-    assert any("Do: " in s for s in result), f"expected 'Do: ' fallback, got {result}"
+    assert any("Do: " in s for s in result.steps), f"expected 'Do: ' fallback, got {result.steps}"
 
 
 def test_plan_task_handles_llm_returning_unstructured_text():
@@ -90,8 +91,8 @@ def test_plan_task_handles_llm_returning_unstructured_text():
 
     result = plan_task("do the thing", verbose_llm)
     # Should not crash; whatever it returns must be a list of strings
-    assert isinstance(result, list)
-    for s in result:
+    assert isinstance(result.steps, list)
+    for s in result.steps:
         assert isinstance(s, str)
 
 
@@ -103,8 +104,8 @@ def test_plan_task_extracts_numbered_steps():
         return "1. Plan the route\n2. Book transport\n3. Reserve hotel"
 
     result = plan_task("plan a trip", numbered_llm)
-    assert len(result) == 3, f"expected 3 steps, got {len(result)}: {result}"
-    assert "Plan the route" in result[0]
+    assert len(result.steps) == 3, f"expected 3 steps, got {len(result.steps)}: {result.steps}"
+    assert "Plan the route" in result.steps[0]
 
 
 def test_plan_task_handles_special_characters():
@@ -119,4 +120,4 @@ def test_plan_task_handles_special_characters():
     {"key": "value", "list": [1, 2, 3]}
     """
     result = plan_task(special, fake_llm)
-    assert isinstance(result, list)
+    assert isinstance(result.steps, list)

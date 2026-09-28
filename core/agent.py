@@ -29,11 +29,11 @@ def register_tool(name: str, fn, description: str = ""):
 def list_tools():
     return [{"name": n, "description": getattr(f, "__tool_description__", "")} for n, f in _TOOLS.items()]
 
-def call_tool(name: str, **kwargs):
+def call_tool(name: str, *args, **kwargs):
     if name not in _TOOLS:
         return f"Tool '{name}' not registered. Available: {list(_TOOLS.keys())}"
     try:
-        return str(_TOOLS[name](**kwargs))
+        return str(_TOOLS[name](*args, **kwargs))
     except Exception as e:
         return f"Tool error: {e}"
 
@@ -61,7 +61,8 @@ def run(
     results = []
 
     # 1. 规划
-    plan = plan_task(task, llm_call)
+    plan_result = plan_task(task, llm_call)
+    plan = plan_result.steps
     if verbose:
         print(f"  Plan: {len(plan)} steps")
 
@@ -86,7 +87,7 @@ def run(
                     parts = tool_result.split(":", 1)
                     name = parts[0].strip()
                     body = parts[1].strip() if len(parts) > 1 else ""
-                    result = call_tool(name, query=body)
+                    result = call_tool(name, body)
                     if verbose:
                         print(f"    Tool {name}: {str(result)[:60]}")
                     if "error" not in str(result).lower():

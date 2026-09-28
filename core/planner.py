@@ -13,8 +13,9 @@ from dataclasses import dataclass, asdict
 import json
 import sqlite3
 from typing import List, Callable, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import os
+import re
 
 
 @dataclass
@@ -114,6 +115,27 @@ def create_regression_test_plan(failed_task: str, failure_reason: str, llm_call:
     return steps
 
 
+def _parse_steps(response: str, task: str) -> List[str]:
+    """Preserve JSON plans and split plain numbered plans into executable steps."""
+    raw = response.strip() if isinstance(response, str) else ""
+    if not raw:
+        return [f"Do: {task}"]
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        parsed = raw
+    if isinstance(parsed, list):
+        steps = [str(item).strip() for item in parsed if item is not None and str(item).strip()]
+        return steps or [f"Do: {task}"]
+    if isinstance(parsed, str):
+        lines = [line.strip() for line in parsed.splitlines() if line.strip()]
+        numbered = [re.fullmatch(r"\d+[.)]\s*(.+)", line) for line in lines]
+        if lines and all(numbered):
+            return [match.group(1).strip() for match in numbered]
+        return [parsed.strip()] if parsed.strip() else [f"Do: {task}"]
+    return [str(parsed)]
+
+
 def plan_task(task: str, llm_call: Callable, context: Optional[dict] = None) -> RoundResult:
     """Decompose a goal into executable steps using LLM.
     
@@ -133,19 +155,13 @@ def plan_task(task: str, llm_call: Callable, context: Optional[dict] = None) -> 
         f"Return a JSON list of step strings."
     )
     
-    try:
-        response = llm_call(prompt)
-        steps = json.loads(response)
-        if not isinstance(steps, list):
-            steps = [steps]
-    except (json.JSONDecodeError, Exception):
-        # Fallback: treat entire response as single step
-        steps = [response]
+    response = llm_call(prompt)
+    steps = _parse_steps(response, task)
     
     result = RoundResult(
         task=task,
         steps=steps,
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=datetime.now(timezone.utc).isoformat()
     )
     
     round_id = save_round_result(result)

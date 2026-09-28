@@ -10,7 +10,10 @@ def tool_shell(command: str) -> str:
     """Run a shell command and return output."""
     try:
         r = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
-        return (r.stdout or r.stderr or "(no output)")[:500]
+        output = (r.stdout or r.stderr or "(no output)")[:500]
+        if r.returncode != 0:
+            return f"Shell error: exit code {r.returncode}: {output}"
+        return output
     except Exception as e:
         return f"Shell error: {e}"
 

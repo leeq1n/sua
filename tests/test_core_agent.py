@@ -34,17 +34,17 @@ def test_planner_with_mock_llm():
     from core.planner import plan_task
     def mock_llm(prompt):
         return "1. Do A\n2. Do B\n3. Do C"
-    steps = plan_task("test", mock_llm)
-    assert len(steps) == 3
-    assert "Do A" in steps[0]
+    result = plan_task("test", mock_llm)
+    assert len(result.steps) == 3
+    assert "Do A" in result.steps[0]
 
 def test_planner_no_steps_fallback():
     from core.planner import plan_task
     def mock_llm(prompt):
         return "Just do it"
-    steps = plan_task("test", mock_llm)
-    assert len(steps) >= 1
-    assert "test" in steps[0]
+    result = plan_task("test", mock_llm)
+    assert len(result.steps) >= 1
+    assert result.steps[0] == "Just do it"
 
 def test_tools_module():
     from core.tools import tool_shell, tool_calculate, tool_read_file, tool_write_file
@@ -52,6 +52,25 @@ def test_tools_module():
     assert "5.1" in result
     result = tool_calculate("2 + 2")
     assert "4" in result
+
+
+def test_daily_run_uses_persisted_plan_and_builtin_tool(monkeypatch):
+    from core import planner
+    from core.agent import run
+    monkeypatch.setattr(planner, "save_round_result", lambda result: 1)
+
+    def llm(prompt):
+        return '["calculate"]' if "JSON list" in prompt else "calc: 2 + 2"
+
+    result = run("calculate", llm)
+    assert result["steps_planned"] == 1
+    assert result["tools_used"] == 1
+    assert result["success"] is True
+
+
+def test_shell_nonzero_exit_is_reported_as_failure():
+    from core.tools import tool_shell
+    assert tool_shell("exit 7").startswith("Shell error: exit code 7")
 
 
 def test_agent_quick_test_streaming_default():
