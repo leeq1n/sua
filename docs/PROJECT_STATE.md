@@ -15,14 +15,16 @@ adapter, not the general control plane.
 
 ## Current authority
 
-`main` contains the E2-M2 implementation baseline plus status documentation.
-Goal Control, mechanism-space evaluation, E1.3-M1, E2-M3, E3-M4, E4-A,
-planner repair, filter retention, their integration, and Windows suite hygiene
-remain isolated candidates. Goal Control has independent acceptance for its
-exact structural candidate, but no valid held-out live behavior comparison. See
-[CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) for exact snapshot identities and
-evidence limits; verify live refs before promotion. Tests or candidate docs do
-not themselves establish behavioral improvement or P30 acceptance.
+This source tree retains the E2-M2 baseline and repairs the existing daily
+planner/tool contract and paper-filter routing. The offline fast suite passes
+in a clean worktree; this does not establish a live task outcome. Goal Control
+is **rejected for canonical promotion** at its exact candidate head: its
+structural P30 acceptance is valid for that head, but reduced live drift and
+resume fidelity remain unmeasured, while adopting it would add a much larger
+host-dependent runtime surface. No Goal Control behavior is claimed here.
+See [CANDIDATE_STATUS.md](CANDIDATE_STATUS.md) for exact identities and the
+archive boundary. Independent P30 acceptance of this consolidated source
+tree is still required before calling the new baseline accepted.
 
 Prior Phase A decisions remain AI4S `AI4S_PROJECT_ADAPTER_VALIDATED` at the
 project-adapter layer and generic `PROPOSAL_ONLY_NEEDS_MORE_EVIDENCE`.
@@ -32,10 +34,11 @@ recurring domain-methodology gaps route to
 
 ## Next step
 
-Review one bounded candidate against current `main` at a time. Preserve frozen
-evidence, compare regressions in the same environment, and obtain applicable
-independent acceptance for the exact clean result before calling it promoted.
-Keep unfinished experimental packages outside the default working context.
+Obtain an artifact-first P30 review of this exact clean consolidation result.
+After an ACCEPT decision, promote the reviewed identity, archive absorbed and
+closed candidates by immutable identity, remove their branch pointers, and
+enter maintenance only when the canonical checkout, offline regression, and
+documentation remain clean. Keep unfinished experiments outside default context.
 
 ## References
 

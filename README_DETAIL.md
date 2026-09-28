@@ -12,9 +12,10 @@ Last P20-verified: 2026-09-28
 ## Code legacy (v1.x-v3.x)
 
 This project was originally a self-improving agent that modifies
-`core/planner.py`. The legacy code remains, but `core.agent.run()` on
-`main` has a known planner result contract mismatch. It is not a verified
-daily path. Candidate repairs are tracked in
+`core/planner.py`. The retained daily entry consumes its persisted planner
+result and invokes the built-in tools with their supported arguments. Its
+mocked offline tests pass; a provider-backed outcome and Goal Control benefit
+remain unverified. The candidate disposition is in
 [`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md).
 
 ### 工作流程

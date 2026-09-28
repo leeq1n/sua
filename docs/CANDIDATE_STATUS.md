@@ -1,73 +1,56 @@
-# Candidate status and promotion boundary
+# Candidate disposition and consolidation gate
 
-> L0: `main` is the canonical implemented baseline; isolated branches are retained candidates, not current SUA capability.
+> L0: Exact candidate identities, promotion decision, and archive conditions for a smaller canonical main.
 
-Snapshot: 2026-09-27. The last promoted implementation baseline is
-`a45de1b73ca4a959da0b7abf78e703f293a74427`
-(E2-M2). This is a routing aid, not independent acceptance. Verify live branch
-heads and evidence before acting. Preserve frozen and untracked evidence; do not
-add it to `main` by default.
+The current source tree proposes existing planner/tool and paper-filter repairs,
+plus isolated offline tests. The clean `codex/main-consolidation` candidate
+passed 988 tests with 15 skipped in the offline fast suite. This is local
+regression evidence, not P30 independent acceptance or proof of live benefit.
 
-| Candidate | Exact head at this snapshot | What to retain | Current boundary |
-|---|---|---|---|
-| E1.3-M1 parent lifecycle | `633de67386db5f585755c824626c50f529307a9a` on `codex/e1-3-m1-implement` | Generic controller change, tests, frozen identity, separate worktree | Implementation candidate; parent behavioral/independent acceptance outstanding. Direct merge from its older base would also remove the canonical E2-M2 regression test. |
-| E2-M3 sandbox evidence | `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` on `codex/e2-m3-preserve-sandbox-evidence` | Small diagnostic-preservation patch and regression | Local construction verified; autonomous-repair comparison remains inconclusive. |
-| E3-M4 surface authority | `616320aec7137589da0e810b7f4c19b4de105a50` on `codex/e3-m4-isolated` | Domain-neutral authority map and frozen cases | Held-out causal measurement incomplete; the older mixed `codex/e3-m4-authority-separation` branch is historical, not a single-feature promotion unit. |
-| E4-A grounded experience | `22d7d8424da7c50dfa8ca3256945513afc31f213` on `codex/e4-a-grounded-experience-anchor` | Frozen benchmark, provenance anchor, tests | Live provider measurement unavailable; candidate overlaps E1.3 in `src/retry_gate.py`. |
-| Goal Control daily integration | `6e53851ce1149610d80d029f498530e8ba350a4e` on `codex/goal-control-daily-flow` | Goal/Task contracts, guarded daily entrypoint, durable trace and feedback, signed task capsule with host-owned latest-state anchor and serialized writes; includes planner/filter repair | Clean offline suite: 1075 passed, 16 skipped. Independent P30 decision: ACCEPT for this exact structural candidate; Windows alias test skipped. Live drift/resume effect remains unmeasured, so this is not promoted capability. Earlier `codex/goal-control-operational` is retained as candidate history. |
-| Mechanism-space evaluation baseline | `639367dfa6a2b9f2ceabcff6da3a204470139114` on `codex/mechanism-space-baseline` | Eight draft large-search-space scenarios and evaluation plan | Structural tests and validators passed; no model behavior, independent acceptance, or claim of innovation-search convergence. Separate from the Authority/Science paper experiment. |
-| Planner contract repair | `c3d101770b0cc4ff60585b7120b01ffbc2b26609` on `codex/planner-contract-repair` | Keep persisted `RoundResult`, align `core.agent.run()` with `.steps`, and update the legacy harness | 49 focused planner/persistence tests passed; independent review remains open. |
-| Pipeline filter retention | `d2e9da9` on `codex/pipeline-filter-retention` | Keep qualified papers available after the memory write; clear stale scores on a failed filter; isolate the offline end-to-end fixture | Five memory/filter tests and the no-qualified-papers route passed. Its full-flow end-to-end test still reaches the separate planner contract failure on this branch. |
-| Planner + pipeline integration | `7f3fe1e7fd647f5159fe6323fc12dac70097d616` on `codex/pipeline-planner-integration` | Combined review surface for the two separate repairs above, with suite hygiene cherry-picked for order-independent offline verification | 57 focused tests and the repository's offline fast suite passed: 987 passed, 15 skipped, zero failures. Independent P30 decision for this exact head: MODIFY. Keep the runtime repairs as candidate material; do not promote this branch. |
-| Suite hygiene | `3df9ffadbec1e12be294594ae684f8b9b0eba6df` on `codex/windows-suite-hygiene` | Windows subprocess decoding, planner test isolation, bounded memory-ceiling fixture, and context tests isolated from developer memory | Targeted failures and the v1.8.1 feature file pass. Full-suite evidence is on the integration branch, which also contains this branch's changes; independent review remains open. |
+## Goal Control decision: REJECT canonical promotion
 
-Keep these candidates and their evidence reachable, but do not count them as
-implemented `main` features. A future promotion should take one bounded
-candidate at a time from current `main`, preserve frozen evidence, compare
-regressions against the same-environment baseline, and obtain the applicable
-P30 fresh, artifact-first decision for the exact resulting clean identity.
-Behavioral improvement claims require valid held-out behavior evidence; a
-quota/credential failure or zero valid runs is measurement failure, not a
-negative or positive result. Do not silently combine overlapping candidates
-or use a broad merge to promote an unrelated ancestor.
+The independently reviewed structural candidate is
+`6e53851ce1149610d80d029f498530e8ba350a4e` on
+`codex/goal-control-daily-flow`. Its P30 ACCEPT applies to that exact
+structural artifact. The held-out live drift/resume effect is unmeasured;
+daily operation also needs host-supplied contracts, classification, keys, and
+completion verification. Promoting the full runtime now would add a much
+larger surface without evidence that it solves the target behavior. The
+canonical promotion decision for this consolidation is **REJECT**. This does
+not re-label the structural audit as a failure. Preserve its exact commit
+and audit evidence in Git history; do not advertise its behavior as main.
 
-The original mixed worktree also contains untracked `experiments/` packages,
-E1.2 apparatus/protocol tests, and historical P30 audit reports. They are
-evidence or operator material, not a sixth implementation candidate. Their
-identity and intended authority must be checked before any packaging; this
-inventory does not add, relocate, or delete them. Use a clean worktree for
-canonical development and exact-artifact review.
+## Candidate closure ledger
 
-## Promotion order and stop conditions
+| Exact head | Candidate | Disposition before branch cleanup |
+|---|---|---|
+| `633de67386db5f585755c824626c50f529307a9a` | E1.3-M1 parent lifecycle | Close unpromoted; parent behavioral acceptance is outstanding. |
+| `2f8b995f6a491dc8ea0ca4ca3ab08b5ddd0d6b04` | E2-M3 sandbox evidence | Close unpromoted; autonomous-repair comparison is inconclusive. |
+| `616320aec7137589da0e810b7f4c19b4de105a50` | E3-M4 surface authority | Close unpromoted; held-out causal measurement is incomplete. |
+| `22d7d8424da7c50dfa8ca3256945513afc31f213` | E4-A grounded experience | Close unpromoted; live provider measurement was unavailable. |
+| `639367dfa6a2b9f2ceabcff6da3a204470139114` | Mechanism-space scenarios | Retain as evaluation evidence only; no innovation-search convergence claim. |
+| `c3d101770b0cc4ff60585b7120b01ffbc2b26609` | Planner contract repair | Existing repair absorbed into consolidation candidate. |
+| `d2e9da9a0c631a21b29063526f41bda1529270ac` | Pipeline filter retention | Existing repair absorbed into consolidation candidate. |
+| `7f3fe1e7fd647f5159fe6323fc12dac70097d616` | Planner/filter integration | Runtime repairs absorbed; its exact P30 MODIFY remains a historical audit decision. The test side effects were addressed in consolidation. |
+| `3df9ffadbec1e12be294594ae684f8b9b0eba6df` | Windows suite hygiene | Relevant offline test isolation absorbed into consolidation candidate. |
 
-1. Goal Control daily integration has independent P30 structural acceptance
-   for `6e53851`, including signed-state replay and concurrent-write review.
-   Its 1075 offline passes support regression only. It separately commits the
-   planner/filter repairs from `7f3fe1e`; the two heads have no ancestry
-   relationship. Their planner/filter and suite-hygiene test files are identical,
-   so the tracked-file mutation and unscoped environment changes identified in
-   the `7f3fe1e` MODIFY review must be resolved or explicitly cleared in a
-   review of the exact proposed promotion artifact. A valid held-out behavior
-   comparison also remains required. Keep structural acceptance separate from
-   a claim that live agents drift less.
-2. Keep the mechanism-space evaluation baseline separate from the paper's
-   Authority/Science experiment. Freeze its discriminator and duplicate-search
-   metrics before any held-out model run; its draft scenarios are not evidence
-   that large-space innovation search converges.
-3. Evaluate E2-M3 and E3-M4 in their own frozen task families. Missing
-   credentials, quota-truncated replicates, or missing consumer evidence leave
-   the candidate inconclusive; preserve the result rather than substituting
-   scripted runs or an altered fixture.
-4. Review E1.3-M1 and E4-A together for `src/retry_gate.py` compatibility, then
-   measure and promote separately. Neither an old-base merge that removes
-   E2-M2 coverage nor a silent combination of the two candidate state models
-   is acceptable.
-5. The independent P30 audit of integration head `7f3fe1e` found the planner
-   and filter runtime repairs structurally valid, but returned MODIFY: some
-   end-to-end tests mutate tracked files, and the offline fixture changes
-   process environment without scoped restoration. Preserve `RoundResult`
-   persistence and qualified-paper routing as candidate material. Hold the
-   integration branch; any later revised promotion artifact needs a fresh
-   exact-identity review.
+The Goal Control intermediate branches are historical and do not create
+additional active capabilities. The original `codex/e3-m4-authority-separation`
+worktree contains untracked experiment and audit material owned by other work;
+do not discard or move it as part of branch cleanup. Likewise, do not silently
+merge the other candidate worktrees into `main`.
+
+## Closure criteria
+
+1. A fresh artifact-first evaluator gives a P30 decision for the exact clean
+   consolidation identity. Local tests cannot issue that decision.
+2. After ACCEPT, the reviewed implementation reaches `main`; the same offline
+   suite and link/structure checks pass, with a clean working tree afterward.
+3. Preserve exact rejected, closed, and absorbed heads by immutable Git refs
+   before removing their branch pointers or clean worktrees. Check worktree
+   ownership and untracked files first; never erase mixed evidence.
+4. Current docs identify what runs on `main` and what remains unmeasured.
+   Only then change project status to maintenance. A missing credential or
+   zero valid behavior runs cannot be counted as a positive or negative result.
 
 Last P20-verified: 2026-09-28

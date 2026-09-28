@@ -19,9 +19,9 @@
 > behavior rules, reasoning primitives, and operating principles
 > that you can carry into any agent runtime.
 
-The control-plane work is being developed in isolated candidates. See
-[`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md) for the current `main`
-boundary and what remains unverified.
+The proposed Goal Control runtime was not promoted to the canonical source
+tree. See [`docs/CANDIDATE_STATUS.md`](docs/CANDIDATE_STATUS.md) for the
+decision, retained evidence, and what remains unverified.
 
 
 
@@ -159,10 +159,11 @@ this companion is required when the README exceeds 7 KB.
 
 
 This project was originally a self-improving agent that modifies
-`core/planner.py`. The legacy code remains, but `core.agent.run()` on
-`main` has a known planner result contract mismatch and is not a verified
-daily path. For code documentation and CLI
-usage, see `README_DETAIL.md` § Code legacy.
+`core/planner.py`. The legacy code remains. `core.agent.run()` now consumes
+the persisted planning result and passes arguments to its built-in tools;
+the offline suite verifies this path with a mocked model. A configured
+provider and real task outcome remain unverified. For CLI usage and code
+history, see `README_DETAIL.md` § Code legacy.
 
 
 
