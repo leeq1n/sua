@@ -20,6 +20,7 @@ The same script (with mocks removed) is what `python run.py --live`
 runs in production.
 """
 import os
+import subprocess
 import sys
 import json
 import time
@@ -68,7 +69,14 @@ def _fake_chat(messages, system=None, config=None, response_format=None,
 
 @pytest.fixture
 def mocked_end_to_end_env(monkeypatch, tmp_path):
-    """Set up: load .env, mock LLM, isolate upgrades/ to tmp_path."""
+    """Run the pipeline in a disposable clone with mocked external calls."""
+    project = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", project, str(repo)],
+                   check=True, capture_output=True)
+    (repo / "data").mkdir(exist_ok=True)
+    (repo / "upgrades").mkdir(exist_ok=True)
+    monkeypatch.chdir(repo)
     from src import learning
     original_init_db = learning.init_db
     test_db = str(tmp_path / "learning.db")
