@@ -182,58 +182,6 @@ def mocked_end_to_end_env(monkeypatch, tmp_path):
     ]
     monkeypatch.setattr(plg, "search_arxiv", lambda cfg: fake_papers)
 
-    # Snapshot + restore core/planner.py
-    planner = os.path.join(
-        os.path.dirname(__file__), "..", "core", "planner.py"
-    )
-    backup = planner + ".e2e_test_bak"
-    if os.path.exists(planner):
-        with open(planner, encoding="utf-8") as f:
-            original = f.read()
-        with open(backup, "w", encoding="utf-8") as f:
-            f.write(original)
-    else:
-        original = None
-        with open(planner, "w", encoding="utf-8") as f:
-            f.write("# placeholder for e2e test\n")
-
-    # Snapshot + restore upgrades/manifest.json
-    manifest = os.path.join(
-        os.path.dirname(__file__), "..", "upgrades", "manifest.json"
-    )
-    manifest_bak = manifest + ".e2e_test_bak"
-    if os.path.exists(manifest):
-        with open(manifest, encoding="utf-8") as f:
-            manifest_orig = f.read()
-        with open(manifest_bak, "w", encoding="utf-8") as f:
-            f.write(manifest_orig)
-    else:
-        manifest_orig = None
-
-    yield
-
-    # Restore
-    if original is not None:
-        with open(planner, "w", encoding="utf-8") as f:
-            f.write(original)
-    else:
-        os.remove(planner)
-    if os.path.exists(backup):
-        os.remove(backup)
-    if manifest_orig is not None:
-        with open(manifest, "w", encoding="utf-8") as f:
-            f.write(manifest_orig)
-    elif os.path.exists(manifest):
-        os.remove(manifest)
-    if os.path.exists(manifest_bak):
-        os.remove(manifest_bak)
-    # Clean bench_tmp / bench_bak leftover from node_evaluate
-    for suffix in (".bench_bak", ".bench_tmp"):
-        p = planner + suffix
-        if os.path.exists(p):
-            os.remove(p)
-
-
 class TestEndToEnd:
     """All 7 stages of the pipeline run to completion with mocked LLM."""
 
